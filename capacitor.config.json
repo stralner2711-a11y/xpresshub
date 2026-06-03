@@ -1,0 +1,9 @@
+{
+  "appId": "dk.xpressbudet.xpressintra",
+  "appName": "XpressIntra",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https"
+  }
+}

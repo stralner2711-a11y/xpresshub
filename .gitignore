@@ -1,0 +1,13 @@
+qa/.edge-qa-profile/
+.tmp-preview-*/
+arkiv/
+node_modules/
+dist/
+.env
+.env.*
+android/keystore.properties
+android/app/release/*.jks
+android/app/release/*.keystore
+android-build-log.txt
+android-build-command-output-*.txt
+android-release-build-log.txt

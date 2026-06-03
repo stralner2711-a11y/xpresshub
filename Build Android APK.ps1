@@ -1,0 +1,225 @@
+$ErrorActionPreference = "Stop"
+
+Set-Location -LiteralPath $PSScriptRoot
+$logPath = Join-Path $PSScriptRoot "android-build-log.txt"
+if (Test-Path $logPath) { Remove-Item -LiteralPath $logPath -Force }
+
+function Write-Step($message) {
+  Write-Host ""
+  Write-Host "=== $message ==="
+  Add-Content -LiteralPath $logPath -Value "`n=== $message ==="
+}
+
+function Add-PathIfExists($path) {
+  if ($path -and (Test-Path -LiteralPath $path)) {
+    $env:Path = "$path;$env:Path"
+  }
+}
+
+function Find-AndroidSdk {
+  $candidates = @(
+    $env:ANDROID_HOME,
+    $env:ANDROID_SDK_ROOT,
+    (Join-Path $env:LOCALAPPDATA "Android\Sdk"),
+    (Join-Path $env:USERPROFILE "AppData\Local\Android\Sdk"),
+    "C:\Android\Sdk",
+    "C:\Program Files\Android\Sdk"
+  ) | Where-Object { $_ }
+
+  foreach ($candidate in $candidates) {
+    if (Test-Path -LiteralPath $candidate) { return $candidate }
+  }
+
+  $studioOptions = @(
+    (Join-Path $env:APPDATA "Google\AndroidStudio2025.1\options\jdk.table.xml"),
+    (Join-Path $env:APPDATA "Google\AndroidStudio2024.3\options\jdk.table.xml"),
+    (Join-Path $env:APPDATA "Google\AndroidStudio2024.2\options\jdk.table.xml")
+  )
+  foreach ($file in $studioOptions) {
+    if (!(Test-Path -LiteralPath $file)) { continue }
+    $content = Get-Content -LiteralPath $file -Raw
+    if ($content -match "Android SDK[^`n]+?homePath[`"']?\s*value=[`"']([^`"']+)") {
+      $sdk = [System.Environment]::ExpandEnvironmentVariables($matches[1])
+      if (Test-Path -LiteralPath $sdk) { return $sdk }
+    }
+  }
+
+  return $null
+}
+
+function Find-LocalGradleBat {
+  $wrapperRoot = Join-Path $env:USERPROFILE ".gradle\wrapper\dists\gradle-8.11.1-all"
+  if (!(Test-Path -LiteralPath $wrapperRoot)) { return $null }
+
+  $gradleBat = Get-ChildItem -LiteralPath $wrapperRoot -Recurse -Filter "gradle.bat" -ErrorAction SilentlyContinue |
+    Where-Object { $_.FullName -like "*\gradle-8.11.1\bin\gradle.bat" } |
+    Select-Object -First 1
+
+  if ($gradleBat) { return $gradleBat.FullName }
+  return $null
+}
+
+function Remove-UnusedGoogleServicesPlugin {
+  $googleServicesJson = Join-Path $PSScriptRoot "android\app\google-services.json"
+  $rootGradle = Join-Path $PSScriptRoot "android\build.gradle"
+  $appGradle = Join-Path $PSScriptRoot "android\app\build.gradle"
+  if ((Test-Path -LiteralPath $googleServicesJson) -or !(Test-Path -LiteralPath $rootGradle) -or !(Test-Path -LiteralPath $appGradle)) {
+    return
+  }
+
+  $rootContent = Get-Content -LiteralPath $rootGradle -Raw
+  $rootContent = $rootContent -replace "(?m)^\s*classpath 'com\.google\.gms:google-services:[^']+'\s*\r?\n", ""
+  [System.IO.File]::WriteAllText($rootGradle, $rootContent, [System.Text.UTF8Encoding]::new($false))
+
+  $appContent = Get-Content -LiteralPath $appGradle -Raw
+  $googleServicesBlockPattern = '(?s)\r?\ntry \{\s*def servicesJSON = file\(''google-services\.json''\).*?Push Notifications won''t work"\)\s*\}\s*'
+  $appContent = $appContent -replace $googleServicesBlockPattern, "`r`n"
+  [System.IO.File]::WriteAllText($appGradle, $appContent, [System.Text.UTF8Encoding]::new($false))
+}
+
+function Run-Logged($command, $arguments) {
+  Write-Host "> $command $($arguments -join ' ')"
+  Add-Content -LiteralPath $logPath -Value "> $command $($arguments -join ' ')"
+  & $command @arguments 2>&1 | Tee-Object -FilePath $logPath -Append
+  if ($LASTEXITCODE -ne 0) {
+    throw "Kommando fejlede: $command $($arguments -join ' ')"
+  }
+}
+
+Write-Step "XpressIntra Android APK build"
+
+Add-PathIfExists "C:\Program Files\nodejs"
+if (Test-Path "C:\Program Files\Android\Android Studio\jbr") {
+  $env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"
+  Add-PathIfExists "C:\Program Files\Android\Android Studio\jbr\bin"
+}
+
+$sdk = Find-AndroidSdk
+if ($sdk) {
+  $env:ANDROID_HOME = $sdk
+  $env:ANDROID_SDK_ROOT = $sdk
+  Add-PathIfExists (Join-Path $sdk "platform-tools")
+  Add-PathIfExists (Join-Path $sdk "cmdline-tools\latest\bin")
+  Add-PathIfExists (Join-Path $sdk "tools\bin")
+}
+
+$npm = Get-Command npm.cmd -ErrorAction SilentlyContinue
+if (!$npm) {
+  Write-Host "FEJL: npm blev ikke fundet."
+  Write-Host "Installer Node.js LTS fra https://nodejs.org/ og genstart computeren."
+  exit 1
+}
+
+$java = Get-Command java.exe -ErrorAction SilentlyContinue
+if (!$java) {
+  Write-Host "FEJL: Java blev ikke fundet."
+  Write-Host "Aabn Android Studio og lad standard-installationen blive faerdig."
+  exit 1
+}
+
+if (!$sdk -or !(Test-Path -LiteralPath $sdk)) {
+  Write-Host "FEJL: Android SDK blev ikke fundet."
+  Write-Host "Aabn Android Studio -> More Actions -> SDK Manager og installer SDK Platform, Build-Tools, Platform-Tools og Command-line Tools."
+  exit 1
+}
+
+Write-Host "npm: $($npm.Source)"
+Write-Host "java: $($java.Source)"
+Write-Host "Android SDK: $sdk"
+Add-Content -LiteralPath $logPath -Value "npm: $($npm.Source)`njava: $($java.Source)`nAndroid SDK: $sdk"
+
+try {
+  if (!(Test-Path -LiteralPath "node_modules")) {
+    Write-Step "Installerer app-pakker"
+    Run-Logged "npm.cmd" @("install")
+  }
+
+  if (!(Test-Path -LiteralPath "android")) {
+    Write-Step "Bygger webapp"
+    Run-Logged "npm.cmd" @("run", "build")
+
+    Write-Step "Opretter Android-projekt"
+    Run-Logged "npx.cmd" @("cap", "add", "android")
+  }
+
+  Write-Step "Synkroniserer webapp til Android"
+  Run-Logged "npm.cmd" @("run", "android:sync")
+  Remove-UnusedGoogleServicesPlugin
+
+  Write-Step "Bygger debug APK"
+  $buildStartedAt = Get-Date
+  $apk = Join-Path $PSScriptRoot "android\app\build\outputs\apk\debug\app-debug.apk"
+  if (Test-Path -LiteralPath $apk) {
+    Remove-Item -LiteralPath $apk -Force
+  }
+  $problemReports = Join-Path $PSScriptRoot "android\build\reports\problems"
+  if (Test-Path -LiteralPath $problemReports) {
+    try {
+      Remove-Item -LiteralPath $problemReports -Recurse -Force
+    } catch {
+      Write-Host "Kunne ikke rydde gammel Gradle-rapport, fortsætter alligevel."
+      Add-Content -LiteralPath $logPath -Value "Kunne ikke rydde gammel Gradle-rapport: $($_.Exception.Message)"
+    }
+  }
+  Push-Location -LiteralPath "android"
+  try {
+    $localGradle = Find-LocalGradleBat
+    if ($localGradle) {
+      Write-Host "Bruger lokal Gradle: $localGradle"
+      Add-Content -LiteralPath $logPath -Value "Bruger lokal Gradle: $localGradle"
+      try {
+        Run-Logged $localGradle @("assembleDebug", "--stacktrace", "--no-daemon")
+      } catch {
+        if ((Test-Path -LiteralPath $apk) -and ((Get-Item -LiteralPath $apk).LastWriteTime -ge $buildStartedAt)) {
+          Write-Host "Gradle meldte fejl (sandsynligvis ved rapport-generering), men APK'en er bygget."
+        } else {
+          throw $_
+        }
+      }
+    } else {
+      try {
+        Run-Logged ".\gradlew.bat" @("assembleDebug", "--stacktrace", "--no-daemon")
+      } catch {
+        if ((Test-Path -LiteralPath $apk) -and ((Get-Item -LiteralPath $apk).LastWriteTime -ge $buildStartedAt)) {
+          Write-Host "Gradle meldte fejl (sandsynligvis ved rapport-generering), men APK'en er bygget."
+        } else {
+          throw $_
+        }
+      }
+    }
+  } finally {
+    Pop-Location
+  }
+
+  if (!(Test-Path -LiteralPath $apk)) {
+    throw "Build sagde OK, men APK blev ikke fundet: $apk"
+  }
+  if ((Get-Item -LiteralPath $apk).LastWriteTime -lt $buildStartedAt) {
+    throw "Build fandt kun en gammel APK. Ny APK blev ikke dannet."
+  }
+
+  Write-Host ""
+  Write-Host "APK er bygget:"
+  Write-Host $apk
+  Add-Content -LiteralPath $logPath -Value "`nAPK er bygget: $apk"
+  exit 0
+} catch {
+  Write-Host ""
+  Write-Host "APK-build fejlede."
+  Write-Host $_.Exception.Message
+  if ((Test-Path -LiteralPath $logPath) -and ((Get-Content -LiteralPath $logPath -Raw) -match "Permission denied: getsockopt|services.gradle.org|dl\.google\.com|repo\.maven\.apache\.org|gradle-[0-9].*\.zip")) {
+    Write-Host ""
+    Write-Host "Det ligner en Android/Gradle-download der bliver blokeret."
+    Write-Host "Aabn Android Studio, aabn mappen 'android', og lad den synkronisere Gradle faerdig."
+    Write-Host "Hvis Windows Firewall, antivirus, VPN eller firma-netvaerk spoerger, saa tillad Java/Android Studio adgang til nettet."
+    Write-Host "Gradle skal kunne hente fra dl.google.com og repo.maven.apache.org."
+    Write-Host "Koer derefter denne fil igen."
+  }
+  Write-Host ""
+  Write-Host "Jeg har gemt den fulde fejl her:"
+  Write-Host $logPath
+  Write-Host ""
+  Write-Host "Send gerne indholdet af android-build-log.txt, hvis den stadig fejler."
+  Add-Content -LiteralPath $logPath -Value "`nFEJL: $($_.Exception.Message)"
+  exit 1
+}

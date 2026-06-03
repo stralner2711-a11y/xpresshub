@@ -1,0 +1,29 @@
+{
+  "name": "XpressIntra medarbejdersystem",
+  "short_name": "XpressIntra",
+  "description": "Internt medarbejdersystem til XpressBudets medarbejdere.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#071727",
+  "theme_color": "#071727",
+  "icons": [
+    {
+      "src": "./assets/roadlog-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "./icons/xpressintra-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icons/xpressintra-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
