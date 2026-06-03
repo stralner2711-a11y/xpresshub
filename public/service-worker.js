@@ -1,4 +1,4 @@
-const CACHE_NAME = 'xpressintra-v58-login-fallback';
+const CACHE_NAME = 'xpressintra-v59-control-cleanup';
 const APP_FILES = [
   './',
   './index.html',
