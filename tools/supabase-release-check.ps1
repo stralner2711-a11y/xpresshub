@@ -1,0 +1,104 @@
+param(
+  [string]$ProjectRoot = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
+)
+
+$ErrorActionPreference = 'Stop'
+
+try {
+  $ProjectRoot = (Resolve-Path -LiteralPath $ProjectRoot).Path
+} catch {
+  $ProjectRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Path
+}
+
+function Fail($message) {
+  Write-Host "FEJL: $message" -ForegroundColor Red
+  exit 1
+}
+
+function Pass($message) {
+  Write-Host "OK: $message"
+}
+
+$configPath = Join-Path $ProjectRoot 'public\app-config.js'
+$schemaPath = Join-Path $ProjectRoot 'supabase\schema.sql'
+$fullSetupPath = Join-Path $ProjectRoot 'supabase\RUN_THIS_FROM_SCRATCH_IN_SUPABASE.sql'
+$setupNotePath = Join-Path $ProjectRoot 'supabase\XPRESSINTRA_CURRENT_SUPABASE_SETUP.md'
+
+if (!(Test-Path $configPath)) { Fail "public/app-config.js mangler" }
+if (!(Test-Path $schemaPath)) { Fail "supabase/schema.sql mangler" }
+if (!(Test-Path $fullSetupPath)) { Fail "supabase/RUN_THIS_FROM_SCRATCH_IN_SUPABASE.sql mangler" }
+if (!(Test-Path $setupNotePath)) { Fail "supabase/XPRESSINTRA_CURRENT_SUPABASE_SETUP.md mangler" }
+
+$config = Get-Content $configPath -Raw
+$schema = Get-Content $schemaPath -Raw
+$fullSetup = Get-Content $fullSetupPath -Raw
+
+if ($config -match 'service_role|sb_secret_|SUPABASE_SERVICE_ROLE') {
+  Fail "app-config.js maa ikke indeholde service_role eller hemmelige noegler"
+}
+
+$urlMatch = [regex]::Match($config, "url:\s*'([^']+)'")
+$keyMatch = [regex]::Match($config, "anonKey:\s*'([^']+)'")
+if (!$urlMatch.Success) { Fail "Supabase URL mangler i app-config.js" }
+if (!$keyMatch.Success) { Fail "Supabase publishable/anon key mangler i app-config.js" }
+
+$supabaseUrl = $urlMatch.Groups[1].Value
+$anonKey = $keyMatch.Groups[1].Value
+
+if ($supabaseUrl -ne 'https://mtfbdoajzmlgqbeiubxe.supabase.co') {
+  Fail "Supabase URL peger ikke paa det aftalte projekt"
+}
+
+if ($anonKey.Length -lt 20) {
+  Fail "Supabase publishable key ser for kort ud"
+}
+
+$requiredTables = @(
+  'profiles',
+  'profile_private_details',
+  'employee_invitations',
+  'vehicles',
+  'notifications',
+  'location_shares',
+  'workday_sessions',
+  'pickup_tasks',
+  'conversations',
+  'conversation_members',
+  'messages',
+  'media_attachments',
+  'announcements',
+  'private_log_entries'
+)
+
+foreach ($table in $requiredTables) {
+  if ($schema -notmatch "create table if not exists public\.$table") {
+    Fail "schema.sql mangler public.$table"
+  }
+  if ($schema -notmatch "alter table public\.$table enable row level security") {
+    Fail "schema.sql mangler RLS for public.$table"
+  }
+}
+
+if ($schema -notmatch 'create policy') { Fail "schema.sql mangler RLS policies" }
+if ($schema -notmatch 'xpressintra-media') { Fail "schema.sql mangler Storage bucket/policies for xpressintra-media" }
+if ($fullSetup -notmatch 'xpressintra-media') { Fail "RUN_THIS_FROM_SCRATCH_IN_SUPABASE.sql mangler xpressintra-media" }
+if ($fullSetup -notmatch '00000000-0000-4000-8000-000000000001') { Fail "Supabase full setup mangler standard faelleschat" }
+
+Pass "Supabase config peger paa $supabaseUrl"
+Pass "Kun offentlig publishable/anon key bruges i app-config.js"
+Pass "Supabase SQL, RLS, Storage og standardchat er med i pakken"
+
+if ($env:XPRESSINTRA_SUPABASE_ONLINE_CHECK -eq '1') {
+  try {
+    $response = Invoke-WebRequest -Uri "$supabaseUrl/auth/v1/settings" -Headers @{ apikey = $anonKey } -UseBasicParsing -TimeoutSec 15
+    if ($response.StatusCode -ge 200 -and $response.StatusCode -lt 500) {
+      Pass "Supabase Auth endpoint svarer HTTP $($response.StatusCode)"
+    } else {
+      Fail "Supabase Auth endpoint svarede HTTP $($response.StatusCode)"
+    }
+  } catch {
+    Fail "Online Supabase-test fejlede: $($_.Exception.Message)"
+  }
+} else {
+  Write-Host "INFO: Online Supabase-test er sprunget over. Saet XPRESSINTRA_SUPABASE_ONLINE_CHECK=1 for at teste live endpoint."
+}

@@ -1,21 +1,21 @@
 {
-  "latestVersion": "1.2.6",
-  "stableVersion": "1.2.6",
-  "activeVersion": "1.2.6",
-  "previousStableVersion": "1.2.5",
-  "latestVersionCode": 9,
-  "stableVersionCode": 9,
-  "activeVersionCode": 9,
-  "apkDownloadUrl": "https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.2.6/xpressintra.apk",
-  "releasePageUrl": "https://github.com/stralner2711-a11y/xpresshub/releases/tag/v1.2.6",
+  "latestVersion": "1.2.7",
+  "stableVersion": "1.2.7",
+  "activeVersion": "1.2.7",
+  "previousStableVersion": "1.2.6",
+  "latestVersionCode": 10,
+  "stableVersionCode": 10,
+  "activeVersionCode": 10,
+  "apkDownloadUrl": "https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.2.7/xpressintra.apk",
+  "releasePageUrl": "https://github.com/stralner2711-a11y/xpresshub/releases/tag/v1.2.7",
   "downloadPageUrl": "https://stralner2711-a11y.github.io/xpresshub/download.html",
   "changelog": [
-    "Profilbilleder viser nu preview med det samme",
-    "Profilbilleder håndterer JPG, PNG, WebP og GIF op til 10 MB",
-    "Store profilbilleder skaleres ned til en mere stabil avatar-størrelse"
+    "Login virker nu også hvis Supabase-biblioteket ikke når at indlæse",
+    "Appen bruger den indbyggede Supabase-konfiguration som sikker fallback",
+    "Profilbilleder viser preview og håndterer JPG, PNG, WebP og GIF op til 10 MB"
   ],
   "forceUpdate": true,
   "rollbackReason": "",
   "defectiveVersions": [],
-  "updatedAt": "2026-06-03"
+  "updatedAt": "2026-06-04"
 }

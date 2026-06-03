@@ -1,0 +1,78 @@
+XPRESSINTRA - START HER
+=======================
+
+Kort sagt:
+Projektet er nu ryddet op, saa der kun er een hovedknap til release:
+
+  KLIK HER - OPDATER ALT.cmd
+
+Den samler web/pc, mobil/Android, GitHub, Vercel-grundlaget, APK-release og Supabase-kontrol i samme opdateringspakke.
+
+
+BRUG DEN HER
+------------
+
+1. KLIK HER - OPDATER ALT.cmd
+   Den er den samlede opdateringspakke.
+   Den tjekker Supabase, bygger appen, kopierer til GitHub-repoet, committer/pusher og laver APK-release.
+
+2. Vent med at koere den, hvis mobiltraaden stadig arbejder paa login i src/app.js.
+   Naar login-fixet er faerdigt, er det denne ene fil der skal bruges.
+
+
+DET VIGTIGE I SYSTEMET
+----------------------
+
+src
+   Selve appen. Bruges af baade pc/web og Android.
+
+public/app-config.js
+   Faelles Supabase-login-config.
+   Den maa kun indeholde offentlig publishable/anon key, aldrig hemmelig servernoegle.
+
+supabase
+   Database, SQL, RLS, Storage og noter om den aktuelle Supabase-opsætning.
+
+tools/supabase-release-check.ps1
+   Ny release-kontrol der sikrer at Supabase-pakken er med, foer OPDATER ALT gaar videre.
+
+android
+   Android/APK-delen.
+
+vercel.json
+   Online pc/web/Vercel-opsætning.
+
+qa
+   Smoke-tests for login, Supabase, sikkerhed, opdatering og brugerflade.
+
+
+HVAD ER RYDDET OP
+-----------------
+
+Gamle klik-filer, logs, zip-filer, demo-filer og noed-login-fixmapper er flyttet til:
+
+  arkiv/oprydning-2026-06-04
+
+De er ikke slettet permanent endnu. Det er med vilje, saa vi stadig kan hente noget tilbage, hvis en gammel log eller fil viser sig at være vigtig.
+
+
+ARBEJDSREGEL FREMOVER
+---------------------
+
+Denne traad passer pc/web/Vercel/GitHub og releasepakken.
+Mobiltraaden passer Android/APK/telefonoplevelsen.
+
+Faelles filer skal behandles forsigtigt:
+  src/app.js
+  src/styles.css
+  index.html
+  public/app-config.js
+  public/version.json
+  service-worker.js
+  supabase/*
+
+Naar login-fixet er faerdigt i mobiltraaden, skal vi koere:
+
+  KLIK HER - OPDATER ALT.cmd
+
+Derefter boer Vercel og APK bruge samme kode og samme Supabase.

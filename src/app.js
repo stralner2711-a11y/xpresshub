@@ -26,9 +26,9 @@ const icons = {
   search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>',
 };
 
-const APP_VERSION = '1.2.6-release-v57';
-const APP_DISPLAY_VERSION = '1.2.6';
-const APP_VERSION_CODE = 9;
+const APP_VERSION = '1.2.7-release-v58';
+const APP_DISPLAY_VERSION = '1.2.7';
+const APP_VERSION_CODE = 10;
 const IMAGE_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
 const PROFILE_PHOTO_MAX_DIMENSION = 512;
 const PROFILE_PHOTO_QUALITY = 0.84;
@@ -371,7 +371,7 @@ function supabaseConfig() {
 function supabaseStatus() {
   const config = supabaseConfig();
   if (!config.url || !config.anonKey) return { ready: false, label: 'Demo', detail: 'Supabase mangler URL og offentlig anon key' };
-  if (!window.supabase?.createClient) return { ready: false, label: 'Afventer', detail: 'Supabase-biblioteket kunne ikke hentes' };
+  if (!window.supabase?.createClient) return { ready: true, label: 'Online', detail: 'Klar via indbygget Supabase-login' };
   return { ready: true, label: 'Online', detail: 'Klar til Supabase Auth og database' };
 }
 
@@ -430,14 +430,201 @@ async function runSupabaseDiagnostics() {
   return checks;
 }
 
+function restSupabaseStorageKey(url) {
+  return `roadlog:restSupabaseSession:${url}`;
+}
+
+function createRestSupabaseClient(config) {
+  const sessionKey = restSupabaseStorageKey(config.url);
+  const readSession = () => {
+    try { return JSON.parse(localStorage.getItem(sessionKey)); } catch { return null; }
+  };
+  const saveSession = value => {
+    if (value) localStorage.setItem(sessionKey, JSON.stringify(value));
+    else localStorage.removeItem(sessionKey);
+  };
+  const authHeaders = (sessionValue = readSession()) => ({
+    apikey: config.anonKey,
+    Authorization: `Bearer ${sessionValue?.access_token || config.anonKey}`,
+  });
+  const jsonHeaders = sessionValue => ({
+    ...authHeaders(sessionValue),
+    'Content-Type': 'application/json',
+  });
+  const parseJsonResponse = async response => {
+    const body = await response.text();
+    let data = null;
+    if (body) {
+      try {
+        data = JSON.parse(body);
+      } catch {
+        data = body;
+      }
+    }
+    if (!response.ok) return { data: null, error: { message: data?.msg || data?.message || body || `HTTP ${response.status}`, status: response.status } };
+    return { data, error: null };
+  };
+  const normalizeAuthSession = data => data?.access_token ? {
+    access_token: data.access_token,
+    refresh_token: data.refresh_token,
+    expires_at: data.expires_at,
+    user: data.user,
+  } : null;
+
+  class RestQuery {
+    constructor(table) {
+      this.table = table;
+      this.params = new URLSearchParams();
+      this.headers = {};
+      this.method = 'GET';
+      this.body = null;
+      this.single = false;
+    }
+    select(columns = '*') {
+      this.params.set('select', columns);
+      if (this.method === 'POST') this.headers.Prefer = `${this.headers.Prefer ? `${this.headers.Prefer},` : ''}return=representation`;
+      return this;
+    }
+    eq(column, value) {
+      this.params.set(column, `eq.${value}`);
+      return this;
+    }
+    order(column, options = {}) {
+      this.params.set('order', `${column}.${options.ascending === false ? 'desc' : 'asc'}`);
+      return this;
+    }
+    limit(value) {
+      this.params.set('limit', String(value));
+      return this;
+    }
+    maybeSingle() {
+      this.single = true;
+      return this.execute();
+    }
+    insert(row) {
+      this.method = 'POST';
+      this.body = row;
+      this.headers.Prefer = 'return=representation';
+      return this;
+    }
+    upsert(row) {
+      this.method = 'POST';
+      this.body = row;
+      this.headers.Prefer = 'resolution=merge-duplicates,return=representation';
+      return this;
+    }
+    update(row) {
+      this.method = 'PATCH';
+      this.body = row;
+      this.headers.Prefer = 'return=representation';
+      return this;
+    }
+    delete() {
+      this.method = 'DELETE';
+      this.headers.Prefer = 'return=representation';
+      return this;
+    }
+    async execute() {
+      const query = this.params.toString();
+      const response = await fetch(`${config.url}/rest/v1/${this.table}${query ? `?${query}` : ''}`, {
+        method: this.method,
+        headers: { ...jsonHeaders(), ...this.headers },
+        body: this.body ? JSON.stringify(this.body) : undefined,
+      });
+      const result = await parseJsonResponse(response);
+      if (result.error) return result;
+      if (this.single) return { data: Array.isArray(result.data) ? result.data[0] || null : result.data, error: null };
+      return result;
+    }
+    then(resolve, reject) {
+      return this.execute().then(resolve, reject);
+    }
+  }
+
+  return {
+    __fallbackRest: true,
+    auth: {
+      async getSession() {
+        const sessionValue = readSession();
+        return { data: { session: sessionValue }, error: null };
+      },
+      async signInWithPassword({ email, password }) {
+        const response = await fetch(`${config.url}/auth/v1/token?grant_type=password`, {
+          method: 'POST',
+          headers: jsonHeaders(null),
+          body: JSON.stringify({ email, password }),
+        });
+        const result = await parseJsonResponse(response);
+        if (result.error) return result;
+        const authSession = normalizeAuthSession(result.data);
+        saveSession(authSession);
+        return { data: { session: authSession, user: authSession?.user }, error: null };
+      },
+      async signUp({ email, password, options }) {
+        const response = await fetch(`${config.url}/auth/v1/signup`, {
+          method: 'POST',
+          headers: jsonHeaders(null),
+          body: JSON.stringify({ email, password, data: options?.data || {} }),
+        });
+        const result = await parseJsonResponse(response);
+        if (result.error) return result;
+        const authSession = normalizeAuthSession(result.data);
+        if (authSession) saveSession(authSession);
+        return { data: { session: authSession, user: result.data?.user || authSession?.user }, error: null };
+      },
+      async signOut() {
+        saveSession(null);
+        return { error: null };
+      },
+    },
+    from(table) {
+      return new RestQuery(table);
+    },
+    async rpc(name, args) {
+      const response = await fetch(`${config.url}/rest/v1/rpc/${name}`, {
+        method: 'POST',
+        headers: jsonHeaders(),
+        body: JSON.stringify(args || {}),
+      });
+      return parseJsonResponse(response);
+    },
+    storage: {
+      from(bucket) {
+        return {
+          async upload(path, file) {
+            const response = await fetch(`${config.url}/storage/v1/object/${bucket}/${path}`, {
+              method: 'POST',
+              headers: authHeaders(),
+              body: file,
+            });
+            const result = await parseJsonResponse(response);
+            return result.error ? result : { data: { path }, error: null };
+          },
+          async createSignedUrl(path, expiresIn = 600) {
+            const response = await fetch(`${config.url}/storage/v1/object/sign/${bucket}/${path}`, {
+              method: 'POST',
+              headers: jsonHeaders(),
+              body: JSON.stringify({ expiresIn }),
+            });
+            const result = await parseJsonResponse(response);
+            if (result.error) return result;
+            const signedUrl = result.data?.signedURL || result.data?.signedUrl || '';
+            return { data: { signedUrl: signedUrl.startsWith('http') ? signedUrl : `${config.url}/storage/v1${signedUrl}` }, error: null };
+          },
+        };
+      },
+    },
+  };
+}
+
 function getSupabaseClient() {
   const status = supabaseStatus();
   if (!status.ready) return null;
   const config = supabaseConfig();
   if (!supabaseClientInstance) {
-    supabaseClientInstance = window.supabase.createClient(config.url, config.anonKey, {
-      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
-    });
+    supabaseClientInstance = window.supabase?.createClient
+      ? window.supabase.createClient(config.url, config.anonKey, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } })
+      : createRestSupabaseClient(config);
   }
   return supabaseClientInstance;
 }
@@ -1933,6 +2120,7 @@ async function applySupabaseSession(authSession) {
 }
 
 async function restoreSupabaseSession() {
+  if (session?.mode === 'demo') return;
   const client = getSupabaseClient();
   if (!client) return;
   const { data, error } = await client.auth.getSession();
