@@ -57,6 +57,6 @@ assert(vm.runInContext('employees.length', context) === 0, 'Fresh production app
 assert(vm.runInContext('vehicles.length', context) === 0, 'Fresh production app should start without demo vehicles');
 assert(vm.runInContext('announcements.length', context) === 0, 'Fresh production app should start without demo posts');
 assert(!appElement.innerHTML.includes('demo@xpressintra.local'), 'Production login should not prefill demo email');
-assert(appElement.innerHTML.includes('Supabase skal sættes op før login'), 'Production login should require Supabase setup');
+assert(appElement.innerHTML.includes('Har du ikke adgang endnu'), 'Production login should explain that access requires an invitation');
 
 console.log('Production empty register smoke test passed');

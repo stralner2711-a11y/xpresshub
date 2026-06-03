@@ -11,3 +11,10 @@ android/app/release/*.keystore
 android-build-log.txt
 android-build-command-output-*.txt
 android-release-build-log.txt
+opdater-alt-log.txt
+github-desktop-auto-sync-log.txt
+github-desktop-sync-log.txt
+.gradle-build-cache/
+github-upload-ready/
+release-klargjort/
+*.zip

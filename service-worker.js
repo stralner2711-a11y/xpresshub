@@ -1,4 +1,4 @@
-const CACHE_NAME = 'xpressintra-v55-update-check';
+const CACHE_NAME = 'xpressintra-v56-action-guards';
 const APP_FILES = [
   './',
   './index.html',

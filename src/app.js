@@ -26,9 +26,9 @@ const icons = {
   search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>',
 };
 
-const APP_VERSION = '0.3.1-supabase-ready-v54';
-const APP_DISPLAY_VERSION = '1.2.4';
-const APP_VERSION_CODE = 7;
+const APP_VERSION = '1.2.5-release-v56';
+const APP_DISPLAY_VERSION = '1.2.5';
+const APP_VERSION_CODE = 8;
 const UPDATE_CONFIG_KEY = 'appUpdateState';
 const defaultUpdateConfig = {
   versionUrl: 'https://stralner2711-a11y.github.io/xpresshub/version.json',
@@ -516,7 +516,7 @@ let globalQuery = '';
 let chatQuery = '';
 let activeInfoCategory = 'all';
 let infoFavorites = stored('infoFavorites') || [];
-let session = stored('session');
+let session = hasSupabaseConfigForMode && !DEMO_MODE ? null : stored('session');
 let creatorRoleTester = stored('creatorRoleTester') || { active: false, originalProfile: null, currentRole: null };
 let profile = stored('profile') || (DEMO_MODE ? { name: 'Tommy Hansen', phone: '+45 22 44 18 90', email: 'stralner2711@gmail.com', role: 'Appansvarlig · Lastbilchauffør', accessRole: 'owner', vehicleType: 'truck', truck: 'TR 42 918', department: 'Lastbil', license: 'C/E · EU kvalifikationsbevis', emergencyContact: 'Anne · +45 22 11 90 90', languages: 'Dansk, engelsk, tysk', logbook: true } : clone(productionProfile));
 let location = { sharing: false, demo: false, speed: 0, points: 0, watchId: null, timer: null, coords: null, startedAt: null, expiresAt: null, lastUpdatedAt: null, shareMode: null };
@@ -1857,10 +1857,18 @@ async function restoreSupabaseSession() {
   const client = getSupabaseClient();
   if (!client) return;
   const { data, error } = await client.auth.getSession();
-  if (error || !data.session) return;
+  if (error || !data.session) {
+    localStorage.removeItem('roadlog:session');
+    session = null;
+    render();
+    return;
+  }
   try {
     await applySupabaseSession(data.session);
   } catch (error) {
+    localStorage.removeItem('roadlog:session');
+    session = null;
+    render();
     showToast(`Supabase er forbundet, men data kunne ikke hentes: ${error.message}`);
   }
 }
@@ -1924,6 +1932,36 @@ function canManageEmployees() {
 
 function canPublishOfficePosts() {
   return isDispatcher();
+}
+
+function canUseInternalAction(action) {
+  if (!action) return true;
+  const creatorOnlyActions = new Set([
+    'test-supabase',
+    'open-security-center',
+    'show-update-status',
+  ]);
+  const adminActions = new Set([
+    'new-employee',
+    'open-launch-checklist',
+    'open-gdpr-go-live',
+    'open-rule-updates',
+  ]);
+  const dispatcherActions = new Set([
+    'new-announcement',
+    'open-dispatch',
+  ]);
+  if (creatorOnlyActions.has(action)) return isCreatorOwner();
+  if (adminActions.has(action)) return canManageEmployees() || isCreatorOwner();
+  if (dispatcherActions.has(action)) return isDispatcher();
+  if (action === 'demo-admin' || action === 'reset-demo') return DEMO_MODE;
+  return true;
+}
+
+function blockInternalAction(action) {
+  if (canUseInternalAction(action)) return false;
+  showToast('Den funktion er kun for creator, chef/admin eller drift');
+  return true;
 }
 
 const creatorRolePresets = {
@@ -4142,19 +4180,20 @@ function openNewChatModal() {
 function openSettingsModal() {
   const config = supabaseConfig();
   const backend = supabaseStatus();
-  const modal = document.createElement('div');
-  modal.className = 'modal-backdrop';
-  modal.innerHTML = `<form class="profile-modal settings-form">
-    <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
-    <p class="eyebrow">XpressIntra</p><h3>Indstillinger</h3>
-    <section class="backend-settings ${backend.ready ? 'online' : 'demo'}">
+  const backendSettings = isCreatorOwner() ? `<section class="backend-settings ${backend.ready ? 'online' : 'demo'}">
       <b>Online backend: ${text(backend.label)}</b>
       <small>${text(backend.detail)}</small>
       <label>Supabase URL<input name="supabaseUrl" placeholder="https://xxxxx.supabase.co" value="${text(config.url)}" /></label>
       <label>Offentlig anon key<input name="supabaseAnonKey" placeholder="eyJ..." value="${text(config.anonKey)}" /></label>
       <small>Brug kun den offentlige anon/publishable key her. Service-role nøgler må aldrig ind i appen.</small>
       <button type="button" data-action="test-supabase">Test Supabase-forbindelse</button>
-    </section>
+    </section>` : '';
+  const modal = document.createElement('div');
+  modal.className = 'modal-backdrop';
+  modal.innerHTML = `<form class="profile-modal settings-form">
+    <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
+    <p class="eyebrow">XpressIntra</p><h3>Indstillinger</h3>
+    ${backendSettings}
     ${renderUpdateSummary()}
     <div class="settings-switches">
       <h4>Når jeg møder ind</h4>
@@ -4824,6 +4863,7 @@ document.addEventListener('click', async event => {
   const quickPickupDuration = event.target.closest('[data-quick-pickup]')?.dataset.quickPickup;
   const completeDataRequestId = event.target.closest('[data-complete-data-request]')?.dataset.completeDataRequest;
   const searchResult = event.target.closest('[data-search-target]');
+  if (blockInternalAction(action)) return;
   if (searchResult) {
     activeTab = searchResult.dataset.searchTarget;
     activeChat = searchResult.dataset.searchChat || null;
@@ -5282,12 +5322,14 @@ document.addEventListener('submit', async event => {
       url: String(data.get('supabaseUrl') || '').trim(),
       anonKey: String(data.get('supabaseAnonKey') || '').trim(),
     };
-    if (nextConfig.url || nextConfig.anonKey) {
-      save(SUPABASE_CONFIG_KEY, nextConfig);
-    } else {
-      localStorage.removeItem(`roadlog:${SUPABASE_CONFIG_KEY}`);
+    if (isCreatorOwner()) {
+      if (nextConfig.url || nextConfig.anonKey) {
+        save(SUPABASE_CONFIG_KEY, nextConfig);
+      } else {
+        localStorage.removeItem(`roadlog:${SUPABASE_CONFIG_KEY}`);
+      }
+      supabaseClientInstance = null;
     }
-    supabaseClientInstance = null;
     workdayPrivacy = {
       gps: data.has('workGps'),
       logbook: data.has('workLogbook'),
@@ -5299,8 +5341,8 @@ document.addEventListener('submit', async event => {
     };
     save('workdayPrivacy', workdayPrivacy);
     notificationPrefs = { office: data.has('office'), rules: data.has('rules'), chat: data.has('chat'), dailyBrief: data.has('dailyBrief'), quietHours: data.has('quietHours') };
-  save('notificationPrefs', notificationPrefs);
-  save('workdayPrivacy', workdayPrivacy);
+    save('notificationPrefs', notificationPrefs);
+    save('workdayPrivacy', workdayPrivacy);
     if (onlineBackendActive()) {
       try {
         await syncSupabaseNotificationPrefs();
@@ -5309,7 +5351,7 @@ document.addEventListener('submit', async event => {
       }
     }
     event.target.closest('.modal-backdrop').remove();
-    showToast(nextConfig.url && nextConfig.anonKey ? 'Indstillinger og Supabase-forbindelse er gemt' : 'Dine indstillinger er gemt');
+    showToast(isCreatorOwner() && nextConfig.url && nextConfig.anonKey ? 'Indstillinger og Supabase-forbindelse er gemt' : 'Dine indstillinger er gemt');
     return;
   }
   if (event.target.matches('.core-settings-form')) {
