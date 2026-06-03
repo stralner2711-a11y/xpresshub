@@ -1,0 +1,21 @@
+{
+  "latestVersion": "1.2.3",
+  "stableVersion": "1.2.3",
+  "activeVersion": "1.2.3",
+  "previousStableVersion": "1.2.2",
+  "latestVersionCode": 6,
+  "stableVersionCode": 6,
+  "activeVersionCode": 6,
+  "apkDownloadUrl": "https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.2.3/xpressintra.apk",
+  "releasePageUrl": "https://github.com/stralner2711-a11y/xpresshub/releases/tag/v1.2.3",
+  "downloadPageUrl": "https://stralner2711-a11y.github.io/xpresshub/download.html",
+  "changelog": [
+    "Update-tjek bruger GitHub Pages version.json",
+    "version.json bliver ikke længere cachet lokalt",
+    "Test-opdatering er sat til tvungen visning"
+  ],
+  "forceUpdate": true,
+  "rollbackReason": "",
+  "defectiveVersions": [],
+  "updatedAt": "2026-06-03"
+}

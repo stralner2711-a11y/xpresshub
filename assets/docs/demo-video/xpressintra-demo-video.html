@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="da">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EkspressIntra demovideo</title>
+    <style>
+      html, body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        overflow: hidden;
+        background: #06111d;
+      }
+
+      canvas {
+        display: block;
+        width: 100vw;
+        height: 100vh;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="video" width="1920" height="1080"></canvas>
+    <script>
+      const canvas = document.getElementById('video');
+      const ctx = canvas.getContext('2d');
+      const logo = new Image();
+      logo.src = '../../public/xpressbudet-logo-transparent.png';
+
+      const W = canvas.width;
+      const H = canvas.height;
+      const fps = 30;
+      const duration = 58;
+      const scenes = [
+        { start: 0, end: 5, key: 'intro', title: 'EkspressIntra', subtitle: 'En intern mobilapp til chauffører, kontor og drift.' },
+        { start: 5, end: 12, key: 'home', title: 'Forsiden samler hverdagen', subtitle: 'Chaufføren ser dagens vigtigste beskeder, opgaver og hurtige handlinger med det samme.' },
+        { start: 12, end: 19, key: 'work', title: 'Mød ind med klare valg', subtitle: 'Arbejdsdagen starter med tydelige tilladelser for GPS, logbog og notifikationer.' },
+        { start: 19, end: 27, key: 'map', title: 'Live-kort med frivillig deling', subtitle: 'Kontoret kan følge aktive positioner, mens medarbejderen selv styrer deling og varighed.' },
+        { start: 27, end: 35, key: 'pickup', title: 'Afhentningsopgaver trin for trin', subtitle: 'Opgaver får status, afhentningssted, afleveringssted, reference og tjekliste.' },
+        { start: 35, end: 43, key: 'chat', title: 'Beskeder uden støj', subtitle: 'Fælleschat, direkte beskeder og notifikationer holder drift og chauffører samlet.' },
+        { start: 43, end: 50, key: 'info', title: 'InfoCenter til hurtige svar', subtitle: 'Guides, landeregler, tjeklister og dokumentlinks ligger klar i mobilen.' },
+        { start: 50, end: 56, key: 'admin', title: 'Chef-overblik på en rolig måde', subtitle: 'Roller, medarbejdere, køretøjer og rettigheder kan styres med tydelig sikkerhed.' },
+        { start: 56, end: 58, key: 'outro', title: 'Klar til sikker demo', subtitle: 'Kan vises som video fra USB uden login, database eller installation.' }
+      ];
+
+      function ease(x) {
+        return x < .5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2;
+      }
+
+      function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+      }
+
+      function sceneAt(t) {
+        return scenes.find(scene => t >= scene.start && t < scene.end) || scenes[scenes.length - 1];
+      }
+
+      function roundRect(x, y, w, h, r, fill, stroke) {
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.arcTo(x + w, y, x + w, y + h, r);
+        ctx.arcTo(x + w, y + h, x, y + h, r);
+        ctx.arcTo(x, y + h, x, y, r);
+        ctx.arcTo(x, y, x + w, y, r);
+        ctx.closePath();
+        if (fill) {
+          ctx.fillStyle = fill;
+          ctx.fill();
+        }
+        if (stroke) {
+          ctx.strokeStyle = stroke;
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        }
+      }
+
+      function textBlock(text, x, y, maxWidth, lineHeight, size, color, weight = 700) {
+        ctx.font = `${weight} ${size}px Arial`;
+        ctx.fillStyle = color;
+        const words = text.split(' ');
+        let line = '';
+        for (const word of words) {
+          const test = line ? `${line} ${word}` : word;
+          if (ctx.measureText(test).width > maxWidth && line) {
+            ctx.fillText(line, x, y);
+            line = word;
+            y += lineHeight;
+          } else {
+            line = test;
+          }
+        }
+        if (line) ctx.fillText(line, x, y);
+        return y + lineHeight;
+      }
+
+      function drawBackground(t) {
+        const gradient = ctx.createLinearGradient(0, 0, W, H);
+        gradient.addColorStop(0, '#071727');
+        gradient.addColorStop(.54, '#0b2235');
+        gradient.addColorStop(1, '#030b13');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, W, H);
+
+        ctx.save();
+        ctx.globalAlpha = .18;
+        for (let i = 0; i < 18; i++) {
+          const x = ((i * 157 + t * 42) % (W + 300)) - 150;
+          const y = 160 + (i % 7) * 118;
+          ctx.strokeStyle = i % 2 ? '#f4a641' : '#75b69a';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          ctx.lineTo(x + 220, y - 60);
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+
+      function drawLogo(x, y, w, alpha = 1) {
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        if (logo.complete && logo.naturalWidth) {
+          const ratio = logo.naturalHeight / logo.naturalWidth;
+          ctx.drawImage(logo, x, y, w, w * ratio);
+        } else {
+          ctx.fillStyle = '#f4efe5';
+          ctx.font = '900 42px Arial';
+          ctx.fillText('XpressBudet', x, y + 44);
+        }
+        ctx.restore();
+      }
+
+      function drawPhone(t, key) {
+        const px = 160;
+        const py = 105;
+        const pw = 430;
+        const ph = 870;
+        roundRect(px, py, pw, ph, 52, '#0a111b', 'rgba(255,255,255,.25)');
+        roundRect(px + 18, py + 50, pw - 36, ph - 96, 34, '#071727', 'rgba(255,255,255,.12)');
+        roundRect(px + 162, py + 25, 106, 8, 8, 'rgba(255,255,255,.2)');
+        roundRect(px + 150, py + ph - 28, 130, 5, 999, 'rgba(255,255,255,.38)');
+        ctx.save();
+        ctx.beginPath();
+        roundRect(px + 18, py + 50, pw - 36, ph - 96, 34);
+        ctx.clip();
+        drawAppScreen(px + 18, py + 50, pw - 36, ph - 96, t, key);
+        ctx.restore();
+      }
+
+      function drawAppHeader(x, y, w, title) {
+        ctx.fillStyle = '#071727';
+        ctx.fillRect(x, y, w, 112);
+        drawLogo(x + 18, y + 22, 150, .96);
+        roundRect(x + w - 72, y + 24, 48, 48, 24, '#17354c', 'rgba(244,166,65,.55)');
+        ctx.fillStyle = '#f4efe5';
+        ctx.font = '900 13px Arial';
+        ctx.fillText('TH', x + w - 56, y + 55);
+        ctx.fillStyle = '#91a0a9';
+        ctx.font = '700 12px Arial';
+        ctx.fillText('I dag', x + 20, y + 96);
+        ctx.fillStyle = '#f4efe5';
+        ctx.font = '900 24px Arial';
+        ctx.fillText(title, x + 20, y + 136);
+      }
+
+      function card(x, y, w, h, title, body, accent = '#f4a641') {
+        roundRect(x, y, w, h, 18, '#102a3e', 'rgba(255,255,255,.12)');
+        roundRect(x + 14, y + 14, 38, 38, 19, `rgba(${accent === '#75b69a' ? '117,182,154' : '244,166,65'},.18)`);
+        ctx.fillStyle = accent;
+        ctx.font = '900 19px Arial';
+        ctx.fillText('•', x + 30, y + 40);
+        ctx.fillStyle = '#f4efe5';
+        ctx.font = '900 15px Arial';
+        ctx.fillText(title, x + 64, y + 31);
+        ctx.fillStyle = '#91a0a9';
+        textBlock(body, x + 64, y + 52, w - 84, 18, 11, '#91a0a9', 700);
+      }
+
+      function drawAppScreen(x, y, w, h, t, key) {
+        ctx.fillStyle = '#071727';
+        ctx.fillRect(x, y, w, h);
+        const inner = x + 20;
+        const width = w - 40;
+
+        if (key === 'intro' || key === 'outro') {
+          drawLogo(x + 74, y + 230, 250);
+          ctx.fillStyle = '#f4efe5';
+          ctx.font = '900 38px Arial';
+          ctx.fillText('Ekspress', x + 82, y + 432);
+          ctx.fillStyle = '#f4a641';
+          ctx.fillText('Intra', x + 246, y + 432);
+          ctx.fillStyle = '#91a0a9';
+          ctx.font = '800 15px Arial';
+          ctx.fillText('Sikker intern demo', x + 116, y + 468);
+          return;
+        }
+
+        const titles = { home: 'Forside', work: 'Mød ind', map: 'Live-kort', pickup: 'Afhentning', chat: 'Beskeder', info: 'InfoCenter', admin: 'Chef' };
+        drawAppHeader(x, y, w, titles[key] || 'Forside');
+
+        if (key === 'home') {
+          card(inner, y + 158, width, 98, 'Vigtigt lige nu', 'Kontoret kan fremhæve dagens beskeder og opgaver.');
+          card(inner, y + 272, width, 98, 'Mine opgaver', 'Afhentning, logbogskladder og hurtige handlinger ligger øverst.', '#75b69a');
+          card(inner, y + 386, width, 98, 'Fællesskab', 'Opslag, reaktioner og kommentarer samler holdet.');
+        }
+        if (key === 'work') {
+          card(inner, y + 158, width, 110, 'Start arbejdsdag', 'Medarbejderen vælger GPS, logbog og notifikationer før vagten starter.', '#75b69a');
+          ['GPS tilladt', 'Logbog aktiv', 'Stille notifikationer'].forEach((label, i) => {
+            roundRect(inner, y + 294 + i * 66, width, 50, 14, '#102a3e', 'rgba(255,255,255,.12)');
+            ctx.fillStyle = '#f4efe5';
+            ctx.font = '900 14px Arial';
+            ctx.fillText(label, inner + 16, y + 325 + i * 66);
+            roundRect(inner + width - 58, y + 307 + i * 66, 42, 24, 999, '#75b69a');
+          });
+        }
+        if (key === 'map') {
+          roundRect(inner, y + 156, width, 360, 22, '#0f2a3e', 'rgba(255,255,255,.12)');
+          for (let i = 0; i < 7; i++) {
+            ctx.strokeStyle = 'rgba(255,255,255,.08)';
+            ctx.beginPath();
+            ctx.moveTo(inner + 20, y + 190 + i * 44);
+            ctx.lineTo(inner + width - 20, y + 174 + i * 38);
+            ctx.stroke();
+          }
+          [['TH', 120, 98], ['MA', 220, 184], ['JK', 158, 272], ['PN', 285, 238]].forEach(([id, dx, dy], i) => {
+            roundRect(inner + dx, y + 168 + dy, 46, 46, 23, i % 2 ? '#75b69a' : '#f4a641');
+            ctx.fillStyle = '#071727';
+            ctx.font = '900 13px Arial';
+            ctx.fillText(id, inner + dx + 12, y + 197 + dy);
+          });
+          card(inner, y + 540, width, 80, 'Deling i 30 minutter', 'Chaufføren bestemmer selv varighed og kan stoppe igen.');
+        }
+        if (key === 'pickup') {
+          card(inner, y + 158, width, 94, 'Hent reservedel', 'Fra Hasselager til Hamburg · reference XB-2041');
+          ['Startet', 'Fundet', 'Hentet', 'Afleveret'].forEach((label, i) => {
+            roundRect(inner + 18, y + 282 + i * 64, 34, 34, 17, i < 2 ? '#75b69a' : '#102a3e', 'rgba(255,255,255,.12)');
+            ctx.fillStyle = i < 2 ? '#071727' : '#f4a641';
+            ctx.font = '900 17px Arial';
+            ctx.fillText(i < 2 ? '✓' : '•', inner + 28, y + 305 + i * 64);
+            ctx.fillStyle = '#f4efe5';
+            ctx.font = '900 15px Arial';
+            ctx.fillText(label, inner + 68, y + 305 + i * 64);
+          });
+        }
+        if (key === 'chat') {
+          card(inner, y + 158, width, 82, 'Direkte besked', 'Line: Ring når du er tom i Hamburg.');
+          card(inner, y + 256, width, 82, 'Fælleschat', 'Peter: Kø ved Bremen, vælg A1.', '#75b69a');
+          card(inner, y + 354, width, 82, 'Regelnyt', 'Vigtige ændringer kan sendes som kort besked.');
+          roundRect(inner, y + 560, width, 52, 18, '#102a3e', 'rgba(255,255,255,.12)');
+          ctx.fillStyle = '#91a0a9';
+          ctx.font = '800 13px Arial';
+          ctx.fillText('Skriv en besked...', inner + 18, y + 592);
+        }
+        if (key === 'info') {
+          ['Uheld', 'Forsinkelse', 'CMR', 'Miljøzoner', 'Landeguider'].forEach((label, i) => {
+            const col = i % 2;
+            const row = Math.floor(i / 2);
+            const bx = inner + col * ((width - 10) / 2 + 10);
+            const by = y + 158 + row * 118;
+            roundRect(bx, by, (width - 10) / 2, 98, 17, '#102a3e', 'rgba(255,255,255,.12)');
+            ctx.fillStyle = i % 2 ? '#75b69a' : '#f4a641';
+            ctx.font = '900 24px Arial';
+            ctx.fillText('•', bx + 18, by + 34);
+            ctx.fillStyle = '#f4efe5';
+            ctx.font = '900 14px Arial';
+            textBlock(label, bx + 18, by + 64, (width - 40) / 2, 17, 14, '#f4efe5', 900);
+          });
+        }
+        if (key === 'admin') {
+          card(inner, y + 158, width, 86, 'Medarbejdere', 'Opret, deaktiver og styr roller.');
+          card(inner, y + 260, width, 86, 'Køretøjer', 'Se status, udstyr og chaufførtilknytning.', '#75b69a');
+          card(inner, y + 362, width, 86, 'Sikkerhed', 'Rettigheder, GDPR og interne regler er samlet.');
+        }
+
+        roundRect(x, y + h - 76, w, 76, 0, '#071727');
+        ['Forside', 'Hold', 'Kort', 'Chat', 'Mere'].forEach((label, i) => {
+          ctx.fillStyle = i === 0 ? '#f4a641' : '#91a0a9';
+          ctx.font = '900 11px Arial';
+          ctx.fillText(label, x + 28 + i * 72, y + h - 30);
+        });
+      }
+
+      function drawCaption(scene, local, sceneProgress) {
+        const x = 720;
+        const y = 270;
+        const enter = ease(clamp(local / 1.1, 0, 1));
+        ctx.save();
+        ctx.globalAlpha = enter;
+        ctx.translate(0, (1 - enter) * 32);
+        drawLogo(x, 126, 210, .9);
+        ctx.fillStyle = '#f4a641';
+        ctx.font = '900 15px Arial';
+        ctx.fillText('DEMOVIDEO · SIKKER FREMVISNING', x, y - 78);
+        ctx.fillStyle = '#f4efe5';
+        textBlock(scene.title, x, y, 850, 68, 54, '#f4efe5', 900);
+        textBlock(scene.subtitle, x, y + 158, 780, 34, 25, '#c6d0d2', 700);
+        roundRect(x, y + 298, 590, 14, 999, 'rgba(255,255,255,.12)');
+        roundRect(x, y + 298, 590 * sceneProgress, 14, 999, '#f4a641');
+        ctx.fillStyle = '#91a0a9';
+        ctx.font = '800 17px Arial';
+        ctx.fillText('Ingen rigtige data · ingen installation · kan vises fra USB', x, y + 374);
+        ctx.restore();
+      }
+
+      function drawFrame(t) {
+        drawBackground(t);
+        const scene = sceneAt(t);
+        const local = t - scene.start;
+        const sceneProgress = clamp((t - scene.start) / (scene.end - scene.start), 0, 1);
+        drawPhone(t, scene.key);
+        drawCaption(scene, local, sceneProgress);
+      }
+
+      function sleep(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+      }
+
+      window.renderDemoVideo = async function renderDemoVideo() {
+        await new Promise(resolve => {
+          if (logo.complete) resolve();
+          else logo.onload = resolve;
+        });
+        const stream = canvas.captureStream(0);
+        const track = stream.getVideoTracks()[0];
+        const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp8')
+          ? 'video/webm;codecs=vp8'
+          : 'video/webm';
+        const recorder = new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 7000000 });
+        const chunks = [];
+        recorder.ondataavailable = event => {
+          if (event.data.size) chunks.push(event.data);
+        };
+        const done = new Promise(resolve => {
+          recorder.onstop = async () => {
+            const blob = new Blob(chunks, { type: 'video/webm' });
+            const buffer = await blob.arrayBuffer();
+            const bytes = Array.from(new Uint8Array(buffer));
+            resolve(bytes);
+          };
+        });
+        recorder.start(1000);
+        const started = performance.now();
+        while ((performance.now() - started) / 1000 < duration) {
+          const elapsed = (performance.now() - started) / 1000;
+          drawFrame(elapsed);
+          track.requestFrame?.();
+          await sleep(1000 / fps);
+        }
+        drawFrame(duration - .001);
+        track.requestFrame?.();
+        await sleep(120);
+        recorder.stop();
+        return done;
+      };
+
+      drawFrame(0);
+    </script>
+  </body>
+</html>

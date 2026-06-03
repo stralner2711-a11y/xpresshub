@@ -1,0 +1,31 @@
+XpressIntra GitHub opdatering
+
+Denne mappe indeholder de nyeste filer, der skal ind i GitHub-repoet.
+Build-fejlen til Vercel er rettet: package.json bruger nu "vite build" i stedet for en Windows-sti.
+
+Gor saadan:
+
+1. Aabn:
+   C:\Users\Tommy\Documents\GitHub\xpresshub
+
+2. Kopier ALT indholdet fra denne mappe:
+   C:\Users\Tommy\Documents\lastbils chauffor app\github-upload-ready
+
+3. Indsaet det i GitHub-mappen og vaelg:
+   Erstat filer i destinationen
+
+4. Aabn GitHub Desktop.
+
+5. Skriv commit-besked:
+   Fix Vercel build og opdater XpressIntra demo
+
+6. Tryk:
+   Commit to main
+
+7. Tryk:
+   Push origin
+
+Derefter kan du gaa ind paa Vercel og trykke Redeploy.
+
+Vigtigt:
+Hvis Windows spoerger om du vil overskrive filer, skal du sige ja.

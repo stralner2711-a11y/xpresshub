@@ -1,0 +1,5372 @@
+const icons = {
+  home: '<svg viewBox="0 0 24 24"><path d="m4 11 8-7 8 7v8a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z"/></svg>',
+  users: '<svg viewBox="0 0 24 24"><path d="M16 20a4 4 0 0 0-8 0"/><circle cx="12" cy="9" r="3"/><path d="M19 20a3 3 0 0 0-2-2.83M17 6.13a3 3 0 0 1 0 5.74M5 20a3 3 0 0 1 2-2.83M7 6.13a3 3 0 0 0 0 5.74"/></svg>',
+  map: '<svg viewBox="0 0 24 24"><path d="m9 18-6 3V6l6-3 6 3 6-3v15l-6 3z"/><path d="M9 3v15m6-12v15"/></svg>',
+  chat: '<svg viewBox="0 0 24 24"><path d="M20 15a4 4 0 0 1-4 4H8l-4 3V7a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4z"/></svg>',
+  more: '<svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg>',
+  arrow: '<svg viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></svg>',
+  plus: '<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
+  pin: '<svg viewBox="0 0 24 24"><path d="M20 10c0 5-8 11-8 11S4 15 4 10a8 8 0 1 1 16 0Z"/><circle cx="12" cy="10" r="2.5"/></svg>',
+  truck: '<svg viewBox="0 0 24 24"><path d="M3 6h11v10H3zm11 4h4l3 3v3h-7z"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg>',
+  send: '<svg viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/></svg>',
+  edit: '<svg viewBox="0 0 24 24"><path d="m15 5 4 4M4 20l4-1 11-11a2.8 2.8 0 0 0-4-4L4 15z"/></svg>',
+  close: '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>',
+  settings: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-2.86 2.86-.06-.06A1.7 1.7 0 0 0 15 19.4a1.7 1.7 0 0 0-1 .6v.08h-4V20a1.7 1.7 0 0 0-1-.6 1.7 1.7 0 0 0-1.88.34l-.06.06-2.86-2.86.06-.06A1.7 1.7 0 0 0 4.6 15a1.7 1.7 0 0 0-.6-1H3.9v-4H4a1.7 1.7 0 0 0 .6-1 1.7 1.7 0 0 0-.34-1.88l-.06-.06L7.06 4.2l.06.06A1.7 1.7 0 0 0 9 4.6a1.7 1.7 0 0 0 1-.6v-.1h4V4a1.7 1.7 0 0 0 1 .6 1.7 1.7 0 0 0 1.88-.34l.06-.06 2.86 2.86-.06.06A1.7 1.7 0 0 0 19.4 9a1.7 1.7 0 0 0 .6 1h.1v4H20a1.7 1.7 0 0 0-.6 1z"/></svg>',
+  info: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7h.01"/></svg>',
+  alert: '<svg viewBox="0 0 24 24"><path d="M12 3 2 20h20z"/><path d="M12 9v4M12 17h.01"/></svg>',
+  van: '<svg viewBox="0 0 24 24"><path d="M3 7h11v10H3zM14 10h4l3 4v3h-7z"/><circle cx="7" cy="18" r="2"/><circle cx="17" cy="18" r="2"/></svg>',
+  phone: '<svg viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.4 19.4 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 2 .7 2.9a2 2 0 0 1-.4 2.1L8.1 10a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.9.6 2.9.7a2 2 0 0 1 1.6 1.9z"/></svg>',
+  document: '<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h8M8 9h2"/></svg>',
+  heart: '<svg viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z"/></svg>',
+  comment: '<svg viewBox="0 0 24 24"><path d="M20 15a4 4 0 0 1-4 4H8l-4 3V7a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4z"/></svg>',
+  check: '<svg viewBox="0 0 24 24"><path d="m5 12 4 4L19 6"/></svg>',
+  image: '<svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="10" r="1.5"/><path d="m21 15-5-5L5 19"/></svg>',
+  smile: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/></svg>',
+  download: '<svg viewBox="0 0 24 24"><path d="M12 3v12m0 0 4-4m-4 4-4-4"/><path d="M4 19h16"/></svg>',
+  search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>',
+};
+
+const APP_VERSION = '0.3.1-supabase-ready-v54';
+const APP_DISPLAY_VERSION = '1.2.3';
+const APP_VERSION_CODE = 6;
+const UPDATE_CONFIG_KEY = 'appUpdateState';
+const defaultUpdateConfig = {
+  versionUrl: 'https://stralner2711-a11y.github.io/xpresshub/version.json',
+  officialRepo: 'https://github.com/stralner2711-a11y/xpresshub',
+  allowLocalVersionFallback: false,
+};
+const appUpdateConfig = { ...defaultUpdateConfig, ...(window.XPRESSINTRA_UPDATE || {}) };
+const SUPABASE_CONFIG_KEY = 'supabaseConfig';
+const injectedSupabaseForMode = typeof window !== 'undefined' ? (window.XPRESSINTRA_SUPABASE || {}) : {};
+const storedSupabaseConfigForMode = (() => {
+  try { return JSON.parse(localStorage.getItem(`roadlog:${SUPABASE_CONFIG_KEY}`)); } catch { return null; }
+})();
+const hasSupabaseConfigForMode = Boolean(
+  String(injectedSupabaseForMode.url || storedSupabaseConfigForMode?.url || '').trim()
+  && String(injectedSupabaseForMode.anonKey || injectedSupabaseForMode.key || storedSupabaseConfigForMode?.anonKey || storedSupabaseConfigForMode?.key || '').trim()
+);
+const storedSessionForMode = (() => {
+  try { return JSON.parse(localStorage.getItem('roadlog:session')); } catch { return null; }
+})();
+const DEMO_MODE = Boolean(window.XPRESSINTRA_DEMO_MODE) || Boolean(!hasSupabaseConfigForMode && storedSessionForMode && storedSessionForMode.mode !== 'supabase');
+let launchSplashVisible = typeof sessionStorage !== 'undefined' && !sessionStorage.getItem('xpressintra:launchSplashSeen');
+let launchSplashScheduled = false;
+const SUPABASE_PUBLIC_CHATS = {
+  all: '00000000-0000-4000-8000-000000000001',
+  trucks: '00000000-0000-4000-8000-000000000002',
+  vans: '00000000-0000-4000-8000-000000000003',
+};
+
+const seedEmployees = [
+  { id: 'th', name: 'Tommy Hansen', initials: 'TH', role: 'Appansvarlig · Lastbilchauffør', accessRole: 'owner', vehicleType: 'truck', truck: 'TR 42 918', status: 'Appansvarlig · tester appen', location: 'Flensburg', phone: '+45 22 44 18 90', email: 'stralner2711@gmail.com', department: 'Lastbil', license: 'C/E · EU kvalifikationsbevis', emergencyContact: 'Anne · +45 22 11 90 90', languages: 'Dansk, engelsk, tysk', employmentStatus: 'active', online: true, sharing: false, coords: [54.7833, 9.4333] },
+  { id: 'ma', name: 'Mads Andersen', initials: 'MA', role: 'Chauffør', accessRole: 'employee', vehicleType: 'van', truck: 'VB 51 204', status: 'Pause til 14:10', location: 'Kolding', phone: '+45 20 11 40 44', email: 'mads@xpressbudet.local', department: 'Varebil', license: 'B · varebilsuddannelse', emergencyContact: 'Sofie · +45 20 20 20 20', languages: 'Dansk, engelsk', employmentStatus: 'active', online: true, sharing: true, coords: [55.4904, 9.4722] },
+  { id: 'ls', name: 'Line Sørensen', initials: 'LS', role: 'Disponent', accessRole: 'dispatcher', vehicleType: 'dispatch', truck: 'Kontoret', status: 'Tilgængelig', location: 'Hasselager', phone: '+45 40 55 31 31', email: 'line@xpressbudet.local', department: 'Drift', license: 'Kontor', emergencyContact: 'Kontoret', languages: 'Dansk, engelsk, tysk', employmentStatus: 'active', online: true, sharing: false, coords: [56.1055, 10.0065] },
+  { id: 'hb', name: 'Henrik Bossen', initials: 'HB', role: 'Chef', accessRole: 'admin', vehicleType: 'dispatch', truck: 'Ledelse', status: 'Admin · kan styre roller', location: 'Hasselager', phone: '+45 40 87 31 31', email: 'chef@xpressbudet.local', department: 'Ledelse', license: 'Administrator', emergencyContact: 'Kontoret', languages: 'Dansk, engelsk', employmentStatus: 'active', online: true, sharing: false, coords: [56.1055, 10.0065] },
+  { id: 'pn', name: 'Peter Nielsen', initials: 'PN', role: 'Chauffør', accessRole: 'employee', vehicleType: 'truck', truck: 'TR 38 771', status: 'Levering afsluttet', location: 'Bremen', phone: '+45 23 44 55 66', email: 'peter@xpressbudet.local', department: 'Lastbil', license: 'C/E · EU kvalifikationsbevis', emergencyContact: 'Mette · +45 23 23 23 23', languages: 'Dansk, tysk', employmentStatus: 'active', online: false, sharing: true, coords: [53.0793, 8.8017] },
+  { id: 'jk', name: 'Julie Kristensen', initials: 'JK', role: 'Chauffør', accessRole: 'employee', vehicleType: 'van', truck: 'VB 20 447', status: 'Klar til ny opgave', location: 'Odense', phone: '+45 24 55 66 77', email: 'julie@xpressbudet.local', department: 'Varebil', license: 'B · varebilsuddannelse', emergencyContact: 'Jonas · +45 24 24 24 24', languages: 'Dansk, engelsk', employmentStatus: 'active', online: true, sharing: true, coords: [55.4038, 10.4024] },
+];
+
+const seedVehicles = [
+  { id: 'tr-42918', unit: 'TR 42 918', type: 'Lastbil', plate: 'TR42918', driverId: 'th', status: 'På tur', equipment: 'Trækker · pallegods', nextCheck: 'Syn tjekkes 18. juni' },
+  { id: 'vb-51204', unit: 'VB 51 204', type: 'Varebil', plate: 'VB51204', driverId: 'ma', status: 'Pause', equipment: 'Varebil · ekspres', nextCheck: 'Service om 2.400 km' },
+  { id: 'tr-38771', unit: 'TR 38 771', type: 'Lastbil', plate: 'TR38771', driverId: 'pn', status: 'Ledig efter levering', equipment: 'Liftbil · stykgods', nextCheck: 'Udstyr OK' },
+  { id: 'vb-20447', unit: 'VB 20 447', type: 'Varebil', plate: 'VB20447', driverId: 'jk', status: 'Klar', equipment: 'Varebil · bydistribution', nextCheck: 'Dæk tjekkes fredag' },
+  { id: 'fleet-spare', unit: 'Reserve', type: 'Køretøj', plate: 'Ikke tildelt', driverId: null, status: 'På værksted', equipment: 'Reserveenhed', nextCheck: 'Afventer service' },
+];
+
+const seedNotifications = [
+  { id: 'direct-line', type: 'Direkte besked', title: 'Line har skrevet til dig', body: 'Ring når du er tom i Hamburg.', time: '13:04', level: 'message', unread: true },
+  { id: 'office-docs', type: 'Kontoropslag', title: 'Husk dokumentation', body: 'CMR-billede kræves på udvalgte internationale leveringer.', time: 'I går', level: 'office', unread: true },
+  { id: 'rule-van-2026', type: 'Regelnyt', title: 'Varebilkrav fra 1. juli 2026', body: 'Takograf og køre-/hviletid bliver relevant for internationale varebiler over 2,5 ton.', time: '31. maj', level: 'rule', unread: false },
+];
+
+const defaultNotificationPrefs = { office: true, rules: true, chat: true, dailyBrief: true, quietHours: true };
+const productionProfile = { name: 'Medarbejder', phone: '', email: '', role: 'Chauffør', accessRole: 'employee', vehicleType: 'truck', truck: '', department: '', license: '', emergencyContact: '', languages: '', logbook: true };
+
+const seedChats = [
+  { id: 'dispatch', name: 'Drift og planlægning', initials: 'DP', preview: 'Line: Ring når du er tom i Hamburg.', time: '13:04', unread: 2 },
+  { id: 'ma', name: 'Mads Andersen', initials: 'MA', preview: 'Jeg holder ved Cirkle K i Kolding.', time: '12:42', unread: 0 },
+  { id: 'all', name: 'Fælleschat · Alle medarbejdere', initials: 'FC', preview: 'Peter: Kø ved Bremen, vælg A1.', time: '11:18', unread: 1, community: true },
+  { id: 'trucks', name: 'Lastbilchat', initials: 'LB', preview: 'Peter: Kø ved Bremen, vælg A1.', time: '11:18', unread: 1, channel: 'truck' },
+  { id: 'vans', name: 'Varebilchat', initials: 'VB', preview: 'Julie: Jeg er fri i Odense om 20 min.', time: '12:56', unread: 2, channel: 'van' },
+];
+
+const seedAnnouncements = [
+  { id: 'bremen', title: 'Vejarbejde ved Bremen', body: 'Forvent ekstra kø i eftermiddag. Brug A1 hvis ruten tillader det.', time: 'I dag · 11:18', tone: 'amber', kind: 'office', author: 'Kontoret', initials: 'XB', audience: 'Alle medarbejdere', pinned: true, likes: 6, comments: ['Tak for info', 'A1 glider fint lige nu.'] },
+  { id: 'documentation', title: 'Husk dokumentation', body: 'Send et billede af CMR efter levering, når opgaven kræver det.', time: 'I går · Line', tone: 'green', kind: 'office', author: 'Line · Kontoret', initials: 'LS', audience: 'Alle medarbejdere', likes: 4, comments: [] },
+  { id: 'kolding', title: 'God holdeplads ved Kolding', body: 'Der er plads ved Circle K lige nu, hvis nogen mangler en hurtig pause.', time: 'I dag · 12:42', tone: 'green', kind: 'colleague', author: 'Mads Andersen', initials: 'MA', audience: 'Kollegaer', likes: 9, comments: ['Tak Mads, jeg er der om 20 min.'] },
+];
+
+const ruleUpdates = [
+  {
+    audience: 'Varebil · international kørsel',
+    title: 'Nye krav fra 1. juli 2026',
+    body: 'Internationale varebiler over 2,5 ton bliver omfattet af takograf samt køre-/hviletidsregler i relevante tilfælde.',
+    source: 'Færdselsstyrelsen',
+    checked: 'Nyhed 27. marts 2026',
+    href: 'https://www.fstyr.dk/nyheder/2026/mar/varebiler-bliver-en-del-af-koere-og-hviletidskontrollen',
+    severity: 'important',
+    status: 'approved',
+    effectiveDate: '1. juli 2026',
+    whyItMatters: 'Varebiler i international godskørsel skal kende kravene i god tid og afklare, om bilen bliver omfattet.',
+  },
+  {
+    audience: 'Varebil og lastbil · Danmark',
+    title: 'Nye arbejdstidsregler fra 1. juli 2026',
+    body: 'Færdselsstyrelsen meldte i februar 2026 ud, at arbejdstidsreglerne ændres for kørsel efter nationale undtagelser til køre- og hviletidsreglerne.',
+    source: 'Færdselsstyrelsen',
+    checked: 'Nyhed 9. februar 2026',
+    href: 'https://www.fstyr.dk/nyheder/2026/feb/aendring-af-bekendtgoerelsen-om-koere-og-hviletidsbestemmelserne-i-vejtransport-og-kontrol-med-arbejdstid-pr-1-juli-2026',
+    severity: 'important',
+    status: 'approved',
+    effectiveDate: '1. juli 2026',
+    whyItMatters: 'Drift og chauffører skal vide, hvornår kontrollen ligger hos Færdselsstyrelsen og Politiet, og hvilke kørsler der er omfattet.',
+  },
+  {
+    audience: 'Lastbil · Danmark',
+    title: 'Vejafgift samlet ét sted',
+    body: 'Brug den officielle portal til kilometerbaseret vejafgift og aktuelle driftsmeddelelser.',
+    source: 'Vejafgifter.dk',
+    checked: 'Overvåget kilde',
+    href: 'https://vejafgifter.dk/',
+    severity: 'watch',
+    status: 'approved',
+    effectiveDate: 'Løbende',
+    whyItMatters: 'Lastbiler på relevante afgiftspligtige veje skal have styr på betaling og driftsmeddelelser.',
+  },
+  {
+    audience: 'Lastbil · Danmark',
+    title: 'ITD: bødemodel for vejafgift er stadig ikke afklaret',
+    body: 'ITD skrev 29. maj 2026, at arbejdet med en ny bødemodel fortsat ikke er afsluttet, og at bødeudstedelsen i praksis fortsat er sat på pause bortset fra åbenlyst snyd.',
+    source: 'ITD',
+    checked: 'Nyhed 29. maj 2026',
+    href: 'https://itd.dk/nyheder/itd-nyt/2026/international-transport-danmark-accepterer-ny-udsaettelse-af-vejafgiftsstaevning/',
+    severity: 'watch',
+    status: 'approved',
+    effectiveDate: 'Gældende status',
+    whyItMatters: 'Det er vigtigt driftsstof, men det er en branchekilde og erstatter ikke den officielle vejafgiftsportal.',
+  },
+  {
+    audience: 'Lastbil · virksomhedskontrol',
+    title: 'Virksomhedskontrol kører nu over længere periode',
+    body: 'Færdselsstyrelsen har opdateret virksomhedskontrollen, så kontrolperioden er udvidet og vejledningerne er samlet tydeligere.',
+    source: 'Færdselsstyrelsen',
+    checked: 'Kontrolleret 3. juni 2026',
+    href: 'https://www.fstyr.dk/nyheder/2025/apr/-aendringer-i-virksomhedskontrollen-fra-april-2025',
+    severity: 'important',
+    status: 'approved',
+    effectiveDate: '1. april 2025',
+    whyItMatters: 'Driften skal kunne finde den officielle kontrolramme, hvis virksomheden bliver bedt om at indsende data.',
+  },
+];
+
+const quickGuides = [
+  { title: 'Uheld eller skade', audience: 'Alle', body: 'Sikr stedet, ring 112 ved fare, tag billeder og kontakt driften.', action: 'Ring til drift', href: 'tel:+4540553131', icon: 'alert' },
+  { title: 'Forsinkelse', audience: 'Alle', body: 'Skriv kort årsag, forventet tid og om kunden skal kontaktes.', action: 'Åbn fælleschat', chat: 'all', icon: 'send' },
+  { title: 'CMR og billeder', audience: 'Lastbil', body: 'Tag tydelige billeder ved afvigelser, skader eller når opgaven kræver dokumentation.', action: 'Se dokumenter', category: 'documents', icon: 'document' },
+  { title: 'Miljøzoner', audience: 'Varebil og lastbil', body: 'Tjek krav før kørsel i byzoner, især ved ældre dieselkøretøjer.', action: 'Åbn kilde', href: 'https://miljoezoner.dk/', icon: 'map' },
+];
+
+const fastAnswers = [
+  { title: 'Forsinket?', body: 'Skriv årsag, ny ETA og om kunden skal kontaktes. Ring til drift ved større afvigelser.', audience: 'Alle' },
+  { title: 'Uheld eller skade?', body: 'Sikr stedet først, ring 112 ved fare, tag billeder og kontakt kontoret bagefter.', audience: 'Alle' },
+  { title: 'CMR eller billede?', body: 'Tag tydeligt billede ved skade, afvigelse eller når opgaven kræver dokumentation.', audience: 'Lastbil' },
+];
+
+const countryGuides = [
+  { country: 'Danmark', body: 'Hold øje med miljøzoner, vejafgift for relevante lastbiler og interne CMR-krav.', audience: 'Alle' },
+  { country: 'Tyskland', body: 'Tjek rute, kø, miljøzoner og dokumentation før levering. Brug kontoret ved tvivl.', audience: 'Lastbil' },
+  { country: 'Holland', body: 'Vær ekstra opmærksom på byzoner, aflæsningstider og kundens adgangsforhold.', audience: 'Varebil og lastbil' },
+];
+
+const infoChecklists = [
+  { title: 'Før afgang', items: ['Opgave og adresse', 'Kontaktperson', 'Dokumenter', 'Bil og udstyr'] },
+  { title: 'Ved levering', items: ['Parker sikkert', 'Tjek gods', 'Tag billede ved afvigelse', 'Meld status'] },
+];
+
+const emojiChoices = ['👍', '😂', '🚚', '📦', '☕', '✅', '🙏', '⚠️'];
+
+const infoSections = [
+  { id: 'operations', icon: 'alert', title: 'Akut & drift', subtitle: 'Kontakter, terminal og hjælp til alle' },
+  { id: 'trucks', icon: 'truck', title: 'Lastbil', subtitle: 'Køre-/hviletid, vejafgift og miljøzoner' },
+  { id: 'vans', icon: 'van', title: 'Varebil', subtitle: 'Tilladelser, miljøzoner og nye EU-regler' },
+  { id: 'documents', icon: 'document', title: 'Dokumenter', subtitle: 'CMR, vilkår og relevante arbejdslinks' },
+  { id: 'rules', icon: 'info', title: 'Regler', subtitle: 'Officielle regelkilder samlet ét sted' },
+];
+
+const infoDetails = {
+  operations: {
+    title: 'Fælles drift og hjælp',
+    intro: 'Hurtig adgang til de vigtigste kontaktpunkter. Interne procedurer for uheld, forsinkelse og dokumentation skal kvalitetssikres med driften og lægges ind her.',
+    rows: [
+      ['Budkørsel og transport', '40 55 31 31', 'tel:+4540553131'],
+      ['Lastbil · liftbil · trækker', '40 87 31 31', 'tel:+4540873131'],
+      ['Terminal og kontor', 'Ved Milepælen 2, 8361 Hasselager'],
+      ['Akut fare eller personskade', 'Ring 112 først. Kontakt derefter driften.'],
+      ['Ved skade eller forsinkelse', 'Kontakt altid driften med det samme.'],
+      ['Dokumentation efter levering', 'Tilføj intern tjekliste: CMR, billeder og eventuelle afvigelser.'],
+      ['Lastsikring', 'Åbn Færdselsstyrelsens vejledning', 'https://www.fstyr.dk/Media/638245854599779929/Lastsikring%20-%20nye%20bestemmelser%20og%20metoder.pdf'],
+    ],
+  },
+  vans: {
+    title: 'Varebil',
+    intro: 'Information til varebilschauffører. Brug altid de officielle links ved tvivl, da krav afhænger af vægt, gods og om kørslen er national eller international.',
+    rows: [
+      ['Vigtigt fra 1. juli 2026', 'Internationale varebiler over 2,5 ton bliver omfattet af takograf samt køre-/hviletidsregler i relevante tilfælde.', 'https://www.fstyr.dk/nyheder/2026/mar/varebiler-bliver-en-del-af-koere-og-hviletidskontrollen'],
+      ['Varebilsregler hos Færdselsstyrelsen', 'Samlet indgang til tilladelser, varebilskørsel og branchekrav', 'https://www.fstyr.dk/erhverv/varebil'],
+      ['Varebilsuddannelser', 'Se krav til varebilschaufføruddannelsesbevis', 'https://www.fstyr.dk/privat/chauffoeruddannelser/varebilsuddannelser'],
+      ['Takograf', 'Færdselsstyrelsens takografside', 'https://www.fstyr.dk/erhverv/gods-bus-og-varebil/takograf'],
+      ['Miljøzoner for varebiler', 'Tjek gældende danske krav før kørsel i miljøzoner', 'https://miljoezoner.dk/regler-og-koretojer/regler-for-varebiler/'],
+      ['EU-overblik for varebiler', 'European Labour Authority om internationale varebiler', 'https://www.ela.europa.eu/en/light-commercial-vehicles'],
+      ['EU-kampagne om nye varebilsregler', 'ELA samler materiale om de store ændringer i 2026', 'https://www.ela.europa.eu/en/news/ela-launches-light-vehicles-big-changes-campaign-ahead-2026-rules'],
+    ],
+  },
+  trucks: {
+    title: 'Lastbil',
+    intro: 'Information til lastbilchauffører. Oversigten peger på officielle kilder til de regler, der løbende kan ændre sig.',
+    rows: [
+      ['Køre- og hviletid', 'Færdselsstyrelsens vejledning', 'https://www.fstyr.dk/erhverv/gods-bus-og-varebil/koere-og-hviletid/vejledning-om-reglerne'],
+      ['Arbejdstidsregler', 'Færdselsstyrelsens oversigt over arbejdstid i vejtransport', 'https://www.fstyr.dk/erhverv/gods-bus-og-varebil/arbejdstidsregler'],
+      ['Virksomhedskontrol', 'Sådan foregår kontrol af køre- og hviletidsreglerne', 'https://www.fstyr.dk/erhverv/gods-bus-og-varebil/koere-og-hviletid/virksomhedskontrol'],
+      ['EU-regler for arbejdstid', 'Køretid, pauser og hvil', 'https://europa.eu/youreurope/citizens/work/work-abroad/rules-working-road-transport/index_en.htm'],
+      ['Vejafgift i Danmark', 'Kilometerbaseret afgift for relevante lastbiler', 'https://www.vejafgifter.dk/'],
+      ['Afgiftspligtige veje', 'Se vejafgiftens officielle kort', 'https://vejafgifter.dk/hvilke-veje/'],
+      ['Miljøzoner for lastbiler', 'Tjek de gældende danske krav', 'https://miljoezoner.dk/regler-og-koretojer/regler-for-lastbiler-busser/'],
+      ['Lastsikring', 'Færdselsstyrelsens vejledning', 'https://www.fstyr.dk/Media/638245854599779929/Lastsikring%20-%20nye%20bestemmelser%20og%20metoder.pdf'],
+      ['ITD om køre- og hviletid', 'Brancheguide og værktøjer som supplement til myndighedsreglerne', 'https://itd.dk/vaerktoej/koere-og-hviletid/'],
+      ['EU-kampagne for vejtransport', 'ELA samler materiale om takograf, posting og køre-/hviletid', 'https://www.ela.europa.eu/en/campaign/road-fair-transport'],
+    ],
+  },
+  documents: {
+    title: 'Dokumenter',
+    intro: 'Links til XpressBudets offentlige dokumenter. Interne vejledninger kan tilføjes, når systemet kobles online.',
+    rows: [
+      ['CMR-loven', 'Åbn dokument', 'https://xpressbudet.dk/wp-content/uploads/2017/03/3_cmr-loven.pdf'],
+      ['NSAB 2015', 'Åbn via XpressBudet.dk', 'https://www.xpressbudet.dk/'],
+      ['Forretningsbetingelser', 'Åbn XpressBudet.dk', 'https://www.xpressbudet.dk/forretningsbetingelser/'],
+      ['Vejtransport hos XpressBudet', 'Ydelser og transporttyper', 'https://www.xpressbudet.dk/vejtransport/'],
+    ],
+  },
+  rules: {
+    title: 'Regler',
+    intro: 'Samlede officielle kilder til regler, som kan ændre sig. Brug dem ved tvivl og få interne procedurer godkendt af driften.',
+    rows: [
+      ['Køre- og hviletid', 'Færdselsstyrelsens vejledning', 'https://www.fstyr.dk/erhverv/gods-bus-og-varebil/koere-og-hviletid/vejledning-om-reglerne'],
+      ['Arbejdstidsregler', 'Færdselsstyrelsens side om arbejdstid i vejtransport', 'https://www.fstyr.dk/erhverv/gods-bus-og-varebil/arbejdstidsregler'],
+      ['Virksomhedskontrol', 'Færdselsstyrelsens kontrolside for køre- og hviletid', 'https://www.fstyr.dk/erhverv/gods-bus-og-varebil/koere-og-hviletid/virksomhedskontrol'],
+      ['Varebilsregler', 'Færdselsstyrelsens indgang til varebilskørsel og tilladelser', 'https://www.fstyr.dk/erhverv/varebil'],
+      ['Takograf', 'Færdselsstyrelsens takografside', 'https://www.fstyr.dk/erhverv/gods-bus-og-varebil/takograf'],
+      ['Miljøzoner for varebiler', 'Tjek gældende danske krav for varebiler', 'https://miljoezoner.dk/regler-og-koretojer/regler-for-varebiler/'],
+      ['Miljøzoner for lastbiler', 'Tjek gældende danske krav for lastbiler og busser', 'https://miljoezoner.dk/regler-og-koretojer/regler-for-lastbiler-busser/'],
+      ['Vejafgift', 'Kilometerbaseret afgift og afgiftspligtige veje', 'https://www.vejafgifter.dk/'],
+      ['ITD om køre- og hviletid', 'Branchekilde med praktiske forklaringer og værktøjer', 'https://itd.dk/vaerktoej/koere-og-hviletid/'],
+      ['EU-regler for vejtransport', 'Køretid, pauser, hvil og arbejde i udlandet', 'https://europa.eu/youreurope/citizens/work/work-abroad/rules-working-road-transport/index_en.htm'],
+      ['ELA vejtransportkampagne', 'Officielt EU-materiale om takograf, posting og sociale regler', 'https://www.ela.europa.eu/en/campaign/road-fair-transport'],
+    ],
+  },
+};
+
+const infoLinks = Object.entries(infoDetails).flatMap(([category, section]) =>
+  section.rows.map(([title, description, href]) => ({
+    id: `${category}-${title.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '-')}`,
+    category,
+    title,
+    description,
+    href,
+    icon: infoSections.find(item => item.id === category)?.icon || 'info',
+    source: href?.includes('fstyr.dk') ? 'Færdselsstyrelsen'
+      : href?.includes('miljoezoner.dk') ? 'Miljøzoner'
+      : href?.includes('vejafgifter.dk') ? 'Vejafgifter'
+      : href?.includes('ela.europa.eu') ? 'European Labour Authority'
+      : href?.includes('itd.dk') ? 'ITD'
+      : href?.includes('at.dk') ? 'Arbejdstilsynet'
+      : href?.includes('virk.dk') ? 'Virk'
+      : href?.includes('xpressbudet.dk') ? 'XpressBudet'
+      : href?.includes('europa.eu') ? 'EU'
+      : href?.startsWith('tel:') ? 'Telefon'
+      : 'Intern',
+  }))
+);
+
+const WORKDAY_TIMEZONE = 'Europe/Copenhagen';
+const GDPR_POLICY_VERSION = '2026-06-02';
+
+const gdprRetentionPlan = [
+  { key: 'live_gps', label: 'Live GPS', days: 1, area: 'GPS', description: 'Seneste position overskrives løbende. Undgå historik i normal drift.' },
+  { key: 'pickup_location', label: 'Afhentningsdeling', days: 1, area: 'GPS', description: 'Midlertidig deling slettes efter udløb eller færdigmelding.' },
+  { key: 'chat_messages', label: 'Chatbeskeder', days: 730, area: 'Chat', description: 'Intern chat bevares efter aftalt arbejdsformål og slettes/arkiveres efter frist.' },
+  { key: 'media', label: 'Billeder', days: 365, area: 'Billeder', description: 'Billeder gemmes kun så længe dokumentationsformålet kræver det.' },
+  { key: 'audit_log', label: 'Audit-log', days: 730, area: 'Sikkerhed', description: 'Adminhandlinger bevares for ansvarlighed uden privat chatindhold.' },
+];
+
+const gdprDataAreas = [
+  { area: 'Profiler', purpose: 'Kontakt, rolle, køretøj, beviser og sikker drift.', basis: 'Aftales af virksomheden', employeeControl: 'Medarbejder kan se og rette via profil/dataanmodning.' },
+  { area: 'GPS', purpose: 'Frivillig lokationsdeling ved arbejdsdag, afhentning og hjælp mellem kollegaer.', basis: 'Aftales af virksomheden', employeeControl: 'Kan slås fra, begrænses til hold og skjule fart/bil/status.' },
+  { area: 'Chat', purpose: 'Intern koordinering mellem medarbejdere og hold.', basis: 'Aftales af virksomheden', employeeControl: 'Direkte samtaler og rollekanaler er adgangsstyrede.' },
+  { area: 'Logbog', purpose: 'Privat personlig arbejdslog og minder fra turen.', basis: 'Frivillig funktion', employeeControl: 'Kan slås fra og slettes som egne data.' },
+  { area: 'Billeder', purpose: 'Dokumentation i chat, opslag, profil, logbog og opgaver.', basis: 'Aftales efter formål', employeeControl: 'Upload er valgfrit og bør begrænses til relevante billeder.' },
+  { area: 'Adminlog', purpose: 'Sikkerhed, ændringsspor og ansvarlighed.', basis: 'Legitim drift/sikkerhed vurderes af virksomheden', employeeControl: 'Indgår i indsigt uden privat chatindhold.' },
+];
+
+const seedMessages = {
+  dispatch: [
+    ['them', 'Godmorgen Tommy. Din næste aflæsning er port 4.', '08:12'],
+    ['me', 'Modtaget. Jeg er fremme omkring 16:40.', '08:15'],
+    ['them', 'Perfekt. Ring når du er tom i Hamburg.', '13:04'],
+  ],
+  ma: [
+    ['them', 'Hvordan ser trafikken ud sydpå?', '12:30'],
+    ['me', 'Den glider fint ved grænsen lige nu.', '12:35'],
+    ['them', 'Super. Jeg holder ved Circle K i Kolding.', '12:42'],
+  ],
+  all: [
+    ['them', 'Husk vejarbejde ved Bremen i eftermiddag.', '10:44'],
+    ['them', 'Kø ved Bremen, vælg A1 hvis I kan.', '11:18'],
+  ],
+  trucks: [
+    ['them', 'Peter: Kø ved Bremen, vælg A1 hvis I kan.', '11:18'],
+    ['them', 'Line: Husk CMR-billede på internationale leveringer.', '11:32'],
+  ],
+  vans: [
+    ['them', 'Julie: Jeg er fri i Odense om 20 min.', '12:56'],
+    ['them', 'Line: Er der nogen tæt på Kolding?', '13:01'],
+  ],
+};
+
+const stored = key => {
+  try { return JSON.parse(localStorage.getItem(`roadlog:${key}`)); } catch { return null; }
+};
+const save = (key, value) => localStorage.setItem(`roadlog:${key}`, JSON.stringify(value));
+const clone = value => JSON.parse(JSON.stringify(value));
+const text = value => String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
+const mediaName = value => String(value || 'xpressintra-billede.jpg').replace(/[^\wæøåÆØÅ.-]+/g, '-');
+
+let supabaseClientInstance = null;
+let supabaseChatSubscription = null;
+let supabaseLocationSubscription = null;
+let supabasePickupSubscription = null;
+let supabaseSchemaState = { missingLocationShares: false, locationWarningShown: false };
+
+function supabaseConfig() {
+  const injected = typeof window !== 'undefined' ? (window.XPRESSINTRA_SUPABASE || {}) : {};
+  const local = stored(SUPABASE_CONFIG_KEY) || {};
+  return {
+    url: String(injected.url || local.url || '').trim(),
+    anonKey: String(injected.anonKey || injected.key || local.anonKey || local.key || '').trim(),
+  };
+}
+
+function supabaseStatus() {
+  const config = supabaseConfig();
+  if (!config.url || !config.anonKey) return { ready: false, label: 'Demo', detail: 'Supabase mangler URL og offentlig anon key' };
+  if (!window.supabase?.createClient) return { ready: false, label: 'Afventer', detail: 'Supabase-biblioteket kunne ikke hentes' };
+  return { ready: true, label: 'Online', detail: 'Klar til Supabase Auth og database' };
+}
+
+async function runSupabaseDiagnostics() {
+  const config = supabaseConfig();
+  const checks = [];
+  const add = (name, ok, detail) => checks.push({ name, ok, detail });
+
+  add('URL', Boolean(config.url), config.url || 'Mangler Supabase URL');
+  add('Publishable key', Boolean(config.anonKey), config.anonKey ? `${config.anonKey.slice(0, 16)}...` : 'Mangler offentlig nøgle');
+  add('Supabase bibliotek', Boolean(window.supabase?.createClient), window.supabase?.createClient ? 'Indlæst i appen' : 'Biblioteket kunne ikke hentes fra CDN');
+
+  if (!config.url || !config.anonKey) return checks;
+
+  const headers = { apikey: config.anonKey, Authorization: `Bearer ${config.anonKey}` };
+  if (typeof fetch !== 'function') {
+    add('Netværkstest', false, 'Denne enhed/browser understøtter ikke fetch-testen');
+    return checks;
+  }
+
+  try {
+    const authResponse = await fetch(`${config.url}/auth/v1/settings`, { headers: { apikey: config.anonKey } });
+    add('Auth endpoint', authResponse.ok, `HTTP ${authResponse.status}`);
+  } catch (error) {
+    add('Auth endpoint', false, error.message);
+  }
+
+  try {
+    const profileResponse = await fetch(`${config.url}/rest/v1/profiles?select=id&limit=1`, { headers });
+    const body = await profileResponse.text();
+    const existsButNeedsLogin = [401, 403].includes(profileResponse.status);
+    add('Profiles Data API', profileResponse.ok || existsButNeedsLogin, `HTTP ${profileResponse.status}${body ? ` · ${body.slice(0, 120)}` : ''}`);
+  } catch (error) {
+    add('Profiles Data API', false, error.message);
+  }
+
+  const client = getSupabaseClient();
+  if (!client) return checks;
+
+  try {
+    const { data } = await client.auth.getSession();
+    add('Session', Boolean(data?.session), data?.session ? `Logget ind som ${data.session.user.email}` : 'Ingen aktiv Supabase-session endnu');
+  } catch (error) {
+    add('Session', false, error.message);
+  }
+
+  if (session?.userId) {
+    try {
+      const { error } = await client.from('profiles').select('id,email,full_name').limit(1);
+      add('Profilforespørgsel', !error, error ? error.message : 'OK');
+    } catch (error) {
+      add('Profilforespørgsel', false, error.message);
+    }
+  }
+
+  return checks;
+}
+
+function getSupabaseClient() {
+  const status = supabaseStatus();
+  if (!status.ready) return null;
+  const config = supabaseConfig();
+  if (!supabaseClientInstance) {
+    supabaseClientInstance = window.supabase.createClient(config.url, config.anonKey, {
+      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true },
+    });
+  }
+  return supabaseClientInstance;
+}
+
+function onlineBackendActive() {
+  return Boolean(getSupabaseClient());
+}
+
+function readImageFile(file) {
+  if (!coreSettings.media) {
+    showToast('Billeder er midlertidigt slået fra af chef/admin');
+    return Promise.resolve(null);
+  }
+  if (!file || !file.type?.startsWith('image/')) return Promise.resolve(null);
+  if (file.size > 2 * 1024 * 1024) {
+    showToast('Billedet er for stort i demoen. Vælg max 2 MB.');
+    return Promise.resolve(null);
+  }
+  return new Promise(resolve => {
+    const reader = new FileReader();
+    reader.addEventListener('load', () => resolve({ src: reader.result, name: file.name, type: file.type, size: file.size }));
+    reader.addEventListener('error', () => resolve(null));
+    reader.readAsDataURL(file);
+  });
+}
+
+function normalizeMessage(message) {
+  const raw = Array.isArray(message)
+    ? { side: message[0], body: message[1], time: message[2] }
+    : { ...message };
+  const sender = messageSender(raw);
+  return {
+    side: raw.side || (raw.senderId === session?.userId ? 'me' : 'them'),
+    body: raw.body || '',
+    time: raw.time || '',
+    createdAt: raw.createdAt || raw.created_at || null,
+    image: raw.image || null,
+    senderId: raw.senderId || sender.id,
+    senderName: raw.senderName || sender.name,
+    senderInitials: raw.senderInitials || sender.initials,
+    senderRole: raw.senderRole || sender.role,
+    senderVehicle: raw.senderVehicle || sender.truck,
+  };
+}
+
+let employees = stored('employees') || (DEMO_MODE ? clone(seedEmployees) : []);
+let chats = stored('chats') || (DEMO_MODE ? clone(seedChats) : []);
+let messages = stored('messages') || (DEMO_MODE ? clone(seedMessages) : {});
+let announcements = stored('announcements') || (DEMO_MODE ? clone(seedAnnouncements) : []);
+let vehicles = stored('vehicles') || (DEMO_MODE ? clone(seedVehicles) : []);
+let notifications = stored('notifications') || (DEMO_MODE ? clone(seedNotifications) : []);
+let dataRequests = stored('dataRequests') || [];
+let adminAuditEvents = stored('adminAuditEvents') || [];
+let feedLikes = stored('feedLikes') || {};
+let appUpdateState = stored(UPDATE_CONFIG_KEY) || { lastCheckedAt: null, latest: null, required: null, lastError: null, dismissedVersionCode: null };
+let notificationPrefs = { ...defaultNotificationPrefs, ...stored('notificationPrefs') };
+let workdayPrivacy = {
+  gps: true,
+  logbook: true,
+  notifications: true,
+  audience: 'all',
+  showSpeed: false,
+  showVehicle: true,
+  showStatus: true,
+  ...stored('workdayPrivacy'),
+};
+let coreSettings = stored('coreSettings') || { gps: true, logbook: true, media: true, employeePosts: true, ruleApproval: true };
+let legalAcceptance = stored('legalAcceptance') || null;
+let workday = stored('workday') || {
+  active: false,
+  startedAt: null,
+  endsAt: null,
+  permissions: { gps: true, logbook: true, notifications: true },
+};
+const initialTab = (() => {
+  try {
+    const tab = new URL(window.location.href).searchParams.get('tab');
+    return ['home', 'work', 'team', 'map', 'chat', 'more', 'info'].includes(tab) ? tab : 'home';
+  } catch {
+    return 'home';
+  }
+})();
+let activeTab = initialTab;
+let activeChat = null;
+let teamQuery = '';
+let infoQuery = '';
+let globalQuery = '';
+let chatQuery = '';
+let activeInfoCategory = 'all';
+let infoFavorites = stored('infoFavorites') || [];
+let session = stored('session');
+let creatorRoleTester = stored('creatorRoleTester') || { active: false, originalProfile: null, currentRole: null };
+let profile = stored('profile') || (DEMO_MODE ? { name: 'Tommy Hansen', phone: '+45 22 44 18 90', email: 'stralner2711@gmail.com', role: 'Appansvarlig · Lastbilchauffør', accessRole: 'owner', vehicleType: 'truck', truck: 'TR 42 918', department: 'Lastbil', license: 'C/E · EU kvalifikationsbevis', emergencyContact: 'Anne · +45 22 11 90 90', languages: 'Dansk, engelsk, tysk', logbook: true } : clone(productionProfile));
+let location = { sharing: false, demo: false, speed: 0, points: 0, watchId: null, timer: null, coords: null, startedAt: null, expiresAt: null, lastUpdatedAt: null, shareMode: null };
+let activePickup = stored('activePickup');
+let pickupHistory = stored('pickupHistory') || [];
+let mapZoom = 1;
+let mapFilter = stored('mapFilter') || 'all';
+let logEntries = stored('logEntries') || (DEMO_MODE ? [
+  { place: 'Flensburg', note: 'God kaffe og en rolig pause ved grænsen.', date: '28. maj' },
+  { place: 'Hamburg', note: 'Solnedgang ved havnen efter aflæsning.', date: '25. maj' },
+] : []);
+let logbookDrafts = stored('logbookDrafts') || [];
+let logbookAutomation = {
+  smartLogbook: true,
+  autoDrafts: true,
+  autoPlace: true,
+  autoStops: true,
+  autoPickup: true,
+  autoVehicle: true,
+  autoMilestones: false,
+  ...stored('logbookAutomation'),
+};
+
+if (DEMO_MODE) {
+  for (const seedEmployee of seedEmployees) {
+    const employee = employees.find(item => item.id === seedEmployee.id);
+    if (employee && !employee.vehicleType) employee.vehicleType = seedEmployee.vehicleType;
+    if (employee) {
+      Object.entries(seedEmployee).forEach(([key, value]) => {
+        if (employee[key] === undefined) employee[key] = value;
+      });
+    }
+    if (!employee) employees.push(clone(seedEmployee));
+  }
+  for (const seedChat of seedChats) {
+    if (!chats.some(chat => chat.id === seedChat.id)) chats.push(clone(seedChat));
+  }
+  for (const [chatId, seedThread] of Object.entries(seedMessages)) {
+    if (!messages[chatId]) messages[chatId] = clone(seedThread);
+  }
+}
+if (!profile.vehicleType) profile.vehicleType = 'truck';
+if (!profile.accessRole) profile.accessRole = 'employee';
+if ((profile.email === 'stralner2711@gmail.com' || (DEMO_MODE && profile.name === 'Tommy Hansen')) && !creatorRoleTester.active) {
+  profile = {
+    ...profile,
+    email: 'stralner2711@gmail.com',
+    role: 'Appansvarlig · Lastbilchauffør',
+    accessRole: 'owner',
+    vehicleType: 'truck',
+    truck: profile.truck && profile.truck !== 'Ledelse' && profile.truck !== 'Kontoret' ? profile.truck : 'TR 42 918',
+    department: 'Lastbil',
+    license: profile.license || 'C/E · EU kvalifikationsbevis',
+  };
+}
+announcements = announcements.map((item, index) => ({
+  id: item.id || `post-${index}-${item.title.toLowerCase().replace(/\W+/g, '-')}`,
+  initials: item.initials || (item.author || 'Kollega').split(/\s+/).map(part => part[0]).join('').slice(0, 2).toUpperCase(),
+  audience: item.audience || 'Alle medarbejdere',
+  likes: item.likes || 0,
+  comments: item.comments || [],
+  ...item,
+}));
+save('employees', employees);
+save('chats', chats);
+save('messages', messages);
+save('announcements', announcements);
+save('vehicles', vehicles);
+save('notifications', notifications);
+save('dataRequests', dataRequests);
+save('profile', profile);
+
+function icon(name, className = '') {
+  return `<span class="icon ${className}">${icons[name]}</span>`;
+}
+
+function brandLogo() {
+  return `<span class="brand-lockup"><img class="brand-logo" src="/xpressbudet-logo-transparent.png?v=46" alt="XpressBudet A/S" /></span>`;
+}
+
+function renderLaunchSplash() {
+  return `<section class="launch-splash" aria-label="XpressIntra starter">
+    <div class="launch-skyline" aria-hidden="true"></div>
+    <div class="launch-road">
+      <span></span><span></span><span></span>
+    </div>
+    <div class="launch-core">
+      <span class="launch-ring"></span>
+      <span class="launch-ring launch-ring-two"></span>
+      <img src="/xpressbudet-logo-transparent.png?v=50" alt="XpressBudet" />
+    </div>
+    <div class="launch-fleet" aria-hidden="true">
+      <span class="launch-vehicle launch-truck">
+        <b class="cab"></b><b class="box"></b><i></i><i></i><em></em>
+      </span>
+      <span class="launch-vehicle launch-lift">
+        <b class="cab"></b><b class="box"></b><i></i><i></i><em></em>
+      </span>
+      <span class="launch-vehicle launch-van">
+        <b class="cab"></b><b class="box"></b><i></i><i></i><em></em>
+      </span>
+    </div>
+    <div class="launch-title">
+      <small>XpressBudet præsenterer</small>
+      <h1>Xpress<span>Intra</span></h1>
+      <p>Indlæser ruter, køretøjer og dagens drift</p>
+    </div>
+    <div class="launch-status">
+      <span>Chauffører</span>
+      <span>Kontor</span>
+      <span>Live drift</span>
+    </div>
+  </section>`;
+}
+
+function ensureLaunchSplash() {
+  if (!launchSplashVisible || document.querySelector('.launch-splash')) return;
+  document.body.insertAdjacentHTML('beforeend', renderLaunchSplash());
+}
+
+function scheduleLaunchSplashExit() {
+  if (!launchSplashVisible || launchSplashScheduled) return;
+  launchSplashScheduled = true;
+  window.setTimeout(() => {
+    launchSplashVisible = false;
+    sessionStorage.setItem('xpressintra:launchSplashSeen', '1');
+    document.querySelector('.launch-splash')?.classList.add('hide');
+    window.setTimeout(() => document.querySelector('.launch-splash')?.remove(), 560);
+  }, 5000);
+}
+
+function avatar(employee, className = '') {
+  const photo = employee?.photo || (employee?.id === 'th' ? profile.photo : null);
+  const initials = employee?.initials || initialsFromName(employee?.name || profile.name || 'Medarbejder');
+  return `<span class="person-avatar ${employee?.online ? 'is-online' : ''} ${className}">${photo ? `<img src="${text(photo.src)}" alt="${text(employee?.name || 'Profil')}" />` : text(initials)}</span>`;
+}
+
+function showToast(text) {
+  let toast = document.querySelector('.toast');
+  if (!toast) {
+    document.body.insertAdjacentHTML('beforeend', '<div class="toast"></div>');
+    toast = document.querySelector('.toast');
+  }
+  if (!toast) return;
+  toast.textContent = text;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2200);
+}
+
+function saveAppUpdateState() {
+  save(UPDATE_CONFIG_KEY, appUpdateState);
+}
+
+function isPlaceholderUpdateConfig() {
+  const versionUrl = String(appUpdateConfig.versionUrl || '').toLowerCase();
+  const officialRepo = String(appUpdateConfig.officialRepo || '').toLowerCase();
+  return versionUrl.includes('your-username')
+    || officialRepo.includes('your-username')
+    || versionUrl.includes('example.com')
+    || officialRepo.includes('example.com');
+}
+
+function isAllowedUpdateUrl(url) {
+  try {
+    const parsed = new URL(url, window.location.href);
+    if (parsed.origin === window.location.origin) return true;
+    const repo = new URL(appUpdateConfig.officialRepo || defaultUpdateConfig.officialRepo);
+    const repoParts = repo.pathname.replace(/^\/|\/$/g, '').split('/').map(part => part.toLowerCase());
+    const repoOwner = repoParts[0];
+    const repoName = repoParts[1];
+    const pathParts = parsed.pathname.replace(/^\/|\/$/g, '').split('/').map(part => part.toLowerCase());
+    const hostname = parsed.hostname.toLowerCase();
+    if (!repoOwner || !repoName) return false;
+    if (hostname === 'github.com') return pathParts[0] === repoOwner && pathParts[1] === repoName;
+    if (hostname === 'raw.githubusercontent.com') return pathParts[0] === repoOwner && pathParts[1] === repoName;
+    if (hostname === `${repoOwner}.github.io`) return pathParts[0] === repoName;
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+function normalizeVersionInfo(raw) {
+  if (!raw || typeof raw !== 'object') throw new Error('version.json er ikke gyldig');
+  const activeVersionCode = Number(raw.activeVersionCode);
+  if (!Number.isFinite(activeVersionCode) || activeVersionCode <= 0) throw new Error('activeVersionCode mangler');
+  const apkDownloadUrl = String(raw.apkDownloadUrl || '').trim();
+  const releasePageUrl = String(raw.releasePageUrl || '').trim();
+  if (!apkDownloadUrl || !isAllowedUpdateUrl(apkDownloadUrl)) throw new Error('APK-linket er ikke fra godkendt GitHub-kilde');
+  if (releasePageUrl && !isAllowedUpdateUrl(releasePageUrl)) throw new Error('Release-linket er ikke fra godkendt GitHub-kilde');
+  return {
+    latestVersion: String(raw.latestVersion || raw.activeVersion || ''),
+    stableVersion: String(raw.stableVersion || raw.activeVersion || ''),
+    activeVersion: String(raw.activeVersion || raw.latestVersion || ''),
+    previousStableVersion: String(raw.previousStableVersion || ''),
+    latestVersionCode: Number(raw.latestVersionCode || activeVersionCode),
+    stableVersionCode: Number(raw.stableVersionCode || activeVersionCode),
+    activeVersionCode,
+    apkDownloadUrl,
+    releasePageUrl,
+    downloadPageUrl: String(raw.downloadPageUrl || ''),
+    changelog: Array.isArray(raw.changelog) ? raw.changelog.map(String).slice(0, 8) : [],
+    forceUpdate: Boolean(raw.forceUpdate),
+    rollbackReason: String(raw.rollbackReason || ''),
+    defectiveVersions: Array.isArray(raw.defectiveVersions) ? raw.defectiveVersions : [],
+    updatedAt: String(raw.updatedAt || ''),
+  };
+}
+
+function updateStatusLabel(info = appUpdateState.latest) {
+  if (!info) return 'Ikke tjekket endnu';
+  if (info.activeVersionCode > APP_VERSION_CODE) return info.forceUpdate ? 'Kritisk opdatering' : 'Ny opdatering';
+  if (info.activeVersionCode < APP_VERSION_CODE) return 'Rollback anbefalet';
+  return 'Appen er opdateret';
+}
+
+function shouldShowUpdate(info, manual = false) {
+  if (!info) return false;
+  if (info.forceUpdate && info.activeVersionCode !== APP_VERSION_CODE) return true;
+  if (info.activeVersionCode > APP_VERSION_CODE) return manual || appUpdateState.dismissedVersionCode !== info.activeVersionCode;
+  if (info.activeVersionCode < APP_VERSION_CODE && info.rollbackReason) return true;
+  return false;
+}
+
+async function fetchVersionInfo() {
+  const urls = [appUpdateConfig.versionUrl || './version.json'];
+  if (appUpdateConfig.allowLocalVersionFallback && !urls.includes('./version.json')) urls.push('./version.json');
+  let lastError = null;
+  for (const url of urls) {
+    try {
+      if (!isAllowedUpdateUrl(url)) throw new Error('version.json ligger ikke på en godkendt kilde');
+      const response = await fetch(url, { cache: 'no-store' });
+      if (!response.ok) throw new Error(`Kunne ikke hente version.json (${response.status})`);
+      return normalizeVersionInfo(await response.json());
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  throw lastError || new Error('Opdateringstjek fejlede');
+}
+
+async function checkForAppUpdate({ manual = false, silent = false } = {}) {
+  try {
+    const info = await fetchVersionInfo();
+    appUpdateState = { ...appUpdateState, latest: info, lastCheckedAt: new Date().toISOString(), lastError: null };
+    if (info.forceUpdate && info.activeVersionCode !== APP_VERSION_CODE) appUpdateState.required = info;
+    else if (appUpdateState.required?.activeVersionCode === APP_VERSION_CODE) appUpdateState.required = null;
+    saveAppUpdateState();
+    if (shouldShowUpdate(info, manual)) openAppUpdateModal(info, { force: info.forceUpdate || info.activeVersionCode < APP_VERSION_CODE });
+    else if (manual) showToast('Appen er opdateret');
+    return info;
+  } catch (error) {
+    appUpdateState = { ...appUpdateState, lastCheckedAt: new Date().toISOString(), lastError: error.message };
+    saveAppUpdateState();
+    if (appUpdateState.required && appUpdateState.required.activeVersionCode !== APP_VERSION_CODE) {
+      openAppUpdateModal(appUpdateState.required, { force: true, offline: true });
+      return appUpdateState.required;
+    }
+    if (manual || !silent) showToast(isCreatorOwner() ? `Opdateringstjek fejlede: ${error.message}` : 'Opdateringstjek fejlede. Appen fortsætter normalt.');
+    return null;
+  }
+}
+
+function openExternalUpdateLink(url) {
+  if (!url || !isAllowedUpdateUrl(url)) {
+    showToast('Downloadlinket er ikke godkendt');
+    return;
+  }
+  window.open(url, '_blank', 'noopener,noreferrer');
+}
+
+function openAppUpdateModal(info = appUpdateState.latest, options = {}) {
+  if (!info) {
+    showToast('Der er ingen versionsdata endnu');
+    return;
+  }
+  document.querySelector('.modal-backdrop')?.remove();
+  const force = Boolean(options.force || info.forceUpdate || appUpdateState.required);
+  const rollback = info.activeVersionCode < APP_VERSION_CODE || Boolean(info.rollbackReason);
+  const modal = document.createElement('div');
+  modal.className = `modal-backdrop ${force ? 'force-update' : ''}`;
+  modal.innerHTML = `<section class="profile-modal update-modal">
+    ${force ? '' : `<button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>`}
+    <p class="eyebrow">${rollback ? 'Stabil version' : force ? 'Kritisk opdatering' : 'Ny opdatering'}</p>
+    <h3>${rollback ? 'Stabil version kræves' : force ? 'Kritisk opdatering kræves' : 'Ny opdatering tilgængelig'}</h3>
+    <section class="update-version-card">
+      <span><b>Installeret</b><strong>${text(APP_DISPLAY_VERSION)}</strong><small>Build ${APP_VERSION_CODE}</small></span>
+      <span><b>Aktiv</b><strong>${text(info.activeVersion)}</strong><small>Build ${info.activeVersionCode}</small></span>
+    </section>
+    ${options.offline ? '<p class="update-warning">Appen kunne ikke hente ny versionsfil, men en tidligere kendt tvangsopdatering er stadig aktiv.</p>' : ''}
+    ${rollback && info.rollbackReason ? `<p class="update-warning"><b>Årsag:</b> ${text(info.rollbackReason)}</p>` : ''}
+    <section class="update-changelog">
+      <h4>Nyt</h4>
+      ${info.changelog.length ? info.changelog.map(item => `<span>${text(item)}</span>`).join('') : '<span>Ingen changelog er skrevet endnu.</span>'}
+    </section>
+    ${isPlaceholderUpdateConfig() ? '<p class="update-warning">Creator: GitHub-placeholderen skal skiftes til det rigtige repository, før medarbejdere bruger opdateringslinket.</p>' : ''}
+    <div class="update-actions">
+      <button type="button" data-action="install-update">${rollback ? 'Installer stabil version' : 'Opdater nu'}</button>
+      ${force ? '' : '<button type="button" class="secondary" data-action="dismiss-update">Senere</button>'}
+    </div>
+  </section>`;
+  document.body.append(modal);
+}
+
+function renderUpdateSummary() {
+  const info = appUpdateState.latest;
+  return `<section class="update-summary-card">
+    <div>
+      <b>App-opdateringer</b>
+      <span>${text(updateStatusLabel(info))}</span>
+      <small>Installeret ${text(APP_DISPLAY_VERSION)} · build ${APP_VERSION_CODE}${appUpdateState.lastCheckedAt ? ` · tjekket ${new Date(appUpdateState.lastCheckedAt).toLocaleString('da-DK')}` : ''}</small>
+    </div>
+    <div class="update-summary-actions">
+      <button type="button" data-action="check-update">Tjek</button>
+      ${info ? '<button type="button" data-action="show-update-status">Detaljer</button>' : ''}
+    </div>
+    ${isPlaceholderUpdateConfig() ? '<em>Husk: GitHub-placeholder skal skiftes.</em>' : ''}
+    ${appUpdateState.lastError ? `<em class="warn">${text(appUpdateState.lastError)}</em>` : ''}
+  </section>`;
+}
+
+function openUpdateStatusModal() {
+  const info = appUpdateState.latest;
+  const modal = document.createElement('div');
+  modal.className = 'modal-backdrop';
+  modal.innerHTML = `<section class="profile-modal update-status-modal">
+    <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
+    <p class="eyebrow">Creator / distribution</p><h3>Opdateringssystem</h3>
+    ${renderUpdateSummary()}
+    <section class="update-detail-list">
+      <span><b>Version URL</b><small>${text(appUpdateConfig.versionUrl)}</small></span>
+      <span><b>Officielt repository</b><small>${text(appUpdateConfig.officialRepo)}</small></span>
+      <span><b>Seneste aktive version</b><small>${info ? `${text(info.activeVersion)} · build ${info.activeVersionCode}` : 'Ikke hentet endnu'}</small></span>
+      <span><b>Stabil version</b><small>${info ? `${text(info.stableVersion)} · build ${info.stableVersionCode}` : 'Ikke hentet endnu'}</small></span>
+      <span><b>Tvangsopdatering</b><small>${info?.forceUpdate ? 'Ja' : 'Nej'}</small></span>
+      <span><b>Rollback</b><small>${info?.rollbackReason || 'Ingen aktiv rollback'}</small></span>
+    </section>
+    <div class="launch-actions">
+      <button type="button" data-action="check-update">Tjek igen</button>
+      <button type="button" data-action="open-download-page">Downloadside</button>
+      <button type="button" data-action="open-version-json">version.json</button>
+    </div>
+  </section>`;
+  document.body.append(modal);
+}
+
+function isMissingSupabaseTableError(error, tableName) {
+  const message = String(error?.message || error?.details || error || '').toLowerCase();
+  const code = String(error?.code || '').toUpperCase();
+  return (
+    message.includes(tableName.toLowerCase())
+    && (message.includes('schema cache') || message.includes('could not find the table') || message.includes('relation') || code === 'PGRST205' || code === '42P01')
+  );
+}
+
+function handleLocationShareSchemaError(error) {
+  if (!isMissingSupabaseTableError(error, 'location_shares')) return false;
+  supabaseSchemaState.missingLocationShares = true;
+  if (!supabaseSchemaState.locationWarningShown) {
+    supabaseSchemaState.locationWarningShown = true;
+    showToast('GPS deles lokalt. Supabase mangler location_shares-tabellen.');
+  }
+  return true;
+}
+
+function inviteLink(employee, invitationId = '') {
+  const url = new URL(window.location.href);
+  url.searchParams.set('invite', invitationId || 'lokal');
+  if (employee?.email) url.searchParams.set('email', employee.email);
+  return url.toString();
+}
+
+async function shareEmployeeInvite(employee, invitationId = '') {
+  const link = inviteLink(employee, invitationId);
+  const subject = `Invitation til XpressIntra`;
+  const body = `Hej ${employee.name || ''}\n\nDu er inviteret til XpressIntra.\n\n1. Åbn appen/linket:\n${link}\n\n2. Brug mailen ${employee.email || 'din arbejdsmail'}.\n3. Tryk "Opret konto via invitation" og vælg en adgangskode.\n\nHilsen XpressBudet`;
+  if (navigator.share) {
+    await navigator.share({ title: subject, text: body, url: link });
+    return;
+  }
+  window.location.href = `mailto:${encodeURIComponent(employee.email || '')}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+
+function canAccessChat(chat) {
+  if (!chat?.channel) return true;
+  return hasChannelAccess(chat.channel);
+}
+
+function visibleChats() {
+  return chats.filter(canAccessChat);
+}
+
+function hasChannelAccess(channel) {
+  const profileText = searchable(`${profile.role || ''} ${profile.department || ''} ${profile.license || ''} ${profile.truck || ''}`);
+  if (channel === 'truck') return profile.vehicleType === 'truck' || profileText.includes('lastbil') || profileText.includes('c/e');
+  if (channel === 'van') return profile.vehicleType === 'van' || profileText.includes('varebil');
+  return true;
+}
+
+function canReadAudience(audience = 'Alle medarbejdere') {
+  const normalized = audience.toLowerCase();
+  if (normalized === 'all' || normalized.includes('alle')) return true;
+  if (normalized === 'truck' || normalized.includes('lastbil')) return hasChannelAccess('truck');
+  if (normalized === 'van' || normalized.includes('varebil')) return hasChannelAccess('van');
+  return true;
+}
+
+function currentEmployee() {
+  const currentId = session?.userId || 'th';
+  const employee = employees.find(item => item.id === currentId) || employees.find(item => item.id === 'th') || employees[0];
+  if (employee) {
+    return {
+      ...employee,
+      name: profile.name || employee.name,
+      initials: initialsFromName(profile.name || employee.name),
+      role: profile.role || employee.role,
+      accessRole: profile.accessRole || employee.accessRole,
+      vehicleType: profile.vehicleType || employee.vehicleType,
+      truck: profile.truck || employee.truck,
+      department: profile.department || employee.department,
+      license: profile.license || employee.license,
+      phone: profile.phone || employee.phone,
+      email: profile.email || employee.email,
+      languages: profile.languages || employee.languages,
+    };
+  }
+  return {
+    id: currentId,
+    name: profile.name || 'Medarbejder',
+    initials: initialsFromName(profile.name || 'Medarbejder'),
+    role: profile.role || 'Chauffør',
+    accessRole: profile.accessRole || 'employee',
+    vehicleType: profile.vehicleType || 'truck',
+    truck: profile.truck || '',
+    status: session ? 'Online' : 'Ikke logget ind',
+    location: profile.department || '',
+    phone: profile.phone || '',
+    email: profile.email || session?.email || '',
+    department: profile.department || '',
+    license: profile.license || '',
+    languages: profile.languages || '',
+    employmentStatus: 'active',
+    online: Boolean(session),
+    sharing: false,
+  };
+}
+
+function employeeById(id) {
+  if (!id) return null;
+  return employees.find(employee => employee.id === id) || null;
+}
+
+function inferMessageSender(message = {}) {
+  if (message.side === 'me') return currentEmployee();
+  if (message.senderId) return employeeById(message.senderId);
+  if (activeChat && !['all', 'trucks', 'vans'].includes(activeChat)) {
+    const direct = employeeById(activeChat);
+    if (direct) return direct;
+  }
+  const prefix = String(message.body || '').match(/^([\p{L}\s.-]{2,24}):/u)?.[1]?.trim().toLowerCase();
+  if (prefix) {
+    return employees.find(employee => employee.name.toLowerCase().startsWith(prefix));
+  }
+  if (activeChat === 'dispatch') return employees.find(employee => employee.accessRole === 'dispatcher') || null;
+  return null;
+}
+
+function messageSender(message = {}) {
+  const fallback = message.side === 'me'
+    ? currentEmployee()
+    : { id: 'unknown', name: 'Kollega', initials: 'KO', role: 'Medarbejder', truck: '' };
+  const sender = inferMessageSender(message) || fallback;
+  return {
+    id: sender.id,
+    name: sender.name || 'Kollega',
+    initials: sender.initials || initialsFromName(sender.name || 'Kollega'),
+    role: sender.role || accessRoleLabel(sender.accessRole) || 'Medarbejder',
+    truck: sender.truck || vehicleLabel(sender.vehicleType),
+  };
+}
+
+function messageTimestamp(message = {}) {
+  if (!message.createdAt) return message.time || '';
+  return new Date(message.createdAt).toLocaleString('da-DK', {
+    day: '2-digit',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+function initialsFromName(name = '') {
+  return String(name || 'XB').split(/\s+/).map(part => part[0]).join('').slice(0, 2).toUpperCase() || 'XB';
+}
+
+function profileFromSupabase(row, user, privateDetails) {
+  return {
+    name: row?.full_name || user?.email || profile.name,
+    phone: row?.phone || profile.phone || '',
+    email: row?.email || user?.email || profile.email || '',
+    role: row?.role || profile.role || 'Chauffør',
+    accessRole: row?.access_role || profile.accessRole || 'employee',
+    vehicleType: row?.vehicle_type || profile.vehicleType || 'truck',
+    truck: row?.truck || profile.truck || '',
+    department: row?.department || profile.department || '',
+    license: row?.license_summary || profile.license || '',
+    emergencyContact: privateDetails?.emergency_contact || profile.emergencyContact || '',
+    languages: row?.languages || profile.languages || '',
+    logbook: Boolean(row?.logbook_enabled ?? profile.logbook),
+  };
+}
+
+function employeeFromSupabase(row, userId) {
+  return {
+    id: row.id,
+    name: row.full_name || row.email || 'Medarbejder',
+    initials: initialsFromName(row.full_name || row.email),
+    role: row.role || 'Chauffør',
+    accessRole: row.access_role || 'employee',
+    vehicleType: row.vehicle_type || 'van',
+    truck: row.truck || '',
+    status: row.id === userId ? 'Online' : 'Medarbejder',
+    location: row.department || '',
+    phone: row.phone || '',
+    email: row.email || '',
+    department: row.department || '',
+    license: row.license_summary || '',
+    languages: row.languages || '',
+    employmentStatus: row.employment_status || 'active',
+    online: row.id === userId,
+    sharing: false,
+  };
+}
+
+function chatFromConversation(row, latestMessage = null) {
+  const isAll = row.channel_type === 'all';
+  const isTruck = row.channel_type === 'truck';
+  const isVan = row.channel_type === 'van';
+  const title = row.title || (row.channel_type === 'direct' ? 'Direkte samtale' : 'Samtale');
+  return {
+    id: row.id,
+    name: title,
+    initials: isAll ? 'FC' : isTruck ? 'LB' : isVan ? 'VB' : initialsFromName(title),
+    preview: latestMessage?.body || 'Ingen beskeder endnu',
+    time: latestMessage?.created_at ? new Date(latestMessage.created_at).toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' }) : '',
+    unread: 0,
+    community: isAll,
+    channel: isTruck ? 'truck' : isVan ? 'van' : null,
+    online: true,
+  };
+}
+
+function supabaseAuthSession() {
+  if (!session?.userId) return null;
+  return { user: { id: session.userId, email: session.email } };
+}
+
+function messageFromSupabase(row, userId) {
+  const attachment = Array.isArray(row.media_attachments) ? row.media_attachments[0] : null;
+  const sender = employeeById(row.sender_id) || (row.sender_id === userId ? currentEmployee() : null);
+  return {
+    id: row.id,
+    senderId: row.sender_id,
+    side: row.sender_id === userId ? 'me' : 'them',
+    senderName: sender?.name || 'Kollega',
+    senderInitials: sender?.initials || initialsFromName(sender?.name || 'Kollega'),
+    senderRole: sender?.role || '',
+    senderVehicle: sender?.truck || '',
+    body: row.body,
+    time: row.created_at ? new Date(row.created_at).toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' }) : '',
+    createdAt: row.created_at,
+    image: attachment ? {
+      src: attachment.signedUrl || '',
+      name: attachment.file_name,
+      storagePath: attachment.storage_path,
+      type: attachment.mime_type,
+      size: attachment.size_bytes,
+    } : null,
+  };
+}
+
+async function attachSignedMediaUrls(rows = []) {
+  const client = getSupabaseClient();
+  const attachments = rows.flatMap(row => Array.isArray(row.media_attachments) ? row.media_attachments : []);
+  await Promise.all(attachments.map(async attachment => {
+    const { data } = await client.storage.from(attachment.bucket || 'xpressintra-media').createSignedUrl(attachment.storage_path, 60 * 10);
+    attachment.signedUrl = data?.signedUrl || '';
+  }));
+  return rows;
+}
+
+async function loadSupabaseChats(authSession) {
+  const client = getSupabaseClient();
+  const userId = authSession?.user?.id;
+  if (!client || !userId) return;
+  const [conversationsResult, messagesResult] = await Promise.all([
+    client.from('conversations').select('*').order('created_at', { ascending: true }),
+    client.from('messages').select('*, media_attachments(*)').order('created_at', { ascending: true }).limit(500),
+  ]);
+  if (conversationsResult.error) throw conversationsResult.error;
+  if (messagesResult.error) throw messagesResult.error;
+  const messageRows = await attachSignedMediaUrls(messagesResult.data || []);
+
+  const nextMessages = {};
+  for (const row of messageRows) {
+    nextMessages[row.conversation_id] = nextMessages[row.conversation_id] || [];
+    nextMessages[row.conversation_id].push(messageFromSupabase(row, userId));
+  }
+
+  const nextChats = (conversationsResult.data || []).map(row => {
+    const thread = nextMessages[row.id] || [];
+    return chatFromConversation(row, thread[thread.length - 1]);
+  });
+
+  if (nextChats.length) {
+    chats = nextChats;
+    messages = nextMessages;
+    save('chats', chats);
+    save('messages', messages);
+  }
+}
+
+async function uploadSupabaseChatImage(file, messageId) {
+  const client = getSupabaseClient();
+  if (!client || !file || !messageId) return null;
+  if (!file.type?.startsWith('image/')) throw new Error('Kun billeder kan uploades i chatten');
+  if (file.size > 10 * 1024 * 1024) throw new Error('Billedet må højst være 10 MB');
+  const extension = file.name?.split('.').pop()?.toLowerCase() || 'jpg';
+  const safeName = mediaName(file.name || `chat-${messageId}.${extension}`);
+  const storagePath = `${session.userId}/chat/${activeChat}/${messageId}-${Date.now()}-${safeName}`;
+  const bucket = 'xpressintra-media';
+  const { error: uploadError } = await client.storage.from(bucket).upload(storagePath, file, {
+    contentType: file.type,
+    upsert: false,
+  });
+  if (uploadError) throw uploadError;
+
+  const { data: attachment, error: attachmentError } = await client.from('media_attachments')
+    .insert({
+      owner_id: session.userId,
+      message_id: messageId,
+      bucket,
+      storage_path: storagePath,
+      file_name: file.name || safeName,
+      mime_type: file.type,
+      size_bytes: file.size,
+      visibility: 'conversation',
+    })
+    .select('*')
+    .maybeSingle();
+  if (attachmentError) throw attachmentError;
+
+  const { data: signed } = await client.storage.from(bucket).createSignedUrl(storagePath, 60 * 10);
+  return {
+    src: signed?.signedUrl || '',
+    name: attachment?.file_name || file.name,
+    storagePath,
+    type: file.type,
+    size: file.size,
+  };
+}
+
+function audienceToSupabase(audience = 'Alle medarbejdere') {
+  const normalized = String(audience || '').toLowerCase();
+  if (normalized.includes('lastbil') || normalized === 'truck') return 'truck';
+  if (normalized.includes('varebil') || normalized === 'van') return 'van';
+  return 'all';
+}
+
+function audienceFromSupabase(audience = 'all') {
+  return audience === 'truck' ? 'Lastbilchauffører' : audience === 'van' ? 'Varebilschauffører' : 'Alle medarbejdere';
+}
+
+function announcementFromSupabase(row) {
+  const comments = Array.isArray(row.announcement_comments) ? row.announcement_comments : [];
+  const reactions = Array.isArray(row.announcement_reactions) ? row.announcement_reactions : [];
+  const attachment = Array.isArray(row.media_attachments) ? row.media_attachments[0] : null;
+  return {
+    id: String(row.id),
+    title: row.title,
+    body: row.body,
+    image: attachment ? { src: attachment.signedUrl || '', name: attachment.file_name, storagePath: attachment.storage_path } : null,
+    time: row.created_at ? new Date(row.created_at).toLocaleString('da-DK', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Nu',
+    tone: row.kind === 'office' ? 'amber' : 'green',
+    kind: row.kind,
+    author: row.kind === 'office' ? 'Kontoret' : 'Kollega',
+    initials: row.kind === 'office' ? 'XB' : 'KO',
+    audience: audienceFromSupabase(row.audience),
+    pinned: row.pinned,
+    likes: reactions.length,
+    comments: comments.map(comment => comment.body),
+  };
+}
+
+async function attachSignedAnnouncementImages(rows = []) {
+  const client = getSupabaseClient();
+  const attachments = rows.flatMap(row => Array.isArray(row.media_attachments) ? row.media_attachments : []);
+  await Promise.all(attachments.map(async attachment => {
+    const { data } = await client.storage.from(attachment.bucket || 'xpressintra-media').createSignedUrl(attachment.storage_path, 60 * 10);
+    attachment.signedUrl = data?.signedUrl || '';
+  }));
+  return rows;
+}
+
+async function uploadSupabaseAnnouncementImage(file, announcementId) {
+  const client = getSupabaseClient();
+  if (!client || !file || !announcementId) return null;
+  if (!file.type?.startsWith('image/')) throw new Error('Kun billeder kan uploades til opslag');
+  if (file.size > 10 * 1024 * 1024) throw new Error('Billedet må højst være 10 MB');
+  const safeName = mediaName(file.name || `opslag-${announcementId}.jpg`);
+  const bucket = 'xpressintra-media';
+  const storagePath = `${session.userId}/announcements/${announcementId}-${Date.now()}-${safeName}`;
+  const { error: uploadError } = await client.storage.from(bucket).upload(storagePath, file, {
+    contentType: file.type,
+    upsert: false,
+  });
+  if (uploadError) throw uploadError;
+  const { error: attachmentError } = await client.from('media_attachments').insert({
+    owner_id: session.userId,
+    announcement_id: announcementId,
+    bucket,
+    storage_path: storagePath,
+    file_name: file.name || safeName,
+    mime_type: file.type,
+    size_bytes: file.size,
+    visibility: 'announcement',
+  });
+  if (attachmentError) throw attachmentError;
+  const { data: signed } = await client.storage.from(bucket).createSignedUrl(storagePath, 60 * 10);
+  return { src: signed?.signedUrl || '', name: file.name || safeName, storagePath };
+}
+
+async function createSupabaseAnnouncement(post, file = null) {
+  const client = getSupabaseClient();
+  if (!client || !session?.userId) return null;
+  const { data, error } = await client.from('announcements').insert({
+    author_id: session.userId,
+    title: post.title,
+    body: post.body,
+    kind: post.kind,
+    audience: audienceToSupabase(post.audience),
+    pinned: Boolean(post.pinned),
+  }).select('*').maybeSingle();
+  if (error) throw error;
+  if (file && data?.id) post.image = await uploadSupabaseAnnouncementImage(file, data.id);
+  if (data?.id) post.id = String(data.id);
+  return data;
+}
+
+async function syncSupabaseAnnouncementReaction(postId, liked) {
+  const client = getSupabaseClient();
+  if (!client || !session?.userId || !/^\d+$/.test(String(postId))) return;
+  if (liked) {
+    const { error } = await client.from('announcement_reactions').insert({ announcement_id: Number(postId), user_id: session.userId });
+    if (error) throw error;
+    return;
+  }
+  await client.from('announcement_reactions').delete().eq('announcement_id', Number(postId)).eq('user_id', session.userId);
+}
+
+async function createSupabaseAnnouncementComment(postId, body) {
+  const client = getSupabaseClient();
+  if (!client || !session?.userId || !/^\d+$/.test(String(postId))) return;
+  const { error } = await client.from('announcement_comments').insert({
+    announcement_id: Number(postId),
+    author_id: session.userId,
+    body,
+  });
+  if (error) throw error;
+}
+
+async function notifySupabaseAudience(post) {
+  const client = getSupabaseClient();
+  if (!client || !session?.userId) return;
+  const audience = audienceToSupabase(post.audience);
+  const targets = employees.filter(employee => {
+    if (employee.id === session.userId) return false;
+    if (audience === 'all') return employee.employmentStatus !== 'offboarded';
+    return employee.vehicleType === audience && employee.employmentStatus !== 'offboarded';
+  });
+  const rows = targets.map(employee => ({
+    user_id: employee.id,
+    type: post.kind === 'office' ? 'Kontoropslag' : 'Opslag',
+    title: post.title,
+    body: post.body,
+    level: post.kind === 'office' ? 'office' : 'message',
+    priority: post.kind === 'office' ? 'medium' : 'normal',
+    category: 'office',
+  }));
+  if (!rows.length) return;
+  const { error } = await client.from('notifications').insert(rows);
+  if (error) throw error;
+}
+
+async function startSupabaseDirectChat(employee, firstMessage = '') {
+  const client = getSupabaseClient();
+  if (!client || !employee?.id) return null;
+  const { data: conversationId, error } = await client.rpc('start_direct_conversation', { target_user_id: employee.id });
+  if (error) throw error;
+
+  await loadSupabaseChats(supabaseAuthSession());
+  let chat = chats.find(item => item.id === conversationId);
+  if (!chat) {
+    chat = {
+      id: conversationId,
+      name: employee.name,
+      initials: employee.initials || initialsFromName(employee.name),
+      preview: 'Start en intern samtale',
+      time: 'Nu',
+      unread: 0,
+    };
+    chats.unshift(chat);
+  } else if (chat.name === 'Direkte samtale') {
+    chat.name = employee.name;
+    chat.initials = employee.initials || initialsFromName(employee.name);
+  }
+  messages[conversationId] = messages[conversationId] || [];
+  save('chats', chats);
+  save('messages', messages);
+
+  if (firstMessage.trim()) {
+    const { error: messageError } = await client.from('messages').insert({
+      conversation_id: conversationId,
+      sender_id: session.userId,
+      body: firstMessage.trim(),
+    });
+    if (messageError) throw messageError;
+  }
+  return conversationId;
+}
+
+function locationShareFromSupabase(row) {
+  const person = employees.find(employee => employee.id === row.user_id);
+  if (!person) return null;
+  return {
+    ...person,
+    sharing: true,
+    online: true,
+    coords: [row.latitude, row.longitude],
+    speed: row.show_speed === false || row.speed_kmh === null ? null : Math.round(Number(row.speed_kmh || 0)),
+    shareMode: row.share_mode,
+    expiresAt: row.expires_at,
+    lastUpdatedAt: row.last_updated_at,
+    truck: row.show_vehicle === false ? 'Bil skjult' : person.truck,
+    status: row.show_status === false ? 'Deler position' : row.status === 'driving' ? 'Kører' : row.status === 'pause' ? 'Pause' : row.status === 'pickup' ? 'Afhentning' : 'Deler position',
+  };
+}
+
+async function loadSupabaseLocations() {
+  const client = getSupabaseClient();
+  if (!client || !session?.userId) return;
+  const { data, error } = await client.from('location_shares').select('*').order('last_updated_at', { ascending: false });
+  if (error) {
+    if (handleLocationShareSchemaError(error)) return;
+    throw error;
+  }
+  const shared = (data || []).map(locationShareFromSupabase).filter(Boolean);
+  const sharedIds = new Set(shared.map(person => person.id));
+  employees = employees.map(employee => {
+    const onlineShare = shared.find(person => person.id === employee.id);
+    if (onlineShare) return { ...employee, ...onlineShare };
+    if (employee.id === session.userId || employee.id === currentEmployee().id) return employee;
+    return sharedIds.has(employee.id) ? employee : { ...employee, sharing: false };
+  });
+  for (const person of shared) {
+    if (!employees.some(employee => employee.id === person.id)) employees.push(person);
+  }
+  save('employees', employees);
+}
+
+function locationStatusForSupabase() {
+  if (activePickup) return 'pickup';
+  if (location.speed > 5) return 'driving';
+  return 'sharing';
+}
+
+function locationPrivacyForSupabase(visibility = 'team') {
+  const permissions = { ...(workday.permissions || {}), ...workdayPrivacy };
+  const audience = visibility === 'pickup'
+    ? 'all'
+    : ['all', 'truck', 'van', 'none'].includes(permissions.audience) ? permissions.audience : 'all';
+  return {
+    audience,
+    showSpeed: Boolean(permissions.showSpeed),
+    showVehicle: Boolean(permissions.showVehicle ?? true),
+    showStatus: Boolean(permissions.showStatus ?? true),
+  };
+}
+
+async function syncSupabaseLocation() {
+  const client = getSupabaseClient();
+  if (!client || !session?.userId || !location.sharing) return;
+  const coords = location.coords || currentEmployee().coords;
+  if (!coords) return;
+  const visibility = activePickup?.employeeId ? 'pickup' : 'team';
+  const shareMode = activePickup ? 'pickup' : location.shareMode || (workday.active ? 'workday' : 'manual');
+  const privacy = locationPrivacyForSupabase(visibility);
+  const { error } = await client.from('location_shares').upsert({
+    user_id: session.userId,
+    latitude: coords[0],
+    longitude: coords[1],
+    speed_kmh: privacy.showSpeed ? Number(location.speed || 0) : null,
+    visibility,
+    visible_to_user_id: visibility === 'pickup' ? activePickup.employeeId : null,
+    audience: privacy.audience,
+    show_speed: privacy.showSpeed,
+    show_vehicle: privacy.showVehicle,
+    show_status: privacy.showStatus,
+    status: locationStatusForSupabase(),
+    share_mode: shareMode,
+    expires_at: location.expiresAt,
+    last_updated_at: new Date().toISOString(),
+  });
+  if (error) {
+    if (handleLocationShareSchemaError(error)) return;
+    throw error;
+  }
+}
+
+async function stopSupabaseLocation() {
+  const client = getSupabaseClient();
+  if (!client || !session?.userId) return;
+  const { error } = await client.from('location_shares').delete().eq('user_id', session.userId);
+  if (error && !handleLocationShareSchemaError(error)) throw error;
+}
+
+function workdayFromSupabase(row) {
+  return {
+    id: row.id,
+    active: row.status === 'active',
+    startedAt: row.started_at,
+    endsAt: row.ends_at,
+    endedAt: row.ended_at,
+    endLabel: '19.00',
+    permissions: row.permissions || { gps: true, logbook: true, notifications: true },
+    mode: 'supabase',
+  };
+}
+
+function pickupFromSupabase(row) {
+  return {
+    id: row.id,
+    driverId: row.driver_id,
+    employeeId: row.colleague_id,
+    note: row.note || '',
+    pickupPlace: row.pickup_place || '',
+    dropoffPlace: row.dropoff_place || '',
+    reference: row.reference || '',
+    priority: row.priority || 'Normal',
+    status: row.status || 'started',
+    checklist: Array.isArray(row.checklist) ? row.checklist : [],
+    steps: Array.isArray(row.steps) ? row.steps : [],
+    expiresAt: row.expires_at || null,
+    startedAt: row.started_at,
+    completedAt: row.completed_at || null,
+    startedLocationSharing: Boolean(row.started_location_sharing),
+    mode: 'supabase',
+  };
+}
+
+function pickupPayloadForSupabase(task = activePickup) {
+  return {
+    driver_id: task.driverId || session.userId,
+    colleague_id: task.employeeId,
+    note: task.note || null,
+    pickup_place: task.pickupPlace || null,
+    dropoff_place: task.dropoffPlace || null,
+    reference: task.reference || null,
+    priority: task.priority || 'Normal',
+    status: task.status || 'started',
+    checklist: ensurePickupChecklist(task),
+    steps: task.steps || [],
+    started_location_sharing: Boolean(task.startedLocationSharing),
+    expires_at: task.expiresAt || null,
+    completed_at: task.completedAt || null,
+  };
+}
+
+function isOpenPickupStatus(status) {
+  return !['delivered', 'cancelled'].includes(status);
+}
+
+async function loadSupabasePickupTasks() {
+  const client = getSupabaseClient();
+  if (!client || !session?.userId) return;
+  const { data, error } = await client.from('pickup_tasks')
+    .select('*')
+    .order('started_at', { ascending: false })
+    .limit(20);
+  if (error) throw error;
+  const openTask = (data || []).find(row => isOpenPickupStatus(row.status));
+  if (openTask) {
+    activePickup = pickupFromSupabase(openTask);
+    save('activePickup', activePickup);
+  }
+}
+
+async function createSupabasePickupTask() {
+  const client = getSupabaseClient();
+  if (!client || !session?.userId || !activePickup) return;
+  activePickup.driverId = session.userId;
+  const { data, error } = await client.from('pickup_tasks')
+    .insert(pickupPayloadForSupabase(activePickup))
+    .select('*')
+    .maybeSingle();
+  if (error) throw error;
+  if (data) {
+    activePickup = { ...activePickup, id: data.id, mode: 'supabase', startedAt: data.started_at || activePickup.startedAt };
+    save('activePickup', activePickup);
+  }
+}
+
+async function updateSupabasePickupTask(extra = {}) {
+  const client = getSupabaseClient();
+  if (!client || !session?.userId || !activePickup?.id) return;
+  const { error } = await client.from('pickup_tasks')
+    .update({ ...pickupPayloadForSupabase(activePickup), ...extra })
+    .eq('id', activePickup.id);
+  if (error) throw error;
+}
+
+async function loadSupabaseWorkday() {
+  const client = getSupabaseClient();
+  if (!client || !session?.userId) return;
+  const { data, error } = await client.from('workday_sessions')
+    .select('*')
+    .eq('user_id', session.userId)
+    .eq('status', 'active')
+    .order('started_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  if (data) {
+    workday = workdayFromSupabase(data);
+    save('workday', workday);
+  }
+}
+
+async function startSupabaseWorkday() {
+  const client = getSupabaseClient();
+  if (!client || !session?.userId) return;
+  const { data, error } = await client.from('workday_sessions')
+    .insert({
+      user_id: session.userId,
+      ends_at: workday.endsAt,
+      permissions: workday.permissions,
+      status: 'active',
+    })
+    .select('*')
+    .maybeSingle();
+  if (error) throw error;
+  if (data) {
+    workday = { ...workday, id: data.id, mode: 'supabase' };
+    save('workday', workday);
+  }
+}
+
+async function endSupabaseWorkday(status = 'ended') {
+  const client = getSupabaseClient();
+  if (!client || !session?.userId || !workday.id) return;
+  await client.from('workday_sessions')
+    .update({ ended_at: new Date().toISOString(), status })
+    .eq('id', workday.id)
+    .eq('user_id', session.userId);
+}
+
+function handleSupabaseLocation(payload) {
+  const row = payload.new || payload.old;
+  if (!row?.user_id) return;
+  const isOwnLocationUpdate = row.user_id === session?.userId || row.user_id === currentEmployee().id;
+  if (payload.eventType === 'DELETE') {
+    employees = employees.map(employee => employee.id === row.user_id ? { ...employee, sharing: false } : employee);
+  } else {
+    const person = locationShareFromSupabase(row);
+    if (person) {
+      const index = employees.findIndex(employee => employee.id === person.id);
+      if (index >= 0) employees[index] = { ...employees[index], ...person };
+      else employees.push(person);
+    }
+  }
+  save('employees', employees);
+  if (activeTab === 'map' && !isOwnLocationUpdate) render({ preserveScroll: true });
+}
+
+function handleSupabasePickupTask(payload) {
+  const row = payload.new || payload.old;
+  if (!row?.id) return;
+  const isParticipant = row.driver_id === session?.userId || row.colleague_id === session?.userId;
+  if (!isParticipant) return;
+
+  if (payload.eventType === 'DELETE' || !isOpenPickupStatus(row.status)) {
+    if (activePickup?.id === row.id) {
+      activePickup = null;
+      save('activePickup', null);
+      render();
+    }
+    return;
+  }
+
+  activePickup = pickupFromSupabase(row);
+  save('activePickup', activePickup);
+  if (activeTab === 'home' || activeTab === 'map') render({ preserveScroll: activeTab === 'map' });
+}
+
+async function handleSupabaseMessage(row) {
+  if (!row?.conversation_id || messages[row.conversation_id]?.some(message => message.id === row.id)) return;
+  const rows = await attachSignedMediaUrls([row]);
+  messages[row.conversation_id] = messages[row.conversation_id] || [];
+  const nextMessage = messageFromSupabase(rows[0], session?.userId);
+  messages[row.conversation_id].push(nextMessage);
+  const chat = chats.find(item => item.id === row.conversation_id);
+  if (chat) {
+    chat.preview = nextMessage.body;
+    chat.time = nextMessage.time;
+    if (activeChat !== row.conversation_id && nextMessage.side !== 'me') chat.unread = (chat.unread || 0) + 1;
+  }
+  save('messages', messages);
+  save('chats', chats);
+  if (activeTab === 'chat') render();
+}
+
+function subscribeSupabaseChat() {
+  const client = getSupabaseClient();
+  if (!client?.channel || supabaseChatSubscription) return;
+  supabaseChatSubscription = client
+    .channel('xpressintra-chat')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => handleSupabaseMessage(payload.new))
+    .subscribe();
+}
+
+function subscribeSupabaseLocations() {
+  const client = getSupabaseClient();
+  if (!client?.channel || supabaseLocationSubscription) return;
+  supabaseLocationSubscription = client
+    .channel('xpressintra-locations')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'location_shares' }, payload => handleSupabaseLocation(payload))
+    .subscribe();
+}
+
+function subscribeSupabasePickupTasks() {
+  const client = getSupabaseClient();
+  if (!client?.channel || supabasePickupSubscription) return;
+  supabasePickupSubscription = client
+    .channel('xpressintra-pickups')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'pickup_tasks' }, payload => handleSupabasePickupTask(payload))
+    .subscribe();
+}
+
+async function loadSupabaseData(authSession) {
+  const client = getSupabaseClient();
+  const user = authSession?.user;
+  if (!client || !user) return;
+
+  const [
+    profileResult,
+    privateResult,
+    employeesResult,
+    vehiclesResult,
+    notificationsResult,
+    notificationPrefsResult,
+    legalAcceptanceResult,
+    dataRequestsResult,
+    coreSettingsResult,
+    logbookResult,
+    automationResult,
+    announcementsResult,
+  ] = await Promise.all([
+    client.from('profiles').select('*').eq('id', user.id).maybeSingle(),
+    client.from('profile_private_details').select('*').eq('user_id', user.id).maybeSingle(),
+    client.from('profiles').select('*').eq('employment_status', 'active').order('full_name'),
+    client.from('vehicles').select('*').order('unit'),
+    client.from('notifications').select('*').order('created_at', { ascending: false }).limit(40),
+    client.from('notification_preferences').select('*').eq('user_id', user.id).maybeSingle(),
+    client.from('legal_acceptances').select('*').eq('user_id', user.id).order('accepted_at', { ascending: false }).limit(1).maybeSingle(),
+    client.from('data_subject_requests').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(20),
+    client.from('core_settings').select('*'),
+    client.from('private_log_entries').select('*').order('created_at', { ascending: false }).limit(50),
+    client.from('logbook_automation_settings').select('*').eq('user_id', user.id).maybeSingle(),
+    client.from('announcements').select('*, announcement_reactions(*), announcement_comments(*), media_attachments(*)').order('created_at', { ascending: false }).limit(50),
+  ]);
+
+  if (profileResult.error) throw profileResult.error;
+  profile = profileFromSupabase(profileResult.data, user, privateResult.data);
+  save('profile', profile);
+
+  if (employeesResult.data?.length) {
+    employees = employeesResult.data.map(row => employeeFromSupabase(row, user.id));
+    save('employees', employees);
+  }
+  if (vehiclesResult.data?.length) {
+    vehicles = vehiclesResult.data.map(row => ({
+      id: row.id,
+      unit: row.unit,
+      type: row.vehicle_type === 'truck' ? 'Lastbil' : row.vehicle_type === 'van' ? 'Varebil' : 'Køretøj',
+      plate: row.plate || '',
+      driverId: row.assigned_driver_id,
+      status: row.status || 'Klar',
+      equipment: row.equipment || '',
+      nextCheck: row.next_check || '',
+    }));
+    save('vehicles', vehicles);
+  }
+  if (notificationsResult.data) {
+    notifications = notificationsResult.data.map(row => ({
+      id: row.id,
+      type: row.type,
+      title: row.title,
+      body: row.body,
+      time: row.created_at ? new Date(row.created_at).toLocaleString('da-DK', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '',
+      level: row.level,
+      priority: row.priority,
+      unread: !row.read_at,
+    }));
+    save('notifications', notifications);
+  }
+  if (notificationPrefsResult.data) {
+    notificationPrefs = {
+      office: notificationPrefsResult.data.office,
+      rules: notificationPrefsResult.data.rules,
+      chat: notificationPrefsResult.data.chat,
+      dailyBrief: notificationPrefsResult.data.daily_brief,
+      quietHours: notificationPrefsResult.data.quiet_hours,
+    };
+    save('notificationPrefs', notificationPrefs);
+  }
+  if (legalAcceptanceResult.data) {
+    legalAcceptance = {
+      date: legalAcceptanceResult.data.accepted_at ? new Date(legalAcceptanceResult.data.accepted_at).toLocaleDateString('da-DK') : 'Online',
+      version: legalAcceptanceResult.data.policy_version,
+    };
+    save('legalAcceptance', legalAcceptance);
+  }
+  if (dataRequestsResult.data) {
+    const labels = { access: 'Indsigt', rectification: 'Rettelse', erasure: 'Sletning', export: 'Eksport', restriction: 'Begrænsning', objection: 'Indsigelse' };
+    dataRequests = dataRequestsResult.data.map(row => ({
+      id: row.id,
+      requestType: row.request_type,
+      label: labels[row.request_type] || 'Dataanmodning',
+      message: row.message || '',
+      status: row.status,
+      createdAt: row.created_at ? new Date(row.created_at).toLocaleDateString('da-DK') : '',
+    }));
+    save('dataRequests', dataRequests);
+  }
+  if (coreSettingsResult.data?.length) {
+    const mapped = Object.fromEntries(coreSettingsResult.data.map(row => [row.key, row.enabled]));
+    coreSettings = {
+      gps: mapped.gps ?? coreSettings.gps,
+      media: mapped.media ?? coreSettings.media,
+      logbook: mapped.logbook ?? coreSettings.logbook,
+      employeePosts: mapped.employee_posts ?? coreSettings.employeePosts,
+      ruleApproval: mapped.rule_approval ?? coreSettings.ruleApproval,
+    };
+    save('coreSettings', coreSettings);
+  }
+  if (logbookResult.data) {
+    logEntries = logbookResult.data.map(row => ({
+      id: row.id,
+      place: row.place,
+      note: row.note,
+      category: row.category,
+      source: row.source,
+      favorite: row.favorite,
+      date: row.created_at ? new Date(row.created_at).toLocaleDateString('da-DK', { day: 'numeric', month: 'short' }) : 'I dag',
+    }));
+    save('logEntries', logEntries);
+  }
+  if (automationResult.data) {
+    logbookAutomation = {
+      smartLogbook: automationResult.data.smart_logbook,
+      autoDrafts: automationResult.data.auto_drafts,
+      autoPlace: automationResult.data.auto_place,
+      autoStops: automationResult.data.auto_stops,
+      autoPickup: automationResult.data.auto_pickup,
+      autoVehicle: automationResult.data.auto_vehicle,
+      autoMilestones: automationResult.data.auto_milestones,
+    };
+    save('logbookAutomation', logbookAutomation);
+  }
+  if (announcementsResult.data) {
+    const rows = await attachSignedAnnouncementImages(announcementsResult.data);
+    announcements = rows.map(announcementFromSupabase);
+    save('announcements', announcements);
+  }
+  await loadSupabaseChats(authSession);
+  await loadSupabaseLocations();
+  await loadSupabaseWorkday();
+  await loadSupabasePickupTasks();
+  await loadSupabaseAdminAudit();
+}
+
+async function applySupabaseSession(authSession) {
+  session = { email: authSession.user.email, userId: authSession.user.id, mode: 'supabase', signedInAt: new Date().toISOString() };
+  save('session', session);
+  await loadSupabaseData(authSession);
+  subscribeSupabaseChat();
+  subscribeSupabaseLocations();
+  subscribeSupabasePickupTasks();
+  render();
+}
+
+async function restoreSupabaseSession() {
+  const client = getSupabaseClient();
+  if (!client) return;
+  const { data, error } = await client.auth.getSession();
+  if (error || !data.session) return;
+  try {
+    await applySupabaseSession(data.session);
+  } catch (error) {
+    showToast(`Supabase er forbundet, men data kunne ikke hentes: ${error.message}`);
+  }
+}
+
+async function signInSupabase(email, password) {
+  const client = getSupabaseClient();
+  if (!client) throw new Error('Supabase er ikke konfigureret endnu');
+  const { data, error } = await client.auth.signInWithPassword({ email, password });
+  if (error) throw error;
+  if (!data.session) throw new Error('Login lykkedes ikke. Tjek mail og adgangskode.');
+  await applySupabaseSession(data.session);
+}
+
+async function signUpSupabase(email, password) {
+  const client = getSupabaseClient();
+  if (!client) throw new Error('Supabase er ikke konfigureret endnu');
+  const { data, error } = await client.auth.signUp({
+    email,
+    password,
+    options: { data: { invited_to_xpressintra: true } },
+  });
+  if (error) throw error;
+  if (data.session) {
+    await applySupabaseSession(data.session);
+    return 'Kontoen er oprettet, og du er logget ind';
+  }
+  return 'Kontoen er oprettet. Tjek mailen og bekræft kontoen, hvis Supabase beder om det.';
+}
+
+async function signOut() {
+  const client = getSupabaseClient();
+  if (client && supabaseChatSubscription) {
+    client.removeChannel?.(supabaseChatSubscription);
+    supabaseChatSubscription = null;
+  }
+  if (client && supabaseLocationSubscription) {
+    client.removeChannel?.(supabaseLocationSubscription);
+    supabaseLocationSubscription = null;
+  }
+  if (client && supabasePickupSubscription) {
+    client.removeChannel?.(supabasePickupSubscription);
+    supabasePickupSubscription = null;
+  }
+  if (client && session?.mode === 'supabase') await client.auth.signOut();
+  localStorage.removeItem('roadlog:session');
+  session = null;
+  render();
+}
+
+function isAdmin() {
+  return ['admin', 'owner'].includes(profile.accessRole);
+}
+
+function isDispatcher() {
+  return ['dispatcher', 'admin', 'owner'].includes(profile.accessRole) || profile.role === 'Disponent' || profile.role === 'Chef';
+}
+
+function canManageEmployees() {
+  return isAdmin();
+}
+
+function canPublishOfficePosts() {
+  return isDispatcher();
+}
+
+const creatorRolePresets = {
+  creator: { label: 'Appansvarlig', role: 'Appansvarlig · Lastbilchauffør', accessRole: 'owner', vehicleType: 'truck', truck: 'TR 42 918', department: 'Lastbil', license: 'C/E · EU kvalifikationsbevis' },
+  truck: { label: 'Lastbilchauffor', role: 'Lastbilchauffor', accessRole: 'employee', vehicleType: 'truck', truck: 'TR 42 918', department: 'Lastbil', license: 'C/E - EU kvalifikation' },
+  van: { label: 'Varebilchauffor', role: 'Varebilchauffor', accessRole: 'employee', vehicleType: 'van', truck: 'VB 51 204', department: 'Varebil', license: 'B - varebil' },
+  dispatcher: { label: 'Disponent', role: 'Disponent', accessRole: 'dispatcher', vehicleType: 'dispatch', truck: 'Kontoret', department: 'Drift', license: 'Kontor' },
+  admin: { label: 'Chef/admin', role: 'Chef', accessRole: 'admin', vehicleType: 'dispatch', truck: 'Ledelse', department: 'Ledelse', license: 'Administrator' },
+};
+
+function canUseCreatorRoleTester() {
+  const original = creatorRoleTester.originalProfile || {};
+  return profile.accessRole === 'owner'
+    || profile.email === 'stralner2711@gmail.com'
+    || original.accessRole === 'owner'
+    || original.email === 'stralner2711@gmail.com';
+}
+
+function creatorPerspectiveLabel() {
+  return creatorRolePresets[creatorRoleTester.currentRole]?.label || accessRoleLabel(profile.accessRole);
+}
+
+function applyCreatorPerspective(roleId) {
+  if (!canUseCreatorRoleTester() || !creatorRolePresets[roleId]) {
+    showToast('Kun creator kan bruge rolleskift');
+    return;
+  }
+  const originalProfile = creatorRoleTester.originalProfile || clone(profile);
+  const preset = creatorRolePresets[roleId];
+  profile = {
+    ...profile,
+    ...preset,
+    name: originalProfile.name || profile.name,
+    email: originalProfile.email || profile.email,
+    phone: originalProfile.phone || profile.phone,
+    emergencyContact: originalProfile.emergencyContact || profile.emergencyContact,
+    languages: originalProfile.languages || profile.languages,
+    logbook: true,
+  };
+  creatorRoleTester = { active: roleId !== 'creator', originalProfile, currentRole: roleId };
+  save('profile', profile);
+  save('creatorRoleTester', creatorRoleTester);
+  showToast(`Viser appen som ${preset.label}`);
+  render();
+}
+
+function recordAdminAudit(title, body) {
+  const event = {
+    id: `audit-${Date.now()}`,
+    title,
+    body,
+    actor: profile.name,
+    time: new Date().toLocaleString('da-DK', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }),
+  };
+  adminAuditEvents.unshift(event);
+  adminAuditEvents = adminAuditEvents.slice(0, 20);
+  save('adminAuditEvents', adminAuditEvents);
+  syncSupabaseAdminAudit(title, body).catch(error => showToast(`Adminloggen blev gemt lokalt, men ikke online: ${error.message}`));
+}
+
+function adminAuditFromSupabase(row) {
+  const details = row.details || {};
+  return {
+    id: row.id,
+    title: row.action === 'profile_security_change' ? 'Medarbejderprofil ændret' : (details.title || row.action),
+    body: details.body || details.summary || 'Adminhandling gemt online',
+    actor: details.actor_name || 'Chef/admin',
+    time: row.created_at ? new Date(row.created_at).toLocaleString('da-DK', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '',
+  };
+}
+
+async function syncSupabaseAdminAudit(title, body, targetUserId = null) {
+  const client = getSupabaseClient();
+  if (!client || !session?.userId || !canManageEmployees()) return;
+  const { error } = await client.from('admin_audit_log').insert({
+    actor_id: session.userId,
+    target_user_id: targetUserId,
+    action: title.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '_').replace(/^_|_$/g, '') || 'admin_action',
+    details: { title, body, actor_name: profile.name },
+  });
+  if (error) throw error;
+}
+
+async function loadSupabaseAdminAudit() {
+  const client = getSupabaseClient();
+  if (!client || !canManageEmployees()) return;
+  const { data, error } = await client.from('admin_audit_log')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(20);
+  if (error) throw error;
+  if (data) {
+    adminAuditEvents = data.map(adminAuditFromSupabase);
+    save('adminAuditEvents', adminAuditEvents);
+  }
+}
+
+async function syncSupabaseNotificationPrefs() {
+  const client = getSupabaseClient();
+  if (!client || !session?.userId) return;
+  const { error } = await client.from('notification_preferences').upsert({
+    user_id: session.userId,
+    office: notificationPrefs.office,
+    rules: notificationPrefs.rules,
+    chat: notificationPrefs.chat,
+    daily_brief: notificationPrefs.dailyBrief,
+    quiet_hours: notificationPrefs.quietHours,
+  });
+  if (error) throw error;
+}
+
+async function markSupabaseNotificationsRead() {
+  const client = getSupabaseClient();
+  if (!client || !session?.userId) return;
+  const { error } = await client.from('notifications')
+    .update({ read_at: new Date().toISOString() })
+    .eq('user_id', session.userId);
+  if (error) throw error;
+}
+
+async function createSupabaseDataRequest(request) {
+  const client = getSupabaseClient();
+  if (!client || !session?.userId) return;
+  const { error } = await client.from('data_subject_requests').insert({
+    user_id: session.userId,
+    request_type: request.requestType,
+    message: request.message,
+    status: 'open',
+  });
+  if (error) throw error;
+}
+
+async function updateSupabaseDataRequest(request) {
+  const client = getSupabaseClient();
+  if (!client || !session?.userId || !canManageEmployees()) return;
+  const { error } = await client.from('data_subject_requests')
+    .update({
+      status: request.status === 'completed' ? 'completed' : 'in_review',
+      handled_by: session.userId,
+      handled_note: request.handledNote || `Behandlet af ${profile.name}`,
+      handled_at: new Date().toISOString(),
+    })
+    .eq('id', request.id);
+  if (error) throw error;
+}
+
+async function acceptSupabaseLegal() {
+  const client = getSupabaseClient();
+  if (!client || !session?.userId || !legalAcceptance) return;
+  const { error } = await client.from('legal_acceptances').insert({
+    user_id: session.userId,
+    policy_version: legalAcceptance.version,
+    accepted_at: new Date().toISOString(),
+  });
+  if (error) throw error;
+}
+
+function profilePayloadForSupabase(employee) {
+  return {
+    full_name: employee.name,
+    phone: employee.phone || null,
+    email: employee.email || null,
+    department: employee.department || null,
+    license_summary: employee.license || null,
+    languages: employee.languages || null,
+    role: employee.role || 'Chauffør',
+    access_role: employee.accessRole || 'employee',
+    vehicle_type: employee.vehicleType || 'van',
+    truck: employee.truck || null,
+    employment_status: employee.employmentStatus || 'active',
+    logbook_enabled: Boolean(employee.logbook),
+  };
+}
+
+async function updateSupabaseEmployeeProfile(employee) {
+  const client = getSupabaseClient();
+  if (!client || !session?.userId || !employee?.id || employee.id === 'th') return;
+  const { error } = await client.from('profiles').update(profilePayloadForSupabase(employee)).eq('id', employee.id);
+  if (error) throw error;
+  await client.from('profile_private_details').upsert({
+    user_id: employee.id,
+    emergency_contact: employee.emergencyContact || null,
+  });
+}
+
+async function createSupabaseEmployeeInvitation(employee) {
+  const client = getSupabaseClient();
+  if (!client || !session?.userId || !canManageEmployees()) return;
+  const { data, error } = await client.from('employee_invitations').insert({
+    created_by: session.userId,
+    full_name: employee.name,
+    email: employee.email,
+    phone: employee.phone || null,
+    role: employee.role || 'Chauffør',
+    access_role: employee.accessRole || 'employee',
+    vehicle_type: employee.vehicleType || 'van',
+    truck: employee.truck || null,
+    department: employee.department || null,
+    license_summary: employee.license || null,
+    languages: employee.languages || null,
+    emergency_contact: employee.emergencyContact || null,
+    logbook_enabled: Boolean(employee.logbook),
+  }).select('id').maybeSingle();
+  if (error) throw error;
+  return data?.id || null;
+}
+
+async function syncSupabaseCoreSettings() {
+  const client = getSupabaseClient();
+  if (!client || !session?.userId || !canManageEmployees()) return;
+  const rows = [
+    ['gps', coreSettings.gps, 'Frivillig live-position'],
+    ['media', coreSettings.media, 'Billeder i chat, opslag, profil og logbog'],
+    ['logbook', coreSettings.logbook, 'Personlig privat logbog'],
+    ['employee_posts', coreSettings.employeePosts, 'Kollegaopslag på forsiden'],
+    ['rule_approval', coreSettings.ruleApproval, 'Regelnyt kræver godkendelse før publicering'],
+  ].map(([key, enabled, description]) => ({ key, enabled, description, updated_by: session.userId, updated_at: new Date().toISOString() }));
+  const { error } = await client.from('core_settings').upsert(rows);
+  if (error) throw error;
+}
+
+function adminDashboardStats() {
+  const activeEmployees = employees.filter(employee => employee.employmentStatus !== 'offboarded');
+  const visibleGps = visibleMapPeople();
+  const vehicleIssues = vehicles.filter(vehicle => /værksted|service|afventer|tjek/i.test(vehicle.status || vehicle.nextCheck || '')).length;
+  const unreadOffice = notifications.filter(item => item.unread && notificationCategory(item) === 'office').length;
+  return {
+    activeEmployees: activeEmployees.length,
+    checkedIn: workday.active ? 1 : 0,
+    visibleGps: visibleGps.length,
+    activePickups: activePickup ? 1 : 0,
+    vehicleIssues,
+    unreadOffice,
+    pendingRules: ruleUpdates.filter(update => update.status !== 'approved').length,
+    offboarded: employees.filter(employee => employee.employmentStatus === 'offboarded').length,
+  };
+}
+
+function adminDashboardAlerts(stats = adminDashboardStats()) {
+  const alerts = [];
+  if (activePickup) {
+    const helper = employees.find(employee => employee.id === activePickup.employeeId);
+    alerts.push({
+      tone: activePickup.status === 'blocked' ? 'urgent' : 'task',
+      title: `Afhentning: ${pickupStatusLabel(activePickup.status)}`,
+      body: `${helper?.name || 'Kollega'} · ${activePickup.pickupPlace || 'sted mangler'} → ${activePickup.dropoffPlace || 'aflevering mangler'}`,
+      action: 'open-pickup',
+    });
+  }
+  if (!coreSettings.gps) alerts.push({ tone: 'privacy', title: 'GPS er slået fra', body: 'Medarbejdere kan ikke dele liveposition, før chef/admin aktiverer funktionen igen.', action: 'open-admin' });
+  if (!coreSettings.media) alerts.push({ tone: 'privacy', title: 'Billeder er slået fra', body: 'Chatbilleder, dokumentation og profilbilleder er midlertidigt lukket.', action: 'open-admin' });
+  if (stats.vehicleIssues) alerts.push({ tone: 'task', title: 'Køretøj kræver opmærksomhed', body: `${stats.vehicleIssues} bil/enhed har service, værksted eller tjek i status.`, action: 'open-vehicles' });
+  if (!legalAcceptance) alerts.push({ tone: 'privacy', title: 'Jura mangler accept', body: 'Sikkerhed og persondata bør gennemgås, før appen bruges rigtigt.', action: 'open-legal' });
+  return alerts;
+}
+
+function launchChecklistItems() {
+  const backend = supabaseStatus();
+  return [
+    { id: 'schema', title: 'Supabase schema er kørt', body: 'Kør supabase/schema.sql i Supabase SQL editoren, inkl. RLS, Storage og realtime.', done: backend.ready },
+    { id: 'keys', title: 'URL og offentlig nøgle er sat', body: 'Indsæt Supabase URL og anon/publishable key i Indstillinger. Brug aldrig service-role i appen.', done: backend.ready },
+    { id: 'security', title: 'Sikkerhedspakke er gennemgået', body: 'Tjek hacking-beskyttelse, mistet telefon, admin-adgang, upload, audit-log og Supabase Security Advisor.', done: securityReadiness().percent >= 60 },
+    { id: 'admin', title: 'Første chef/admin er oprettet', body: 'Opret brugeren i Supabase Auth og kør supabase/first-admin.sql med brugerens email.', done: canManageEmployees() && session?.mode === 'supabase' },
+    { id: 'legal', title: 'Jura og persondata er accepteret', body: 'GPS-formål, billeder, chat, slettefrister og databehandleraftale skal være besluttet.', done: Boolean(legalAcceptance) },
+    { id: 'gdpr_package', title: 'GDPR go-live pakke er gennemgået', body: 'Medarbejderinfo, dataanmodninger, slettefrister og sikkerhedsbrud er samlet og gennemgået.', done: gdprGoLiveReadiness().percent >= 60 },
+    { id: 'mobile', title: 'Testet på telefon', body: 'Test login, mød ind, GPS, livekort, chat, billeder, opslag og afhentning på mindst to telefoner.', done: false },
+    { id: 'team', title: 'Medarbejdere er inviteret', body: 'Chef/admin opretter invitationer, og medarbejdere logger ind med egne Supabase Auth-brugere.', done: employees.some(employee => employee.id !== 'th' && employee.id !== session?.userId) },
+  ];
+}
+
+function launchReadiness() {
+  const items = launchChecklistItems();
+  const done = items.filter(item => item.done).length;
+  return { done, total: items.length, percent: Math.round((done / items.length) * 100), items };
+}
+
+function isCreatorOwner() {
+  return profile.accessRole === 'owner';
+}
+
+function securityReadinessItems() {
+  const backend = supabaseStatus();
+  return [
+    { id: 'public_key_only', title: 'Ingen service-role i appen', body: 'Frontend må kun bruge offentlig publishable/anon key. Service-role hører aldrig hjemme i appen eller APK.', done: true },
+    { id: 'supabase_online', title: 'Supabase-forbindelse testet', body: backend.detail, done: backend.ready },
+    { id: 'rls_storage', title: 'RLS og privat storage', body: 'SQL-pakken indeholder RLS på tabeller og privat bucket til billeder med bruger-mappe-regel.', done: true },
+    { id: 'security_headers', title: 'Browser-beskyttelse', body: 'Hosting er sat op med CSP, clickjacking-beskyttelse, nosniff, referrer-policy og permissions-policy.', done: true },
+    { id: 'admin_audit', title: 'Adminhandlinger logges', body: 'Kritiske adminhandlinger gemmes i audit-log uden privat chat- eller logbogsindhold.', done: adminAuditEvents.length > 0 || canManageEmployees() },
+    { id: 'lost_phone', title: 'Mistet telefon-procedure', body: 'Virksomheden skal have en kort procedure: deaktiver bruger, skift kode, log ud/revoker session og tjek aktivitet.', done: false },
+    { id: 'mfa', title: 'MFA på ejer/admin', body: 'Supabase owner/admin-konti bør have 2-faktor login før rigtig drift.', done: false },
+    { id: 'advisor', title: 'Supabase Security Advisor', body: 'Kør Security Advisor i Supabase dashboard og ret eventuelle advarsler før medarbejdere inviteres bredt.', done: false },
+    { id: 'dependencies', title: 'Eksterne biblioteker', body: 'Leaflet og Supabase-js bør på sigt pakkes ind i buildet i stedet for at hentes fra CDN.', done: false },
+  ];
+}
+
+function securityReadiness() {
+  const items = securityReadinessItems();
+  const done = items.filter(item => item.done).length;
+  return { items, done, total: items.length, percent: Math.round((done / items.length) * 100) };
+}
+
+function creatorOperationsStats() {
+  const backend = supabaseStatus();
+  const readiness = launchReadiness();
+  const activeEmployees = employees.filter(employee => employee.employmentStatus !== 'offboarded');
+  const directChats = chats.filter(chat => !chat.channel).length;
+  const channelChats = chats.filter(chat => chat.channel).length;
+  const unreadNotifications = notifications.filter(item => item.unread).length;
+  const disabledCore = Object.entries(coreSettings).filter(([, enabled]) => !enabled).length;
+  const pendingDataRequests = dataRequests.filter(request => !/closed|done|afsluttet/i.test(request.status || '')).length;
+  const security = securityReadiness();
+  const managedDataAreas = [employees, chats, notifications, vehicles, ruleUpdates, announcements, dataRequests]
+    .filter(list => Array.isArray(list) && list.length).length;
+  const risks = [
+    !backend.ready,
+    readiness.percent < 100,
+    security.percent < 75,
+    !legalAcceptance,
+    disabledCore > 0,
+    pendingDataRequests > 0,
+    appUpdateState.required,
+    isPlaceholderUpdateConfig(),
+  ].filter(Boolean).length;
+  return {
+    version: APP_DISPLAY_VERSION,
+    versionCode: APP_VERSION_CODE,
+    updateStatus: updateStatusLabel(),
+    backend,
+    readiness,
+    activeEmployees: activeEmployees.length,
+    directChats,
+    channelChats,
+    unreadNotifications,
+    disabledCore,
+    pendingDataRequests,
+    security,
+    managedDataAreas,
+    risks,
+  };
+}
+
+function creatorOperationsActionItems(stats = creatorOperationsStats()) {
+  const items = [];
+  if (appUpdateState.required) items.push({ tone: 'risk', title: 'App-opdatering kræves', body: `${appUpdateState.required.activeVersion} er markeret som påkrævet.`, action: 'show-update-status' });
+  if (isPlaceholderUpdateConfig()) items.push({ tone: 'warn', title: 'GitHub placeholder', body: 'Skift GitHub-placeholder før medarbejdere får opdateringslink.', action: 'show-update-status' });
+  if (!stats.backend.ready) items.push({ tone: 'risk', title: 'Supabase skal tjekkes', body: stats.backend.detail, action: 'test-supabase' });
+  if (stats.readiness.percent < 100) items.push({ tone: 'warn', title: 'Go-live er ikke helt klar', body: `${stats.readiness.done}/${stats.readiness.total} punkter er klar til professionel brug.`, action: 'open-launch-checklist' });
+  if (stats.security.percent < 75) items.push({ tone: 'risk', title: 'Sikkerhedspakken mangler', body: `${stats.security.done}/${stats.security.total} sikkerhedspunkter er markeret klar.`, action: 'open-security-center' });
+  if (!legalAcceptance) items.push({ tone: 'risk', title: 'Jura og persondata mangler', body: 'Godkend interne regler for GPS, billeder, chat, logbog og slettefrister.', action: 'open-legal' });
+  if (stats.disabledCore) items.push({ tone: 'warn', title: 'Kernefunktioner er slukket', body: `${stats.disabledCore} funktion(er) er midlertidigt lukket for medarbejderne.`, action: 'open-admin' });
+  if (stats.pendingDataRequests) items.push({ tone: 'warn', title: 'Persondata skal behandles', body: `${stats.pendingDataRequests} dataanmodning(er) ligger aabne.`, action: 'open-my-data' });
+  if (!items.length) items.push({ tone: 'good', title: 'Ingen akutte driftspunkter', body: 'Appen ser rolig ud lige nu. Hold stadig oeje med go-live og telefon-test.', action: 'open-launch-checklist' });
+  return items.slice(0, 5);
+}
+
+function creatorOperationsMissingItems(stats = creatorOperationsStats()) {
+  const missingProfiles = employees.filter(employee => employee.employmentStatus !== 'offboarded' && (!employee.phone || !employee.email || !employee.department)).length;
+  const vehicleMissingStatus = vehicles.filter(vehicle => !vehicle.status || !vehicle.nextCheck).length;
+  const pendingRules = ruleUpdates.filter(update => update.status !== 'approved').length;
+  return [
+    { label: 'Profiler', value: missingProfiles, detail: missingProfiles ? 'mangler telefon, mail eller afdeling' : 'ser udfyldte ud' },
+    { label: 'Koeretoejer', value: vehicleMissingStatus, detail: vehicleMissingStatus ? 'mangler status eller naeste tjek' : 'har status og tjek' },
+    { label: 'Regelnyt', value: pendingRules, detail: pendingRules ? 'kladder/godkendelser venter' : 'intet venter' },
+    { label: 'Supabase', value: stats.backend.ready ? 0 : 1, detail: stats.backend.ready ? 'online status er sat' : 'backend skal tjekkes' },
+  ];
+}
+
+function creatorProfessionalPlanItems() {
+  return [
+    { phase: 'Design', score: 72, title: 'Ens sider og roligere layout', body: 'Samme kort, spacing, knapper og tekstniveau paa forside, chat, kort, profiler og drift.' },
+    { phase: 'Chauffoerflow', score: 68, title: 'Hverdagsopgaver skal vaere hurtigere', body: 'Moed ind, del position, hent for kollega, CMR/billeder og beskeder skal kunne klares med faa tryk.' },
+    { phase: 'Funktioner', score: 64, title: 'Mangler de sidste arbejdsfunktioner', body: 'Opgaver, dokumentation, koeretoejstjek, opslag og logbog skal samles bedre og fjerne dubletter.' },
+    { phase: 'Drift', score: 76, title: 'Creator og chef skal kunne styre appen', body: 'Versionsstatus, fejlcenter, brugerroller, kernefunktioner og go-live skal ligge samlet i drift.' },
+    { phase: 'Data', score: 70, title: 'Supabase skal valideres i rigtig brug', body: 'RLS, upload, chat, profiler, invitationer og livekort skal testes med rigtige brugere.' },
+    { phase: 'Udgivelse', score: 58, title: 'APK og medarbejderudrulning mangler finish', body: 'Ren release-build, telefon-test, installationsguide, opdateringsflow og supportvejledning.' },
+  ];
+}
+
+function gdprGoLiveItems() {
+  const backend = supabaseStatus();
+  return [
+    { id: 'employee_info', title: 'Medarbejderinformation', body: 'Forklar formål, GPS, chat, billeder, logbog, rettigheder og hvem der kan se hvad.', done: Boolean(legalAcceptance) },
+    { id: 'supabase_rls', title: 'Supabase og RLS', body: 'Backend er sat, RLS er slået til, og appen bruger kun offentlig anon/publishable key.', done: backend.ready },
+    { id: 'retention', title: 'Slettefrister', body: 'Live GPS, billeder, chat og audit-log har konkrete frister og oprydningsfunktion i SQL.', done: true },
+    { id: 'data_requests', title: 'Dataanmodninger', body: 'Medarbejdere kan sende indsigt, rettelse, sletning, eksport, begrænsning og indsigelse.', done: true },
+    { id: 'admin_process', title: 'Admin-proces', body: 'Creator/chef kan se åbne persondatasager uden at læse private chats eller logbøger.', done: canManageEmployees() || isCreatorOwner() },
+    { id: 'supplier_docs', title: 'Databehandleraftaler', body: 'Supabase, hosting, kort og mail skal dokumenteres af virksomheden før rigtig drift.', done: false },
+    { id: 'risk_review', title: 'Risikovurdering/DPIA', body: 'GPS og medarbejderkontrol skal risikovurderes og godkendes internt.', done: false },
+    { id: 'breach_process', title: 'Sikkerhedsbrud', body: 'Aftal ansvarlig, intern log og vurdering af anmeldelse til Datatilsynet ved brud.', done: false },
+  ];
+}
+
+function gdprGoLiveReadiness() {
+  const items = gdprGoLiveItems();
+  const done = items.filter(item => item.done).length;
+  return { items, done, total: items.length, percent: Math.round((done / items.length) * 100) };
+}
+
+function openDataRequestsCount() {
+  return dataRequests.filter(request => !/completed|closed|done|afsluttet|rejected/i.test(request.status || '')).length;
+}
+
+function renderGdprGoLivePanel({ compact = false } = {}) {
+  const readiness = gdprGoLiveReadiness();
+  return `<section class="gdpr-go-live-panel ${compact ? 'compact' : ''}">
+    <div class="gdpr-score">
+      <span><b>${readiness.percent}%</b><small>GDPR go-live</small></span>
+      <em><i style="width:${readiness.percent}%"></i></em>
+      <p>${readiness.done}/${readiness.total} punkter markeret klar. Juridisk godkendelse skal stadig ske i virksomheden.</p>
+    </div>
+    <div class="gdpr-check-grid">
+      ${readiness.items.map(item => `<span class="${item.done ? 'done' : 'todo'}"><b>${item.done ? '✓' : '○'} ${text(item.title)}</b><small>${text(item.body)}</small></span>`).join('')}
+    </div>
+  </section>`;
+}
+
+function completeDataRequest(requestId) {
+  if (!canManageEmployees() && !isCreatorOwner()) {
+    showToast('Kun chef/admin kan afslutte dataanmodninger');
+    return;
+  }
+  const request = dataRequests.find(item => item.id === requestId);
+  if (!request) return;
+  request.status = 'completed';
+  request.handledAt = new Date().toLocaleDateString('da-DK');
+  request.handledBy = profile.name;
+  save('dataRequests', dataRequests);
+  recordAdminAudit('Dataanmodning afsluttet', `${request.label || request.requestType} blev markeret som behandlet`);
+  updateSupabaseDataRequest(request).catch(error => showToast(`Dataanmodningen blev opdateret lokalt, men ikke online: ${error.message}`));
+  document.querySelector('.modal-backdrop')?.remove();
+  openGdprGoLiveModal();
+  showToast('Dataanmodningen er markeret som behandlet');
+}
+
+function renderCreatorOperationsDashboard() {
+  if (!isCreatorOwner()) return '';
+  const stats = creatorOperationsStats();
+  const actionItems = creatorOperationsActionItems(stats);
+  const missingItems = creatorOperationsMissingItems(stats);
+  const professionalPlan = creatorProfessionalPlanItems();
+  const healthLabel = stats.risks === 0 ? 'Stabil' : stats.risks <= 2 ? 'Tjek anbefales' : 'Kraever fokus';
+  const healthClass = stats.risks === 0 ? 'good' : stats.risks <= 2 ? 'warn' : 'risk';
+  return `<section class="creator-ops-dashboard">
+    <div class="creator-ops-hero">
+      <div><p class="eyebrow">Creator drift</p><h4>Appens drift</h4><span>Teknik, sikkerhed, data og kernefunktioner samlet uden at vise privat chatindhold.</span></div>
+      <strong class="${healthClass}">${text(healthLabel)}</strong>
+    </div>
+    <div class="creator-ops-grid">
+      <span><b>${text(stats.backend.label)}</b><small>Supabase</small></span>
+      <span><b>${stats.readiness.percent}%</b><small>Klar til drift</small></span>
+      <span><b>${stats.activeEmployees}</b><small>Aktive profiler</small></span>
+      <span><b>${stats.channelChats}/${stats.directChats}</b><small>Kanaler / direkte</small></span>
+      <span><b>${stats.unreadNotifications}</b><small>Ulaeste beskeder</small></span>
+      <span><b>${stats.disabledCore}</b><small>Funktioner slukket</small></span>
+      <span><b>${stats.pendingDataRequests}</b><small>Dataanmodninger</small></span>
+      <span><b>${stats.security.percent}%</b><small>Sikkerhed</small></span>
+    </div>
+    <div class="creator-ops-actions">
+      <button type="button" data-action="test-supabase">Test Supabase</button>
+      <button type="button" data-action="check-update">Tjek update</button>
+      <button type="button" data-action="open-launch-checklist">Go-live tjek</button>
+      <button type="button" data-action="open-security-center">Sikkerhed</button>
+      <button type="button" data-action="open-settings">Backend</button>
+    </div>
+    ${renderUpdateSummary()}
+    <section class="creator-ops-checks">
+      <span class="${stats.backend.ready ? 'ok' : 'fail'}"><b>Forbindelse</b><small>${text(stats.backend.detail)}</small></span>
+      <span class="${stats.security.percent >= 75 ? 'ok' : 'warn'}"><b>Sikkerhed</b><small>${stats.security.done}/${stats.security.total} punkter klar mod hacking og misbrug</small></span>
+      <span class="${legalAcceptance ? 'ok' : 'warn'}"><b>Jura</b><small>${text(legalStatusText())}</small></span>
+      <span class="${stats.disabledCore ? 'warn' : 'ok'}"><b>Kernefunktioner</b><small>${stats.disabledCore ? `${stats.disabledCore} funktion(er) er slaaet fra` : 'Alle kernefunktioner er aabne'}</small></span>
+      <span class="${stats.pendingDataRequests ? 'warn' : 'ok'}"><b>Persondata</b><small>${stats.pendingDataRequests ? `${stats.pendingDataRequests} anmodning(er) boer behandles` : 'Ingen aabne dataanmodninger'}</small></span>
+    </section>
+    <details class="creator-ops-details" open>
+      <summary>Hvad skal du holde øje med?</summary>
+      <section class="creator-ops-panel">
+      ${actionItems.map(item => `<button type="button" class="${text(item.tone)}" data-action="${text(item.action)}"><b>${text(item.title)}</b><small>${text(item.body)}</small></button>`).join('')}
+      </section>
+    </details>
+    <details class="creator-ops-details" open>
+      <summary>Creator genveje</summary>
+      <section class="creator-ops-panel">
+      <div class="creator-ops-shortcuts">
+        <button type="button" data-action="new-employee">Registrer kollega</button>
+        <button type="button" data-action="open-security-center">Sikkerhedscenter</button>
+        <button type="button" data-action="open-gdpr-go-live">GDPR pakke</button>
+        <button type="button" data-action="new-announcement">Nyt opslag</button>
+        <button type="button" data-action="open-rule-updates">Regelnyt</button>
+        <button type="button" data-action="open-vehicles">Koeretoejer</button>
+        <button type="button" data-tab="map">Livekort</button>
+        <button type="button" data-tab="chat">Beskeder</button>
+      </div>
+      </section>
+    </details>
+    <details class="creator-ops-details">
+      <summary>Test appen som</summary>
+      <section class="creator-ops-panel">
+      <div class="creator-ops-role-test">
+        <button type="button" data-creator-role="truck">Lastbil</button>
+        <button type="button" data-creator-role="van">Varebil</button>
+        <button type="button" data-creator-role="dispatcher">Disponent</button>
+        <button type="button" data-creator-role="admin">Chef/admin</button>
+      </div>
+      <p>Skifter kun dit lokale perspektiv, saa du kan se om menuer, chat og rettigheder giver mening.</p>
+      </section>
+    </details>
+    <details class="creator-ops-details">
+      <summary>Mangler og kvalitet</summary>
+      <section class="creator-ops-panel">
+      <div class="creator-ops-missing">
+        ${missingItems.map(item => `<span class="${item.value ? 'warn' : 'ok'}"><b>${text(item.label)}</b><strong>${text(item.value)}</strong><small>${text(item.detail)}</small></span>`).join('')}
+      </div>
+      </section>
+    </details>
+    <details class="creator-ops-details">
+      <summary>Professionel færdiggørelse</summary>
+      <section class="creator-ops-panel creator-pro-plan">
+      <p>De pakker der stadig skal loeftes, foer appen foeles helt faerdig til medarbejdere i drift.</p>
+      <div class="creator-pro-list">
+        ${professionalPlan.map(item => `<article>
+          <div><b>${text(item.phase)}</b><strong>${item.score}%</strong></div>
+          <em><i style="width:${item.score}%"></i></em>
+          <span><b>${text(item.title)}</b><small>${text(item.body)}</small></span>
+        </article>`).join('')}
+      </div>
+      </section>
+    </details>
+    <section class="creator-ops-privacy">
+      <b>Privatlivsvagt</b>
+      <span>Creator kan styre drift, sikkerhed og kvalitet. Panelet viser tal og status, men ikke indhold fra direkte beskeder eller private logboeger. Åbne dataanmodninger: ${openDataRequestsCount()}.</span>
+    </section>
+  </section>`;
+}
+
+function renderAdminDashboard() {
+  const stats = adminDashboardStats();
+  const alerts = adminDashboardAlerts(stats);
+  const activeEmployees = employees.filter(employee => employee.employmentStatus !== 'offboarded');
+  const visibleGps = visibleMapPeople();
+  const latestAudit = adminAuditEvents.slice(0, 4);
+  const readiness = launchReadiness();
+  return `<section class="admin-dashboard">
+    ${renderCreatorOperationsDashboard()}
+    <div class="admin-dashboard-hero">
+      <div><p class="eyebrow">Chef-dashboard</p><h4>Kontrol uden at læse privat chat</h4><span>Drift, medarbejdere, opgaver og kernefunktioner samlet et sted.</span></div>
+      <button type="button" data-action="open-dispatch">Åbn drift</button>
+    </div>
+    <button type="button" class="launch-readiness-card" data-action="open-launch-checklist">
+      <span><b>${readiness.percent}%</b><small>Klar til drift</small></span>
+      <em><i style="width:${readiness.percent}%"></i></em>
+      <strong>${readiness.done}/${readiness.total} punkter klar · åbn tjekliste</strong>
+    </button>
+    <button type="button" class="launch-readiness-card gdpr-card" data-action="open-gdpr-go-live">
+      <span><b>${gdprGoLiveReadiness().percent}%</b><small>GDPR pakke</small></span>
+      <em><i style="width:${gdprGoLiveReadiness().percent}%"></i></em>
+      <strong>${openDataRequestsCount()} åbne dataanmodninger · åbn persondata</strong>
+    </button>
+    <div class="admin-kpi-grid">
+      <span><b>${stats.activeEmployees}</b><small>aktive medarbejdere</small></span>
+      <span><b>${stats.checkedIn}</b><small>mødt ind i dag</small></span>
+      <span><b>${stats.visibleGps}</b><small>synlige GPS</small></span>
+      <span><b>${stats.activePickups}</b><small>aktive afhentninger</small></span>
+      <span><b>${stats.vehicleIssues}</b><small>bil-tjek</small></span>
+      <span><b>${stats.unreadOffice}</b><small>ulæst kontor</small></span>
+    </div>
+    <div class="admin-command-row">
+      <button type="button" data-action="new-employee">Registrér kollega</button>
+      <button type="button" data-action="new-announcement">Kontoropslag</button>
+      <button type="button" data-action="open-rule-updates">Regelnyt</button>
+      <button type="button" data-action="open-vehicles">Køretøjer</button>
+    </div>
+    <section class="admin-alert-list">
+      <h4>Kræver opmærksomhed</h4>
+      ${alerts.length ? alerts.map(alert => `<button type="button" class="${text(alert.tone)}" data-action="${text(alert.action)}"><b>${text(alert.title)}</b><small>${text(alert.body)}</small></button>`).join('') : '<p class="empty-state">Ingen kritiske ting lige nu.</p>'}
+    </section>
+    <section class="admin-live-list">
+      <h4>Live status</h4>
+      ${activeEmployees.slice(0, 6).map(employee => `<article><span>${avatar(employee)}</span><div><b>${text(employee.name)}</b><small>${text(vehicleLabel(employee.vehicleType))} · ${text(employee.status)} · ${visibleGps.some(person => person.id === employee.id) ? 'GPS synlig' : 'GPS skjult'}</small></div><button type="button" data-employee="${text(employee.id)}">Profil</button></article>`).join('')}
+    </section>
+    <section class="admin-audit-list">
+      <h4>Seneste adminhandlinger</h4>
+      ${latestAudit.length ? latestAudit.map(item => `<span><b>${text(item.title)}</b><small>${text(item.time)} · ${text(item.actor)} · ${text(item.body)}</small></span>`).join('') : '<p class="empty-state">Ingen adminhandlinger i demoen endnu.</p>'}
+    </section>
+  </section>`;
+}
+
+function legalStatusText() {
+  return legalAcceptance ? `Accepteret ${legalAcceptance.date}` : 'Mangler gennemgang';
+}
+
+function accessRoleLabel(accessRole) {
+  return {
+    employee: 'Medarbejder',
+    dispatcher: 'Disponent',
+    admin: 'Chef/admin',
+    owner: 'Creator',
+  }[accessRole] || 'Medarbejder';
+}
+
+function profileCompletion(employee = currentEmployee()) {
+  const fields = ['phone', 'email', 'department', 'license', 'emergencyContact', 'languages'];
+  return Math.round((fields.filter(field => employee[field]).length / fields.length) * 100);
+}
+
+function searchable(value) {
+  return String(value || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '');
+}
+
+function globalSearchResults() {
+  const query = globalQuery.trim().toLowerCase();
+  if (query.length < 2) return [];
+  const matches = value => searchable(value).includes(query);
+  const resultSets = [
+    employees.map(employee => ({
+      type: 'Kollega',
+      title: employee.name,
+      body: `${employee.role} · ${employee.truck} · ${employee.location}`,
+      targetTab: 'team',
+    })),
+    visibleChats().map(chat => ({
+      type: chat.channel ? 'Kanal' : chat.community ? 'Fælleschat' : 'Chat',
+      title: chat.name,
+      body: chat.preview,
+      targetTab: 'chat',
+      chatId: chat.id,
+    })),
+    announcements.filter(item => canReadAudience(item.audience)).map(item => ({
+      type: item.kind === 'office' ? 'Kontoropslag' : 'Opslag',
+      title: item.title,
+      body: `${item.author} · ${item.body}`,
+      targetTab: 'home',
+    })),
+    infoLinks.map(item => ({
+      type: 'Information',
+      title: item.title,
+      body: `${item.source} · ${item.description}`,
+      targetTab: 'info',
+      infoCategory: item.category,
+    })),
+    vehicles.map(vehicle => ({
+      type: 'Køretøj',
+      title: vehicle.unit,
+      body: `${vehicle.type} · ${vehicle.status} · ${vehicle.plate}`,
+      targetTab: 'more',
+      action: 'open-vehicles',
+    })),
+    logEntries.map(entry => ({
+      type: 'Privat logbog',
+      title: entry.place,
+      body: `${entry.date || 'Logbog'} · ${entry.note}`,
+      targetTab: 'more',
+      action: 'open-logbook',
+    })),
+  ];
+  return resultSets.flat()
+    .filter(item => matches(`${item.type} ${item.title} ${item.body}`))
+    .slice(0, 8);
+}
+
+function renderGlobalSearch() {
+  const results = globalSearchResults();
+  return `<section class="global-search">
+    <label><span>${icon('search')}</span><input data-global-search placeholder="Søg i appen..." value="${text(globalQuery)}" autocomplete="off" /></label>
+    ${globalQuery.trim().length >= 2 ? `<div class="global-search-results">
+      ${results.length ? results.map(item => `<button data-search-target="${text(item.targetTab)}" ${item.chatId ? `data-search-chat="${text(item.chatId)}"` : ''} ${item.infoCategory ? `data-search-info="${text(item.infoCategory)}"` : ''} ${item.action ? `data-search-action="${text(item.action)}"` : ''}>
+        <small>${text(item.type)}</small><b>${text(item.title)}</b><span>${text(item.body)}</span>
+      </button>`).join('') : '<p>Ingen resultater. Prøv navn, bil, by, CMR, GPS eller regel.</p>'}
+    </div>` : ''}
+  </section>`;
+}
+
+function workStatusCounts() {
+  return {
+    active: workday.active ? 1 : employees.filter(employee => employee.online).length,
+    pause: employees.filter(employee => searchable(employee.status).includes('pause')).length,
+    help: employees.filter(employee => employee.online && employee.vehicleType !== 'dispatch').length,
+    pickup: activePickup ? 1 : 0,
+  };
+}
+
+function dailyLogbookSummary(stats) {
+  const latest = logEntries[0];
+  return {
+    title: latest ? `${latest.place || 'Dagens tur'}` : 'Ingen minder endnu',
+    body: latest ? `${latest.date || 'Seneste'} · ${latest.note}` : 'Når du gemmer steder, billeder eller afhentninger, samler appen dagen her.',
+    meta: `${stats.total} minder · ${logbookDrafts.length} kladder · ${stats.places} steder`,
+  };
+}
+
+function vehicleLabel(vehicleType) {
+  if (vehicleType === 'truck') return 'Lastbil';
+  if (vehicleType === 'van') return 'Varebil';
+  return 'Kontor';
+}
+
+function vehicleDriver(vehicle) {
+  return employees.find(employee => employee.id === vehicle.driverId);
+}
+
+function pickupStatusLabel(status = 'started') {
+  return {
+    started: 'Startet',
+    found: 'Fundet',
+    picked_up: 'Hentet',
+    delivered: 'Afleveret',
+    blocked: 'Kan ikke finde',
+    note: 'Note',
+  }[status] || 'Startet';
+}
+
+function pickupLiveNotes(task = activePickup) {
+  return (task?.steps || []).filter(step => step.type === 'note' || step.note);
+}
+
+function pickupChecklistItems() {
+  return [
+    { id: 'route', label: 'Rute og sted tjekket' },
+    { id: 'photo', label: 'Billede / dokumentation' },
+    { id: 'message', label: 'Kollega opdateret' },
+  ];
+}
+
+function ensurePickupChecklist(task = activePickup) {
+  const existing = task?.checklist || [];
+  return pickupChecklistItems().map(item => ({
+    ...item,
+    done: Boolean(existing.find(saved => saved.id === item.id)?.done),
+  }));
+}
+
+async function togglePickupChecklist(id) {
+  if (!activePickup) return;
+  activePickup.checklist = ensurePickupChecklist(activePickup).map(item =>
+    item.id === id ? { ...item, done: !item.done } : item
+  );
+  save('activePickup', activePickup);
+  if (onlineBackendActive()) {
+    updateSupabasePickupTask().catch(error => showToast(`Tjeklisten blev gemt lokalt, men ikke online: ${error.message}`));
+  }
+  render();
+}
+
+async function addPickupLiveNote(note) {
+  if (!activePickup || !note.trim()) return;
+  const author = currentEmployee();
+  activePickup.steps = activePickup.steps || [];
+  activePickup.steps.push({
+    status: 'note',
+    type: 'note',
+    note: note.trim(),
+    authorId: session?.userId || author.id,
+    authorName: author.name || profile.name || 'Kollega',
+    at: new Date().toISOString(),
+  });
+  save('activePickup', activePickup);
+  if (onlineBackendActive()) {
+    updateSupabasePickupTask().catch(error => showToast(`Noten blev gemt lokalt, men ikke online: ${error.message}`));
+  }
+  render({ preserveScroll: true });
+  showToast('Live note er tilføjet');
+}
+
+function addNotification(notification) {
+  if (!shouldKeepNotification(notification)) return;
+  notifications.unshift({
+    id: `notification-${Date.now()}`,
+    time: 'Nu',
+    unread: true,
+    priority: notification.level === 'urgent' ? 'high' : notification.level === 'rule' ? 'medium' : 'normal',
+    ...notification,
+  });
+  save('notifications', notifications);
+}
+
+function notificationCategory(notification) {
+  const type = `${notification.type || ''} ${notification.level || ''}`.toLowerCase();
+  if (type.includes('regel') || type.includes('rule')) return 'rules';
+  if (type.includes('chat') || type.includes('besked') || type.includes('message')) return 'chat';
+  if (type.includes('kontor') || type.includes('drift') || type.includes('office') || type.includes('urgent')) return 'office';
+  return 'office';
+}
+
+function shouldKeepNotification(notification) {
+  if (notification.level === 'urgent') return true;
+  return notificationPrefs[notificationCategory(notification)] !== false;
+}
+
+function notificationSummary() {
+  const unread = notifications.filter(item => item.unread).length;
+  const urgent = notifications.filter(item => item.unread && item.level === 'urgent').length;
+  return {
+    unread,
+    urgent,
+    quietText: notificationPrefs.quietHours ? 'Stille tid 19.00-06.00' : 'Stille tid slået fra',
+    dailyBrief: Boolean(notificationPrefs.dailyBrief),
+  };
+}
+
+function dailyReminders() {
+  const reminders = [];
+  reminders.push({ title: 'Dokumentation', body: 'Husk billede eller CMR ved skade, afvigelse eller krav fra opgaven.', action: 'open-logbook' });
+  if (notifications.some(item => item.unread)) reminders.push({ title: 'Ulæste beskeder', body: `${notifications.filter(item => item.unread).length} ting venter i notifikationer.`, action: 'open-notifications' });
+  if (workday.active) reminders.push({ title: 'Automatisk ro', body: 'GPS og arbejdsdag slukker kl. 19.00 dansk tid.', action: 'open-my-data' });
+  return reminders.slice(0, 3);
+}
+
+function renderReminderPanel() {
+  const summary = notificationSummary();
+  if (!summary.dailyBrief) return '';
+  const reminders = dailyReminders();
+  return `<section class="reminder-panel">
+    <div><span>Husk i dag</span><small>${text(summary.quietText)}</small></div>
+    ${reminders.map(reminder => `<button data-action="${text(reminder.action)}"><b>${text(reminder.title)}</b><small>${text(reminder.body)}</small></button>`).join('')}
+  </section>`;
+}
+
+function markAllNotificationsRead() {
+  notifications = notifications.map(item => ({ ...item, unread: false }));
+  save('notifications', notifications);
+  if (onlineBackendActive()) {
+    markSupabaseNotificationsRead().catch(error => showToast(`Notifikationer blev markeret lokalt, men ikke online: ${error.message}`));
+  }
+}
+
+function toggleInfoFavorite(id) {
+  infoFavorites = infoFavorites.includes(id)
+    ? infoFavorites.filter(item => item !== id)
+    : [...infoFavorites, id];
+  save('infoFavorites', infoFavorites);
+}
+
+function myDataSummary() {
+  return [
+    ['Profil', profile.name, profile.email || 'Mail mangler'],
+    ['Rettighed', accessRoleLabel(profile.accessRole), vehicleLabel(profile.vehicleType)],
+    ['Arbejdsdag', workday.active ? 'Mødt ind' : 'Ikke aktiv', workday.active ? 'Slukker automatisk kl. 19.00' : 'Tryk Mød ind på forsiden'],
+    ['GPS', location.sharing ? 'Deler live' : 'Skjult', location.sharing ? `${location.speed} km/t vises lokalt` : 'Ingen live-deling'],
+    ['Logbog', profile.logbook ? 'Aktiv og privat' : 'Fravalgt', `${logEntries.length} private indlæg i demoen`],
+    ['Billeder', coreSettings.media ? 'Tilladt' : 'Slået fra', 'Profil, chat, opslag og logbog'],
+    ['Dataanmodninger', `${dataRequests.length} i demoen`, 'Indsigt, rettelse, sletning eller eksport'],
+  ];
+}
+
+function zonedParts(date, timeZone = WORKDAY_TIMEZONE) {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(date).reduce((result, part) => ({ ...result, [part.type]: part.value }), {});
+  return {
+    year: Number(parts.year),
+    month: Number(parts.month),
+    day: Number(parts.day),
+    hour: Number(parts.hour),
+    minute: Number(parts.minute),
+    second: Number(parts.second),
+  };
+}
+
+function timezoneOffsetMinutes(date, timeZone = WORKDAY_TIMEZONE) {
+  const parts = zonedParts(date, timeZone);
+  const asUtc = Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second);
+  return Math.round((asUtc - date.getTime()) / 60000);
+}
+
+function zonedTimeToDate(year, month, day, hour, minute, timeZone = WORKDAY_TIMEZONE) {
+  const utcGuess = new Date(Date.UTC(year, month - 1, day, hour, minute, 0));
+  const offset = timezoneOffsetMinutes(utcGuess, timeZone);
+  return new Date(Date.UTC(year, month - 1, day, hour, minute, 0) - offset * 60000);
+}
+
+function workdayEndTime(date = new Date()) {
+  const today = zonedParts(date, WORKDAY_TIMEZONE);
+  let end = zonedTimeToDate(today.year, today.month, today.day, 19, 0, WORKDAY_TIMEZONE);
+  if (date >= end) {
+    const tomorrow = zonedParts(new Date(end.getTime() + 24 * 60 * 60 * 1000), WORKDAY_TIMEZONE);
+    end = zonedTimeToDate(tomorrow.year, tomorrow.month, tomorrow.day, 19, 0, WORKDAY_TIMEZONE);
+  }
+  return end;
+}
+
+function workdayPermissions() {
+  return {
+    gps: Boolean(coreSettings.gps && workdayPrivacy.gps && workdayPrivacy.audience !== 'none'),
+    logbook: Boolean(coreSettings.logbook && profile.logbook && workdayPrivacy.logbook),
+    notifications: Boolean(workdayPrivacy.notifications && (notificationPrefs.office || notificationPrefs.rules || notificationPrefs.chat)),
+    audience: workdayPrivacy.audience,
+    showSpeed: Boolean(workdayPrivacy.showSpeed),
+    showVehicle: Boolean(workdayPrivacy.showVehicle),
+    showStatus: Boolean(workdayPrivacy.showStatus),
+  };
+}
+
+async function startWorkday() {
+  const permissions = workdayPermissions();
+  workday = {
+    active: true,
+    startedAt: new Date().toISOString(),
+    endsAt: workdayEndTime().toISOString(),
+    endLabel: '19.00',
+    permissions,
+  };
+  save('workday', workday);
+  if (onlineBackendActive()) {
+    try {
+      await startSupabaseWorkday();
+    } catch (error) {
+      showToast(`Mødt ind lokalt, men Supabase fejlede: ${error.message}`);
+    }
+  }
+  if (permissions.gps) startLocationSharing('Du er mødt ind, og din position deles efter dine tilladelser');
+  if (permissions.logbook) syncLogbookDrafts();
+  render();
+  showToast('Du er mødt ind. Alt slukker automatisk kl. 19.00');
+}
+
+async function endWorkday(message = 'Du er meldt fri, og dagens deling er slukket', status = 'ended') {
+  if (onlineBackendActive()) {
+    try {
+      await endSupabaseWorkday(status);
+    } catch (error) {
+      showToast(`Arbejdsdagen stoppede lokalt, men Supabase fejlede: ${error.message}`);
+    }
+  }
+  workday = { ...workday, active: false, endedAt: new Date().toISOString() };
+  save('workday', workday);
+  if (location.sharing) {
+    stopLocationSharing(message);
+    return;
+  }
+  render();
+  showToast(message);
+}
+
+function enforceWorkdayExpiry(now = new Date()) {
+  if (!workday.active || !workday.endsAt) return;
+  if (now < new Date(workday.endsAt)) return;
+  endWorkday('Klokken er over 19.00, så arbejdsdagen og deling er slukket automatisk', 'auto_ended');
+}
+
+function logbookStats() {
+  const places = new Set(logEntries.map(entry => entry.place).filter(Boolean));
+  return {
+    total: logEntries.length,
+    places: places.size,
+    images: logEntries.filter(entry => entry.image).length,
+    auto: logEntries.filter(entry => entry.source === 'auto').length,
+    favorites: logEntries.filter(entry => entry.favorite).length,
+  };
+}
+
+function currentLogbookPlace() {
+  const employee = currentEmployee();
+  const place = location.sharing
+    ? employee.location || 'Aktuel GPS-position'
+    : employee.location || profile.department || 'Min lokation';
+  return location.sharing ? `Min lokation · ${place}` : place;
+}
+
+function logbookSuggestions() {
+  if (!logbookAutomation.smartLogbook) return [];
+  const employee = currentEmployee();
+  const suggestions = [];
+  if (logbookAutomation.autoPlace) {
+    suggestions.push({
+      kind: 'current-location',
+      title: 'Gem aktuel lokation',
+      place: location.sharing ? (employee.location || 'Live-position') : (employee.location || profile.department || 'Dagens sted'),
+      note: location.sharing
+        ? `Live GPS var aktiv med cirka ${location.speed || 0} km/t og ${location.points || 0} punkter.`
+        : `Forslag fra din profil: ${employee.status || 'arbejdsdag på vejen'}.`,
+    });
+  }
+  if (logbookAutomation.autoPickup && activePickup) {
+    const helper = employees.find(employeeItem => employeeItem.id === activePickup.employeeId);
+    suggestions.push({
+      kind: 'pickup-task',
+      title: 'Gem afhentningsopgave',
+      place: helper?.location || 'Afhentning',
+      note: `${pickupStatusLabel(activePickup.status)}: ${activePickup.note || 'Kollegahjælp'}${helper ? ` for ${helper.name}` : ''}.`,
+    });
+  }
+  if (logbookAutomation.autoStops && location.sharing && location.speed < 6 && location.points > 0) {
+    suggestions.push({
+      kind: 'pause-stop',
+      title: 'Gem pause eller stop',
+      place: employee.location || 'Pause på ruten',
+      note: `Du har holdt stille ved ${employee.location || 'ruten'}. God kandidat til en privat pause-note.`,
+    });
+  }
+  if (logbookAutomation.autoVehicle) {
+    const vehicle = vehicles.find(item => item.unit === profile.truck || item.driverId === employee.id);
+    suggestions.push({
+      kind: 'vehicle-day',
+      title: 'Gem dagens køretøj',
+      place: employee.location || profile.department || 'På tur',
+      note: `${vehicle?.unit || profile.truck || 'Køretøj'} · ${vehicle?.status || employee.status || 'klar til arbejde'}.`,
+    });
+  }
+  if (logbookAutomation.autoMilestones) {
+    suggestions.push({
+      kind: 'milestone',
+      title: 'Gem milepæl',
+      place: employee.location || 'Dagens rute',
+      note: `Dagens lille note: ${employee.status || 'en tur der er værd at huske'}.`,
+    });
+  }
+  return suggestions;
+}
+
+function draftId(kind, place) {
+  return `${kind}-${String(place || 'sted').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '-')}`;
+}
+
+function syncLogbookDrafts() {
+  if (!logbookAutomation.smartLogbook || !logbookAutomation.autoDrafts) return logbookDrafts;
+  const existingIds = new Set(logbookDrafts.map(draft => draft.id));
+  for (const suggestion of logbookSuggestions()) {
+    const id = draftId(suggestion.kind, suggestion.place);
+    if (existingIds.has(id)) continue;
+    logbookDrafts.unshift({
+      id,
+      ...suggestion,
+      date: 'I dag',
+      category: suggestion.kind === 'pause-stop' ? 'Pause' : suggestion.kind === 'pickup-task' ? 'Afhentning' : suggestion.kind === 'vehicle-day' ? 'Køretøj' : 'Automatik',
+      status: 'draft',
+      createdAt: new Date().toISOString(),
+    });
+  }
+  save('logbookDrafts', logbookDrafts);
+  return logbookDrafts;
+}
+
+function createAutoLogEntry(kind) {
+  const suggestion = logbookSuggestions().find(item => item.kind === kind);
+  if (!suggestion) return null;
+  const entry = {
+    place: suggestion.place,
+    note: suggestion.note,
+    date: 'I dag',
+    category: kind === 'pickup-task' ? 'Afhentning' : kind === 'vehicle-day' ? 'Køretøj' : 'Automatik',
+    source: 'auto',
+    kind,
+    favorite: false,
+    metadata: {
+      speed: location.speed || 0,
+      sharing: Boolean(location.sharing),
+      vehicle: profile.truck || '',
+      createdFrom: suggestion.title,
+    },
+  };
+  logEntries.unshift(entry);
+  save('logEntries', logEntries);
+  return entry;
+}
+
+function approveLogbookDraft(id) {
+  const draft = logbookDrafts.find(item => item.id === id);
+  if (!draft) return null;
+  const entry = {
+    place: draft.place,
+    note: draft.note,
+    date: draft.date || 'I dag',
+    category: draft.category || 'Automatik',
+    source: 'auto',
+    kind: draft.kind,
+    favorite: false,
+    status: 'approved',
+    metadata: { createdFrom: draft.title, draftId: draft.id },
+  };
+  logEntries.unshift(entry);
+  logbookDrafts = logbookDrafts.filter(item => item.id !== id);
+  save('logEntries', logEntries);
+  save('logbookDrafts', logbookDrafts);
+  return entry;
+}
+
+function deleteLogbookDraft(id) {
+  logbookDrafts = logbookDrafts.filter(item => item.id !== id);
+  save('logbookDrafts', logbookDrafts);
+}
+
+function clearLogbookDrafts() {
+  logbookDrafts = [];
+  save('logbookDrafts', logbookDrafts);
+}
+
+function toggleLogbookAutomation(key) {
+  if (!(key in logbookAutomation)) return;
+  logbookAutomation = { ...logbookAutomation, [key]: !logbookAutomation[key] };
+  save('logbookAutomation', logbookAutomation);
+}
+
+function renderLogbookEntry(entry) {
+  return `<article class="${entry.favorite ? 'favorite' : ''}">
+    <p>${text(entry.date || 'I dag')} · ${text(entry.place)} ${entry.source === 'auto' ? '· Automatisk forslag' : '· Manuel'}</p>
+    <b>${text(entry.category || 'Logbog')}</b>
+    <span>${text(entry.note)}</span>
+    ${entry.image ? `<figure class="logbook-image"><img src="${text(entry.image.src)}" alt="${text(entry.image.name || entry.place)}" /><a href="${text(entry.image.src)}" download="${text(mediaName(entry.image.name))}">${icon('download')} Download</a></figure>` : ''}
+  </article>`;
+}
+
+function visibleMapPeople() {
+  const sharedPeople = employees.filter(person => person.sharing && person.coords);
+  const currentId = session?.userId || currentEmployee().id;
+  const workPermissions = { ...(workday.permissions || {}), ...workdayPrivacy };
+  const selfVisible = location.sharing && (workPermissions.audience || workdayPrivacy.audience) !== 'none';
+  const selfStatusParts = ['Deler GPS'];
+  if (workPermissions.showSpeed) selfStatusParts.push(`${location.speed} km/t`);
+  const people = location.sharing
+    ? [
+        ...sharedPeople.filter(person => person.id !== currentId && person.id !== currentEmployee().id),
+        ...(selfVisible ? [{
+          ...currentEmployee(),
+          id: currentId,
+          location: 'Dig',
+          coords: location.coords || currentEmployee().coords,
+          sharing: true,
+          truck: workPermissions.showVehicle ? currentEmployee().truck : 'Bil skjult',
+          status: workPermissions.showStatus ? selfStatusParts.join(' · ') : 'Deler GPS',
+        }] : []),
+      ]
+    : sharedPeople;
+  return people.filter(person => mapFilter === 'all' || mapFilter === 'sharing' || person.vehicleType === mapFilter);
+}
+
+function homeTopPriorities(activeTasks, unreadNotifications) {
+  const priorities = [];
+  if (!workday.active) {
+    priorities.push({ title: 'Åbn Arbejde', body: 'Mød ind, del tur og se dine tilladelser samlet.', action: 'open-work', icon: 'check' });
+  }
+  if (activePickup) {
+    priorities.push({ title: 'Følg afhentning', body: activePickup.note || 'Live noter og status på hjælpeopgaven.', action: 'open-pickup', icon: 'pin' });
+  }
+  if (unreadNotifications) {
+    priorities.push({ title: 'Tjek beskeder', body: `${unreadNotifications} ulæste beskeder, opslag eller regelnyt.`, action: 'open-notifications', icon: 'alert' });
+  }
+  if (!location.sharing) {
+    priorities.push({ title: 'Del position ved behov', body: 'Hurtig GPS-deling når en kollega skal finde dig.', action: 'toggle-location', icon: 'map' });
+  }
+  if (logbookDrafts.length) {
+    priorities.push({ title: 'Gem logbog', body: `${logbookDrafts.length} automatiske kladder venter.`, action: 'open-logbook', icon: 'truck' });
+  }
+  priorities.push(...activeTasks.map(task => ({ title: task.title, body: task.body, action: task.action, icon: 'info' })));
+  return priorities.slice(0, 3);
+}
+
+function formatClock(isoValue) {
+  if (!isoValue) return 'ukendt tid';
+  return new Date(isoValue).toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' });
+}
+
+function locationExpiryText() {
+  if (!location.sharing) return 'Du bestemmer selv, hvornår kollegaerne kan se dig';
+  if (location.expiresAt) return `Stopper kl. ${formatClock(location.expiresAt)}`;
+  if (workday.active && workday.endsAt) return 'Stopper kl. 19.00 dansk tid';
+  return 'Kører indtil du selv stopper delingen';
+}
+
+function mapPersonStatus(person) {
+  if ((person.id === currentEmployee().id || person.id === session?.userId) && location.sharing) {
+    if (location.speed > 5) return 'Kører';
+    if (location.demo) return 'Demo GPS';
+    return 'Deler';
+  }
+  if (!person.online) return 'Offline';
+  if ((person.status || '').toLowerCase().includes('pause')) return 'Pause';
+  return person.sharing ? 'Deler' : 'Skjult';
+}
+
+function mapLastUpdatedLabel(person) {
+  if ((person.id === currentEmployee().id || person.id === session?.userId) && location.lastUpdatedAt) return `Sidst opdateret ${formatClock(location.lastUpdatedAt)}`;
+  if (person.lastUpdatedAt) return `Sidst opdateret ${formatClock(person.lastUpdatedAt)}`;
+  return 'Sidst opdateret for få min. siden';
+}
+
+async function ensureDirectChat(employee) {
+  if (onlineBackendActive()) {
+    return startSupabaseDirectChat(employee);
+  }
+  let chat = chats.find(item => item.id === employee.id);
+  if (!chat) {
+    chat = { id: employee.id, name: employee.name, initials: employee.initials, preview: 'Start en intern samtale', time: 'Nu', unread: 0 };
+    chats.unshift(chat);
+    messages[employee.id] = [];
+    save('chats', chats);
+    save('messages', messages);
+  }
+  return chat.id;
+}
+
+function postAvatar(item) {
+  return `<span class="feed-avatar ${item.kind === 'office' ? 'office' : ''}">${text(item.initials || 'XB')}</span>`;
+}
+
+function renderFeedPost(item) {
+  const liked = Boolean(feedLikes[item.id]);
+  const likeCount = Number(item.likes || 0) + (liked ? 1 : 0);
+  return `<article class="social-post ${item.kind === 'rule' ? 'rule-post' : ''}">
+    <header>${postAvatar(item)}<div><b>${text(item.author)}</b><span>${text(item.time)} · ${text(item.audience)}</span></div>${item.pinned ? '<em>Fastgjort</em>' : ''}</header>
+    <div class="social-post-body">${item.title ? `<h3>${text(item.title)}</h3>` : ''}<p>${text(item.body)}</p>
+      ${item.image ? `<figure class="post-image"><img src="${text(item.image.src)}" alt="${text(item.image.name || item.title || 'Opslagsbillede')}" /><a href="${text(item.image.src)}" download="${text(mediaName(item.image.name))}">${icon('download')} Download</a></figure>` : ''}
+      ${item.kind === 'rule' ? `<button class="source-link" data-action="open-rule-updates">${text(item.source)} · Se officiel kilde</button>` : ''}
+    </div>
+    <footer>
+      <button class="${liked ? 'liked' : ''}" data-action="toggle-like" data-post="${text(item.id)}">${icon('heart')}<span>${likeCount || 'Synes godt om'}</span></button>
+      ${item.kind === 'rule'
+        ? `<button data-action="open-rule-updates">${icon('document')}<span>Læs mere</span></button>`
+        : `<button data-action="open-comments" data-post="${text(item.id)}">${icon('comment')}<span>${item.comments?.length || 0} kommentarer</span></button>`}
+    </footer>
+  </article>`;
+}
+
+function updateLocation(position) {
+  location.speed = Math.max(0, Math.round((position.coords.speed || 0) * 3.6));
+  location.coords = [position.coords.latitude, position.coords.longitude];
+  location.points += 1;
+  location.lastUpdatedAt = new Date().toISOString();
+  syncLogbookDrafts();
+  syncSupabaseLocation().catch(error => showToast(`GPS kunne ikke opdateres online: ${error.message}`));
+}
+
+function startDemoLocation() {
+  if (location.timer) return;
+  location.demo = true;
+  location.timer = setInterval(() => {
+    location.speed = Math.max(0, Math.round(78 + Math.sin(Date.now() / 2500) * 7));
+    location.coords = currentEmployee().coords;
+    location.points += 1;
+    location.lastUpdatedAt = new Date().toISOString();
+    syncLogbookDrafts();
+    syncSupabaseLocation().catch(() => {});
+  }, 1000);
+}
+
+function startLocationSharing(message = 'Din live-position deles nu med kolleger', durationMinutes = null) {
+  if (!coreSettings.gps) {
+    showToast('GPS-deling er midlertidigt slået fra af chef/admin');
+    return;
+  }
+  const now = new Date();
+  const expiresAt = durationMinutes
+    ? new Date(now.getTime() + durationMinutes * 60 * 1000).toISOString()
+    : workday.active ? workday.endsAt : null;
+  location.expiresAt = expiresAt;
+  location.startedAt = location.startedAt || now.toISOString();
+  location.lastUpdatedAt = now.toISOString();
+  location.shareMode = durationMinutes ? `${durationMinutes} min` : workday.active ? 'workday' : 'manual';
+  if (location.sharing) {
+    syncSupabaseLocation().catch(error => showToast(`GPS kunne ikke opdateres online: ${error.message}`));
+    render({ preserveScroll: true });
+    showToast(message);
+    return;
+  }
+  location.sharing = true;
+  if (!navigator.geolocation) {
+    startDemoLocation();
+  } else {
+    location.watchId = navigator.geolocation.watchPosition(updateLocation, startDemoLocation, {
+      enableHighAccuracy: true, maximumAge: 3000, timeout: 5000,
+    });
+  }
+  syncSupabaseLocation().catch(error => showToast(`GPS kunne ikke deles online: ${error.message}`));
+  render();
+  showToast(message);
+}
+
+function stopLocationSharing(message = 'Din position er ikke længere synlig for kolleger') {
+  if (!location.sharing) return;
+  navigator.geolocation?.clearWatch(location.watchId);
+  clearInterval(location.timer);
+  stopSupabaseLocation().catch(() => {});
+  location = { sharing: false, demo: false, speed: 0, points: 0, watchId: null, timer: null, coords: null, startedAt: null, expiresAt: null, lastUpdatedAt: null, shareMode: null };
+  render();
+  showToast(message);
+}
+
+function startTimedLocationSharing(minutes) {
+  startLocationSharing(`Din position deles i ${minutes} minutter`, minutes);
+}
+
+function enforceLocationExpiry(now = new Date()) {
+  if (!location.sharing || !location.expiresAt) return;
+  if (new Date(location.expiresAt) <= now) stopLocationSharing('GPS-delingen stoppede automatisk');
+}
+
+function toggleLocation() {
+  if (location.sharing) {
+    if (activePickup) {
+      activePickup = null;
+      save('activePickup', null);
+      stopLocationSharing('Afhentningen er afsluttet, og GPS-delingen er stoppet');
+      return;
+    }
+    stopLocationSharing();
+    return;
+  }
+  startLocationSharing();
+}
+
+function renderScreenGuide() {
+  if (activeTab === 'chat' && activeChat) return '';
+  const guides = {
+    home: { title: 'Start her', body: 'Se dagens vigtigste beskeder, opgaver og hurtige handlinger.', action: 'open-notifications', label: 'Tjek beskeder' },
+    work: { title: 'Arbejde og tur', body: 'Mød ind, del tur, hent for kollega og gem logbog fra ét roligt sted.', action: workday.active ? 'end-workday' : 'start-workday', label: workday.active ? 'Slut dag' : 'Mød ind' },
+    team: { title: 'Find en kollega', body: 'Søg efter navn, bil eller rolle. Profiler viser kun det, kollegaen må dele.', action: 'new-employee', label: 'Registrer kollega', adminOnly: true },
+    map: { title: 'Livekort med frivillig GPS', body: 'Del kun din position når det giver mening. Stop deling når du er færdig.', action: 'toggle-location', label: location.sharing ? 'Stop deling' : 'Del position' },
+    chat: { title: 'Beskeder samlet', body: 'Brug fælleschat, din køretøjskanal eller direkte beskeder uden at blande opslag ind.', action: 'new-chat', label: 'Ny besked' },
+    info: { title: 'Hurtig information', body: 'Find drift, telefonnumre, regler, dokumenter og praktiske svar fra vejen.', action: 'open-info', label: 'Nød og drift', info: 'operations' },
+    more: { title: isCreatorOwner() ? 'Styr appen professionelt' : 'Din konto og privatliv', body: isCreatorOwner() ? 'Tjek drift, rettigheder, Supabase, sikkerhed og de vigtigste styringer.' : 'Ret profil, privatliv, notifikationer og dine egne data.', action: isCreatorOwner() ? 'open-admin' : 'open-profile', label: isCreatorOwner() ? 'Appens drift' : 'Min profil' },
+  };
+  const guide = guides[activeTab] || guides.home;
+  const hidden = guide.adminOnly && !canManageEmployees();
+  return `<section class="screen-guide">
+    <div><b>${text(guide.title)}</b><span>${text(guide.body)}</span></div>
+    ${hidden ? '' : `<button type="button" data-action="${text(guide.action)}" ${guide.info ? `data-info="${text(guide.info)}"` : ''}>${text(guide.label)}</button>`}
+  </section>`;
+}
+
+function appShell(content) {
+  return `
+    <section class="phone-shell">
+      <header class="topbar">
+        <div class="brand-row">
+          <div>${brandLogo()}<p class="date">XpressIntra · kun medarbejdere</p></div>
+          <button class="avatar" data-action="open-profile" aria-label="Åbn din profil">${text(currentEmployee().initials)}</button>
+        </div>
+      </header>
+      <section class="content">${renderGlobalSearch()}${renderScreenGuide()}${content}</section>
+      <nav class="bottom-nav" aria-label="Hovedmenu">
+        ${[
+          ['home', 'home', 'Forside'],
+          ['work', 'check', 'Arbejde'],
+          ['map', 'map', 'Live-kort'],
+          ['chat', 'chat', 'Beskeder'],
+          ['more', 'more', 'Kontrol'],
+        ].map(([id, iconName, label]) => `
+          <button class="nav-item ${activeTab === id ? 'active' : ''}" data-tab="${id}">
+            ${icon(iconName)}<span>${label}</span>
+          </button>`).join('')}
+      </nav>
+    </section>
+    <section class="desktop-note">
+      ${brandLogo()}
+      <h1>Hold kontakten,<br />mens hjulene ruller.</h1>
+      <p>XpressBudets interne medarbejdersystem til chauffører, kurérer og disponenter. Del position, find vigtig information og hold kontakten fra mobilen.</p>
+      <div class="desktop-list"><span>01</span> Fælles drift og chat <span>02</span> Frivillig live-position <span>03</span> Chaufførinfo samlet ét sted</div>
+    </section>`;
+}
+
+function renderLogin() {
+  const backend = supabaseStatus();
+  const demoCredentials = DEMO_MODE && !backend.ready;
+  const invitedEmail = (() => {
+    try { return new URL(window.location.href).searchParams.get('email') || ''; } catch { return ''; }
+  })();
+  const inviteToken = (() => {
+    try { return new URL(window.location.href).searchParams.get('invite') || ''; } catch { return ''; }
+  })();
+  const hasInviteLink = Boolean(inviteToken && invitedEmail);
+  return `<section class="login-shell">
+    <div class="login-brand">${brandLogo()}<small>XpressIntra · internt medarbejdersystem</small></div>
+    <div class="login-copy"><h1>Godt at se dig.</h1><p>Log ind for at finde kollegaer, dele din position og skrive med holdet.</p></div>
+    <form class="login-form">
+      <label>Arbejdsmail<input name="email" type="email" value="${text(invitedEmail || (demoCredentials ? 'demo@xpressintra.local' : ''))}" required /></label>
+      <label>Adgangskode<input name="password" type="password" value="${demoCredentials ? 'demo1234' : ''}" minlength="6" required /></label>
+      <button>Log ind</button>
+      ${backend.ready && hasInviteLink ? '<button class="login-secondary" data-action="signup-invite">Opret konto</button>' : ''}
+      <span>${text(hasInviteLink ? 'Du er inviteret. Brug mailen fra invitationen og vælg din adgangskode.' : 'Har du ikke adgang endnu, skal din chef eller creator invitere dig først.')}</span>
+    </form>
+  </section>`;
+}
+
+function renderHome() {
+  const feed = [
+    ...announcements.filter(item => canReadAudience(item.audience)),
+    { id: 'rule-vans-july-2026', title: ruleUpdates[0].title, body: ruleUpdates[0].body, time: ruleUpdates[0].checked, kind: 'rule', author: 'Regelnyt', initials: 'RN', audience: ruleUpdates[0].audience, source: ruleUpdates[0].source, likes: 2, comments: [] },
+  ];
+  const onlineEmployees = employees.filter(employee => employee.online);
+  const unreadNotifications = notifications.filter(item => item.unread).length;
+  const officePosts = announcements.filter(item => item.kind === 'office' && canReadAudience(item.audience)).slice(0, 3);
+  const nowStatus = workday.active ? 'Arbejdsdag aktiv' : location.sharing ? 'Position deles' : 'Klar til dagen';
+  const locationText = location.sharing ? locationExpiryText() : 'GPS er skjult';
+  const nextAction = activePickup
+    ? { title: 'Afhentning i gang', body: activePickup.note || 'Følg status og live noter', action: 'open-pickup', icon: 'pin' }
+    : unreadNotifications
+      ? { title: 'Tjek beskeder', body: `${unreadNotifications} ulæste ting venter`, action: 'open-notifications', icon: 'chat' }
+      : { title: 'Åbn Arbejde', body: 'Mød ind, del tur og gem logbog samlet ét sted', action: 'open-work', icon: 'check' };
+  return `
+    <section class="home-clean-hero surface-card">
+      <div>
+        <p class="eyebrow">Forside</p>
+        <h2>Godmorgen, ${text(profile.name.split(' ')[0])}</h2>
+        <span>${text(nowStatus)} · ${text(profile.truck || vehicleLabel(profile.vehicleType))} · ${text(locationText)}</span>
+      </div>
+      <button class="home-next-action" data-action="${text(nextAction.action)}">
+        <span>${icon(nextAction.icon)}</span>
+        <b>${text(nextAction.title)}</b>
+        <small>${text(nextAction.body)}</small>
+      </button>
+      <div class="home-status-strip">
+        <span><b>${workday.active ? 'Aktiv' : 'Ikke mødt ind'}</b><small>Arbejde</small></span>
+        <span><b>${location.sharing ? 'Live' : 'Skjult'}</b><small>GPS</small></span>
+        <span><b>${unreadNotifications}</b><small>Ulæst</small></span>
+      </div>
+    </section>
+    <section class="home-office-board screen-section">
+      <div class="screen-section-head"><span>Vigtigt fra kontoret</span><small>Drift og beskeder</small>${canPublishOfficePosts() ? '<button data-action="new-announcement">Nyt opslag</button>' : ''}</div>
+      ${officePosts.length ? officePosts.map(item => `<button data-action="open-notifications"><b>${text(item.title)}</b><small>${text(item.time)} · ${text(item.author)}</small><span>${text(item.body)}</span></button>`).join('') : '<article><b>Ingen fastgjorte beskeder</b><span>Kontoret kan lægge de vigtigste ting her.</span></article>'}
+    </section>
+    ${renderPickupCard()}
+    <section class="home-simple-actions" aria-label="Vigtigste genveje">
+      <button data-chat="all"><span>${icon('chat')}</span><b>Beskeder</b><small>Fælleschat og direkte beskeder</small></button>
+      <button data-action="open-work"><span>${icon('check')}</span><b>Arbejde</b><small>Mød ind, del tur og logbog</small></button>
+      <button data-tab="map"><span>${icon('map')}</span><b>Live-kort</b><small>${onlineEmployees.filter(employee => employee.sharing).length} deler position</small></button>
+      <button data-tab="info"><span>${icon('info')}</span><b>Information</b><small>Regler, håndbog og kontakter</small></button>
+    </section>
+    <section class="home-community-preview screen-section">
+      <div class="screen-section-head"><span>Fællesskab</span><small>${onlineEmployees.length} online</small><button data-chat="all">Åbn chat</button></div>
+      <section class="story-rail" aria-label="Kollegaer online">
+        ${onlineEmployees.slice(0, 8).map(employee => `<button data-employee="${text(employee.id)}">${avatar(employee)}<span>${text(employee.id === 'th' ? 'Dig' : employee.name.split(' ')[0])}</span></button>`).join('')}
+      </section>
+      <section class="social-feed compact-feed">${feed.slice(0, 2).map(renderFeedPost).join('')}</section>
+    </section>`;
+}
+
+function renderWork() {
+  const audienceText = workdayPrivacy.audience === 'all' ? 'Alle kollegaer'
+    : workdayPrivacy.audience === 'truck' ? 'Lastbilholdet'
+    : workdayPrivacy.audience === 'van' ? 'Varebilholdet'
+    : 'Ingen';
+  return `
+    <div class="page-heading"><div><p class="eyebrow">Din tur</p><h2>Arbejde</h2></div><button class="round-btn" data-action="open-settings" aria-label="Arbejdstilladelser">${icon('settings')}</button></div>
+    <section class="work-hero surface-card ${workday.active ? 'active' : ''}">
+      <div>
+        <p class="eyebrow">Arbejdsdag</p>
+        <h3>${workday.active ? 'Du er mødt ind' : 'Start dagens tur'}</h3>
+        <span>${workday.active ? `Slukker automatisk kl. ${text(workday.endLabel || '19.00')} dansk tid` : 'Start dagen her. Tilladelser styres i Indstillinger.'}</span>
+      </div>
+      <button data-action="${workday.active ? 'end-workday' : 'start-workday'}">${workday.active ? 'Slut dag' : 'Mød ind'}</button>
+    </section>
+    <section class="work-primary-grid">
+      <button data-action="toggle-location"><span>${icon(location.sharing ? 'check' : 'map')}</span><b>${location.sharing ? 'Stop GPS' : 'Del tur'}</b><small>${location.sharing ? locationExpiryText() : 'Bruger dine valg fra Indstillinger'}</small></button>
+      <button data-action="open-pickup"><span>${icon('pin')}</span><b>Hent for kollega</b><small>${activePickup ? pickupStatusLabel(activePickup.status) : 'Start hurtig opgave'}</small></button>
+      <button data-action="open-logbook"><span>${icon('truck')}</span><b>Gem logbog</b><small>${logbookDrafts.length ? `${logbookDrafts.length} kladder venter` : 'Gem sted, pause eller minde'}</small></button>
+    </section>
+    <button class="work-settings-link" data-action="open-settings">${icon('settings')} Indstil hvad der deles, og med hvem</button>
+    ${renderPickupCard()}
+    <details class="work-more-section">
+      <summary>Flere arbejdsgenveje</summary>
+      <section class="quick-action-rail simplified">
+        <button data-tab="map"><span>${icon('map')}</span><b>Live-kort</b><small>Se kollegaer der deler</small></button>
+        <button data-tab="team"><span>${icon('users')}</span><b>Kollegaer</b><small>Søg navn, bil eller rolle</small></button>
+        <button data-action="open-notifications"><span>${icon('alert')}</span><b>Beskeder</b><small>${notifications.filter(item => item.unread).length} ulæste</small></button>
+        <button data-action="open-task-overview"><span>${icon('check')}</span><b>Opgaver</b><small>Kladder og aktive ting</small></button>
+        <button data-tab="info"><span>${icon('info')}</span><b>Information</b><small>Regler og kontakter</small></button>
+      </section>
+    </details>`;
+}
+
+function renderPickupCard() {
+  if (!activePickup) return '';
+  const colleague = employees.find(employee => employee.id === activePickup.employeeId);
+  const status = pickupStatusLabel(activePickup.status);
+  const expiryText = activePickup.expiresAt
+    ? `Stopper automatisk ${new Date(activePickup.expiresAt).toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' })}`
+    : 'Stopper når du markerer opgaven færdig';
+  const checklist = ensurePickupChecklist(activePickup);
+  const steps = activePickup.steps || [];
+  const liveNotes = pickupLiveNotes(activePickup);
+  return `<section class="pickup-card">
+    <div class="pickup-icon">${icon('pin')}</div>
+    <div><p>Afhentning for ${text(colleague?.name || 'kollega')}</p><span><b>${text(status)}</b> · ${text(activePickup.note || 'Kollegaen kan følge dig, mens opgaven er aktiv.')}</span><small>${text(expiryText)}</small></div>
+    <div class="pickup-task-meta">
+      <span><b>Afhentningssted</b><small>${text(activePickup.pickupPlace || colleague?.location || 'Ikke angivet')}</small></span>
+      <span><b>Afleveringssted</b><small>${text(activePickup.dropoffPlace || currentEmployee().location || 'Ikke angivet')}</small></span>
+      <span><b>Reference</b><small>${text(activePickup.reference || 'Ingen reference')}</small></span>
+      <span><b>Prioritet</b><small>${text(activePickup.priority || 'Normal')}</small></span>
+    </div>
+    <div class="pickup-checklist"><b>Tjekliste</b>${checklist.map(item => `<button class="${item.done ? 'done' : ''}" data-pickup-check="${text(item.id)}">${item.done ? '✓' : '○'} ${text(item.label)}</button>`).join('')}</div>
+    <div class="pickup-live-notes"><b>Live noter</b>
+      ${liveNotes.length ? liveNotes.slice(-5).map(step => `<span><strong>${text(step.authorName || 'Kollega')}</strong><small>${new Date(step.at).toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' })}</small>${text(step.note)}</span>`).join('') : '<span>Ingen noter endnu. Begge parter kan skrive korte opdateringer her.</span>'}
+      <form class="pickup-note-form"><input name="note" placeholder="Skriv live note..." autocomplete="off" /><button>Send</button></form>
+    </div>
+    <div class="pickup-timeline"><b>Tidslinje</b>${steps.filter(step => step.type !== 'note').length ? steps.filter(step => step.type !== 'note').map(step => `<span>${text(pickupStatusLabel(step.status))} · ${new Date(step.at).toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' })}</span>`).join('') : '<span>Opgaven er startet</span>'}</div>
+    <div class="pickup-status-actions">
+      <button data-pickup-status="found">Fundet</button>
+      <button data-pickup-status="picked_up">Hentet</button>
+      <button data-pickup-status="blocked">Kan ikke finde</button>
+      <button data-action="finish-pickup">Afleveret</button>
+    </div>
+  </section>`;
+}
+
+function employeeRow(employee) {
+  return `<button class="employee-row" data-employee="${employee.id}">
+    ${avatar(employee)}
+    <span class="employee-copy"><b>${text(employee.name)}</b><small>${text(employee.status)} · ${employee.vehicleType === 'truck' ? 'Lastbil' : employee.vehicleType === 'van' ? 'Varebil' : 'Disponent'}</small></span>
+    <span class="employee-place">${text(employee.location)}</span>${icon('arrow', 'row-arrow')}
+  </button>`;
+}
+
+function renderTeam() {
+  const filteredEmployees = employees.filter(employee =>
+    `${employee.name} ${employee.truck} ${employee.role}`.toLowerCase().includes(teamQuery.toLowerCase())
+  );
+  return `
+    <div class="page-heading"><div><p class="eyebrow">Medarbejdere</p><h2>Kollegaer</h2></div>${canManageEmployees() ? `<button class="round-btn" data-action="new-employee" aria-label="Registrér kollega">${icon('plus')}</button>` : ''}</div>
+    <label class="search-box"><input data-team-search placeholder="Søg efter navn eller bil..." value="${text(teamQuery)}" /><span>${filteredEmployees.length} profiler</span></label>
+    <section class="employee-list">${filteredEmployees.length ? filteredEmployees.map(employeeRow).join('') : '<p class="empty-state">Ingen kollegaer matcher din søgning.</p>'}</section>
+    <section class="privacy-note"><b>Privatliv først</b><span>Placering vises kun for medarbejdere, der aktivt har slået deling til.</span></section>`;
+}
+
+function teamMap(large = true) {
+  const id = large ? 'live-map-full' : 'live-map-home';
+  return `<div class="leaflet-map ${large ? 'leaflet-map-large' : ''}" id="${id}" data-large="${large ? 'true' : 'false'}">
+    <div class="map-loading">${icon('map')}<b>Indlæser live-kort</b><span>OpenStreetMap med live-markører</span></div>
+  </div>`;
+}
+
+const leafletInstances = {};
+let leafletLoadPromise = null;
+
+function loadExternalAsset(tagName, attributes) {
+  return new Promise((resolve, reject) => {
+    const element = document.createElement(tagName);
+    Object.entries(attributes).forEach(([key, value]) => element.setAttribute(key, value));
+    element.addEventListener('load', resolve, { once: true });
+    element.addEventListener('error', reject, { once: true });
+    document.head.append(element);
+  });
+}
+
+function ensureLeaflet() {
+  if (globalThis.L) return Promise.resolve(globalThis.L);
+  if (!leafletLoadPromise) {
+    leafletLoadPromise = Promise.all([
+      loadExternalAsset('link', { rel: 'stylesheet', href: 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css' }),
+      loadExternalAsset('script', { src: 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js' }),
+    ]).then(() => globalThis.L);
+  }
+  return leafletLoadPromise;
+}
+
+function markerClass(person) {
+  if (person.id === currentEmployee().id && location.sharing) return 'self';
+  if (person.vehicleType === 'truck') return 'truck';
+  if (person.vehicleType === 'van') return 'van';
+  return 'dispatch';
+}
+
+function markerPosition(coords) {
+  const [lat, lng] = coords;
+  const minLat = 53.0;
+  const maxLat = 57.2;
+  const minLng = 7.4;
+  const maxLng = 11.4;
+  const left = Math.min(88, Math.max(8, ((lng - minLng) / (maxLng - minLng)) * 100));
+  const top = Math.min(88, Math.max(8, (1 - ((lat - minLat) / (maxLat - minLat))) * 100));
+  return `left:${left}%;top:${top}%`;
+}
+
+function fallbackLiveMap(container, people) {
+  container.innerHTML = `<div class="fallback-live-map">
+    <div class="fallback-map-grid"></div>
+    <span class="fallback-city city-aarhus">Aarhus</span><span class="fallback-city city-kolding">Kolding</span><span class="fallback-city city-hamburg">Hamburg</span>
+    ${people.map(person => `<button class="fallback-marker ${markerClass(person)}" style="${markerPosition(person.coords)}" title="${text(person.name)}"><b>${text(person.initials)}</b></button>`).join('')}
+    <div class="fallback-map-note">${icon('alert')}<b>Backup-kort aktivt</b><span>Det rigtige OpenStreetMap-kort kunne ikke hentes. Markører og Google Maps-links virker stadig.</span></div>
+  </div>`;
+}
+
+async function initializeMaps() {
+  if (!document.querySelectorAll) return;
+  const containers = [...document.querySelectorAll('.leaflet-map')];
+  if (!containers.length) return;
+  const people = visibleMapPeople();
+  let leaflet;
+  try {
+    leaflet = await ensureLeaflet();
+  } catch {
+    leaflet = null;
+  }
+  containers.forEach(container => {
+    if (!leaflet) {
+      fallbackLiveMap(container, people);
+      return;
+    }
+    if (leafletInstances[container.id]) leafletInstances[container.id].remove();
+    const large = container.dataset.large === 'true';
+    const map = leaflet.map(container, { zoomControl: true, attributionControl: true, scrollWheelZoom: large }).setView([55.25, 9.6], large ? 6 : 5);
+    leafletInstances[container.id] = map;
+    leaflet.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 18,
+      attribution: '&copy; OpenStreetMap',
+    }).addTo(map);
+    people.forEach(person => {
+      const marker = leaflet.marker(person.coords, {
+        icon: leaflet.divIcon({
+          className: `live-leaflet-marker ${markerClass(person)}`,
+          html: `<b>${text(person.initials)}</b>`,
+          iconSize: [30, 30],
+          iconAnchor: [15, 15],
+        }),
+      }).addTo(map);
+      marker.bindPopup(`<strong>${text(person.name)}</strong><br>${text(vehicleLabel(person.vehicleType))} · ${text(person.status)}<br>${text(person.truck)}`);
+    });
+    if (large && people.length) map.fitBounds(people.map(person => person.coords), { padding: [34, 34], maxZoom: 9 });
+    setTimeout(() => map.invalidateSize(), 80);
+  });
+}
+
+function renderMap() {
+  const visiblePeople = visibleMapPeople();
+  const statuses = workStatusCounts();
+  return `
+    <div class="page-heading"><div><p class="eyebrow">Frivillig positionsdeling</p><h2>Live-kort</h2></div></div>
+    <section class="map-hero-card surface-card">
+      <div>
+        <p class="eyebrow">GPS status</p>
+        <h3>${location.sharing ? 'Du deler position' : 'Du er skjult'}</h3>
+        <span>${visiblePeople.length} synlige på kortet · ${location.sharing ? `${location.speed} km/t` : 'GPS er slukket'}</span>
+      </div>
+      <button data-action="toggle-location">${location.sharing ? 'Stop deling' : 'Del position'}</button>
+    </section>
+    <section class="map-filter-row" aria-label="Kortfilter">
+      ${[
+        ['all', 'Alle'],
+        ['sharing', 'Deler nu'],
+        ['truck', 'Lastbil'],
+        ['van', 'Varebil'],
+      ].map(([id, label]) => `<button class="${mapFilter === id ? 'active' : ''}" data-map-filter="${id}">${label}</button>`).join('')}
+    </section>
+    <section class="map-share-timer screen-section">
+      <div class="screen-section-head"><span>Deling</span><small>Start og stop hurtigt</small></div>
+      <div><b>Hurtig deling</b><span>Start GPS i en fast periode, fx når du henter noget for en kollega.</span></div>
+      <button data-location-duration="15">Del i 15 min</button>
+      <button data-location-duration="30">Del i 30 min</button>
+      <button data-location-duration="60">Del i 60 min</button>
+    </section>
+    <div class="screen-section-head map-section-head"><span>Rigtigt kort</span><small>OpenStreetMap med Google Maps-links</small></div>
+    <section class="map-legend-panel">
+      <span><i class="legend-dot self"></i>Dig</span>
+      <span><i class="legend-dot truck"></i>Lastbil</span>
+      <span><i class="legend-dot van"></i>Varebil</span>
+      <span><i class="legend-dot dispatch"></i>Kontor</span>
+      <small>Kun kollegaer med aktiv deling vises. Brug "Deler nu" hvis kortet skal være helt rent.</small>
+    </section>
+    ${teamMap(true)}
+    <section class="map-actions">
+      <p class="map-expiry-line">${locationExpiryText()}</p>
+      <div><b>${location.sharing ? 'Din position er synlig' : 'Du er skjult på kortet'}</b><span>${location.sharing ? (location.demo ? 'Demo-position bruges i denne prototype' : 'Opdateres automatisk fra din GPS') : 'Du bestemmer selv, hvornår kollegaerne kan se dig'}</span></div>
+      <button data-action="toggle-location">${location.sharing ? 'Stop deling' : 'Del position'}</button>
+      <small class="map-person-legend">Status · Sidst opdateret</small>
+    </section>
+    <details class="map-more-section">
+      <summary>Arbejdsstatus og detaljer</summary>
+      <section class="work-status-strip">
+        <div><span>Arbejdsstatus</span><b>${statuses.active}</b><small>mødt ind/online</small></div>
+        <div><span>Pause</span><b>${statuses.pause}</b><small>holder stille</small></div>
+        <div><span>Kan hjælpe</span><b>${statuses.help}</b><small>kollegaer online</small></div>
+        <div><span>Afhentning</span><b>${statuses.pickup}</b><small>aktiv opgave</small></div>
+      </section>
+    </details>
+    <section class="map-people screen-section"><div class="section-title"><h3>Synlige kollegaer</h3><span>${visiblePeople.length} personer</span></div>
+      ${visiblePeople.length ? visiblePeople.map(person => `<div class="map-person-card">${employeeRow(person)}<div class="map-person-meta"><span>Status · ${text(mapPersonStatus(person))}</span><span>${text(mapLastUpdatedLabel(person))}</span></div><a class="map-open-link" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(person.coords.join(','))}" target="_blank" rel="noreferrer">Åbn i Google Maps</a></div>`).join('') : '<p class="empty-state">Ingen deler position i dette filter lige nu.</p>'}
+    </section>`;
+}
+
+function renderChat() {
+  if (activeChat) return renderConversation();
+  const community = chats.find(chat => chat.community);
+  const channels = chats.filter(chat => chat.channel && canAccessChat(chat));
+  const chatSearch = searchable(chatQuery.trim());
+  const directChats = chats.filter(chat => !chat.community && !chat.channel)
+    .filter(chat => !chatSearch || searchable(`${chat.name} ${chat.preview}`).includes(chatSearch));
+  const pinnedChat = community || channels[0] || directChats[0];
+  const communityCard = community
+    ? `<button class="community-chat" data-chat="${text(community.id)}">
+      <span class="community-icon">${icon('users')}</span>
+      <span><small>Hele holdet</small><b>Fælleschat</b><em>${text(community.preview)}</em></span>
+      ${community.unread ? `<i>${text(community.unread)}</i>` : icon('arrow', 'row-arrow')}
+    </button>`
+    : '<section class="important-message"><span>Fælleschat</span><b>Ikke oprettet endnu</b><small>Kør Supabase schema igen for at oprette standardkanalerne.</small></section>';
+  return `
+    <div class="page-heading"><div><p class="eyebrow">XpressBudet internt</p><h2>Fællesskab</h2></div><button class="round-btn" data-action="new-chat" aria-label="Ny besked">${icon('plus')}</button></div>
+    ${communityCard}
+    <label class="search-box chat-search"><input data-chat-search placeholder="Søg i beskeder..." value="${text(chatQuery)}" /><span>${directChats.length} hits</span></label>
+    <section class="channel-section screen-section">
+      <div class="section-title"><h3>Kanaler</h3><span>${channels.length} synlige</span></div>
+      ${channels.map(chat => `<button class="channel-card ${chat.channel}" data-chat="${chat.id}">
+        <span class="channel-icon">${icon(chat.channel === 'truck' ? 'truck' : 'van')}</span>
+        <span><b>${text(chat.name)}</b><small>${text(chat.preview)}</small></span>
+        ${chat.unread ? `<i>${text(chat.unread)}</i>` : icon('arrow', 'row-arrow')}
+      </button>`).join('')}
+    </section>
+    <div class="section-title chat-title"><h3>Direkte</h3></div>
+    <section class="chat-list screen-section">${directChats.map(chat => `
+      <button class="chat-row" data-chat="${chat.id}">
+        <span class="person-avatar">${text(chat.initials)}</span>
+      <span class="chat-copy"><b>${text(chat.name)}</b><small>${text(chat.preview)}</small></span>
+      <span class="chat-meta"><time>${text(chat.time)}</time>${chat.unread ? `<i>${text(chat.unread)}</i>` : ''}</span>
+      </button>`).join('')}
+    </section>
+    <details class="chat-more-section">
+      <summary>Overblik og fastgjort besked</summary>
+      <section class="chat-overview-panel surface-card">
+        <div><span>Drift</span><b>${announcements.filter(item => canReadAudience(item.audience)).length}</b><small>opslag</small></div>
+        <div><span>Kanaler</span><b>${channels.length}</b><small>for din gruppe</small></div>
+        <div><span>Direkte</span><b>${chats.filter(chat => !chat.community && !chat.channel).length}</b><small>samtaler</small></div>
+      </section>
+      <section class="important-message">
+        <span>Vigtig besked</span><b>${text(pinnedChat?.name || 'Ingen fastgjort besked')}</b><small>${text(pinnedChat?.preview || 'Fastgjorte chatbeskeder kan vises her uden at blande nyheder ind i beskederne.')}</small>
+      </section>
+    </details>`;
+}
+
+function conversationHeading(chat) {
+  if (chat.community) return { title: 'Fælleschat', subtitle: 'Alle medarbejdere' };
+  if (chat.channel === 'truck') return { title: 'Lastbilchat', subtitle: 'Kun lastbilholdet' };
+  if (chat.channel === 'van') return { title: 'Varebilchat', subtitle: 'Kun varebilholdet' };
+  return { title: chat.name, subtitle: 'Direkte besked' };
+}
+
+function renderConversation() {
+  const chat = chats.find(item => item.id === activeChat);
+  if (!chat) {
+    activeChat = null;
+    return renderChat();
+  }
+  const thread = (messages[activeChat] || []).map(normalizeMessage);
+  const heading = conversationHeading(chat);
+  return `
+    <div class="conversation-head">
+      <button data-action="back-chats" aria-label="Tilbage til beskeder">${icon('arrow', 'back-arrow')}</button>
+      <span class="person-avatar">${text(chat.initials)}</span>
+      <div><b>${text(heading.title)}</b><small>${text(heading.subtitle)}</small></div>
+    </div>
+    <section class="messages">${thread.map(renderMessageBubble).join('')}</section>
+    <form class="message-form">
+      <div class="emoji-row">${emojiChoices.map(emoji => `<button type="button" data-emoji="${text(emoji)}">${text(emoji)}</button>`).join('')}</div>
+      <div class="message-compose">
+        <label class="image-picker" title="Tilføj billede">${icon('image')}<input name="image" type="file" accept="image/*" /></label>
+        <input name="message" autocomplete="off" placeholder="Skriv en besked eller emoji..." />
+        <button aria-label="Send besked">${icon('send')}</button>
+      </div>
+    </form>`;
+}
+
+function renderMessageBubble(message) {
+  const own = message.side === 'me';
+  const meta = [message.senderRole, message.senderVehicle].filter(Boolean).join(' · ');
+  return `<article class="message-row ${own ? 'own' : 'other'}">
+    ${own ? '' : `<span class="person-avatar message-avatar">${text(message.senderInitials)}</span>`}
+    <div class="bubble ${text(message.side)}">
+      <header><b>${own ? 'Dig' : text(message.senderName)}</b>${meta ? `<small>${text(meta)}</small>` : ''}</header>
+      ${message.body ? `<p>${text(message.body)}</p>` : ''}
+      ${message.image ? `<figure class="chat-image"><img src="${text(message.image.src)}" alt="${text(message.image.name || 'Chatbillede')}" /><a href="${text(message.image.src)}" download="${text(mediaName(message.image.name))}">${icon('download')} Download</a></figure>` : ''}
+      <time>${text(messageTimestamp(message))}</time>
+    </div>
+  </article>`;
+}
+
+function renderCreatorRoleTester() {
+  if (!canUseCreatorRoleTester()) return '';
+  const roleButtons = Object.entries(creatorRolePresets).map(([id, preset]) => (
+    `<button class="${creatorRoleTester.currentRole === id ? 'active' : ''}" data-creator-role="${text(id)}">${text(preset.label)}</button>`
+  )).join('');
+  return `<section class="creator-role-tester">
+    <div><span>Creator test</span><small>Kun synlig for creator</small></div>
+    <p>Skift perspektiv lokalt og se appen som medarbejder, disponent eller chef uden at ændre rigtige rettigheder.</p>
+    <strong>Viser lige nu: ${text(creatorPerspectiveLabel())}</strong>
+    <nav>${roleButtons}</nav>
+  </section>`;
+}
+
+function renderMore() {
+  const completion = profileCompletion({ ...currentEmployee(), ...profile });
+  return `
+    <div class="page-heading"><div><p class="eyebrow">Din konto</p><h2>Kontrolcenter</h2></div></div>
+    <button class="profile-card" data-action="open-profile">${avatar(currentEmployee(), 'large-avatar')}<span><b>${text(profile.name)}</b><small>${text(profile.role)} · ${text(accessRoleLabel(profile.accessRole))} · ${completion}% udfyldt</small></span>${icon('edit', 'row-arrow')}</button>
+    ${legalAcceptance ? '' : `<section class="legal-alert">
+      <b>Sikkerhed & jura</b>
+      <span>${text(legalStatusText())}. GPS, billeder, chat og profiler er persondata og skal bruges efter klare interne regler.</span>
+      <button data-action="open-legal">Åbn</button>
+    </section>`}
+    <section class="control-tabs" aria-label="Kontrolcenter overblik">
+      <span>Daglig brug</span><span>Privatliv</span><span>Chef/admin</span>
+    </section>
+    <section class="utility-list control-center">
+      <details class="control-detail-group" open>
+        <summary>Daglig brug</summary>
+        <button class="utility-row" data-action="open-profile"><span class="utility-icon">${icon('edit')}</span><span><b>Rediger profil</b><small>Navn, telefon og tilknyttet lastbil</small></span>${icon('arrow', 'row-arrow')}</button>
+        <button class="utility-row" data-action="open-notifications"><span class="utility-icon">${icon('alert')}</span><span><b>Notifikationer</b><small>${notifications.filter(item => item.unread).length} ulæste · direkte beskeder og regelnyt</small></span>${icon('arrow', 'row-arrow')}</button>
+        <button class="utility-row" data-action="open-vehicles"><span class="utility-icon">${icon('truck')}</span><span><b>Køretøjer</b><small>Register over biler, status og chaufførtilknytning</small></span>${icon('arrow', 'row-arrow')}</button>
+        <button class="utility-row" data-tab="info"><span class="utility-icon">${icon('info')}</span><span><b>Information</b><small>Kontakter, guides og dokumenter</small></span>${icon('arrow', 'row-arrow')}</button>
+        <button class="utility-row" data-action="${profile.logbook ? 'open-logbook' : 'open-profile'}"><span class="utility-icon">${icon('truck')}</span><span><b>Personlig logbog</b><small>${profile.logbook ? `${logEntries.length} private minder · kun synlige for dig` : 'Fravalgt · kan slås til på din profil'}</small></span>${icon('arrow', 'row-arrow')}</button>
+      </details>
+      <details class="control-detail-group">
+        <summary>Sikkerhed og privatliv</summary>
+        <button class="utility-row" data-action="open-my-data"><span class="utility-icon">${icon('document')}</span><span><b>Mine data</b><small>Indsigt, eksport, sletning og privatlivsvalg</small></span>${icon('arrow', 'row-arrow')}</button>
+        <button class="utility-row" data-action="open-legal"><span class="utility-icon">${icon('alert')}</span><span><b>Sikkerhed & jura</b><small>Privatliv, GPS, billeder og slettefrister</small></span>${icon('arrow', 'row-arrow')}</button>
+        <button class="utility-row" data-action="toggle-location"><span class="utility-icon">${icon('pin')}</span><span><b>Lokationsdeling</b><small>${location.sharing ? 'Aktiv · tryk for at stoppe' : 'Slået fra · tryk for at dele'}</small></span>${icon('arrow', 'row-arrow')}</button>
+        <button class="utility-row" data-action="open-settings"><span class="utility-icon">${icon('settings')}</span><span><b>Indstillinger</b><small>Notifikationer og privatliv</small></span>${icon('arrow', 'row-arrow')}</button>
+      </details>
+      <details class="control-detail-group">
+        <summary>Administration</summary>
+        ${isDispatcher() ? `<button class="utility-row" data-action="open-dispatch"><span class="utility-icon">${icon('alert')}</span><span><b>Driftsoverblik</b><small>Hold, positioner og driftsopslag</small></span>${icon('arrow', 'row-arrow')}</button>` : ''}
+        <button class="utility-row" data-action="open-admin"><span class="utility-icon">${icon('settings')}</span><span><b>${isCreatorOwner() ? 'Appens drift' : canManageEmployees() ? 'Chef/admin' : 'Sikkerhed og rettigheder'}</b><small>${isCreatorOwner() ? 'Status, sikkerhed, Supabase og vigtige styringer' : canManageEmployees() ? 'Rettigheder, sikkerhed og medarbejdere' : 'Se hvad chef/admin kan styre'}</small></span>${icon('arrow', 'row-arrow')}</button>
+        ${canManageEmployees() ? `<button class="utility-row" data-action="open-launch-checklist"><span class="utility-icon">${icon('check')}</span><span><b>Klar til drift</b><small>Supabase, første admin, telefon-test og jura</small></span>${icon('arrow', 'row-arrow')}</button>` : ''}
+        ${renderCreatorRoleTester()}
+        <button class="utility-row" data-action="reset-demo"><span class="utility-icon">${icon('settings')}</span><span><b>Nulstil demo</b><small>Gendan de oprindelige eksempeldata</small></span>${icon('arrow', 'row-arrow')}</button>
+        <button class="utility-row" data-action="logout"><span class="utility-icon">${icon('close')}</span><span><b>Log ud</b><small>Afslut din session på denne enhed</small></span>${icon('arrow', 'row-arrow')}</button>
+      </details>
+    </section>
+    <section class="privacy-note"><b>XpressIntra er kun til medarbejdere</b><span>Profiler, beskeder og placeringer skal gemmes bag et sikkert login, når systemet forbindes til en server.</span></section>`;
+}
+
+function renderInfo() {
+  const query = searchable(infoQuery.trim());
+  const filteredLinks = infoLinks.filter(item =>
+    (activeInfoCategory === 'all' || item.category === activeInfoCategory || (activeInfoCategory === 'favorites' && infoFavorites.includes(item.id)))
+    && searchable(`${item.title} ${item.description} ${item.source} ${item.category}`).includes(query)
+  );
+  const favoriteLinks = infoLinks.filter(item => infoFavorites.includes(item.id));
+  return `
+    <div class="page-heading"><div><p class="eyebrow">Værktøjskasse</p><h2>Information</h2></div><button class="round-btn" data-action="open-info" data-info="operations" aria-label="Åbn kontakter">${icon('phone')}</button></div>
+    <section class="info-hero surface-card">
+      <p class="section-kicker">Nød og drift</p>
+      <h3>Find det rigtige svar hurtigt</h3>
+      <p>Søg i kontakter, regler, dokumenter og officielle kilder. Links er sat op som rigtige knapper, så de er nemme at ramme fra mobilen.</p>
+      <div><a href="tel:+4540553131">Budkørsel <b>40 55 31 31</b></a><a href="tel:+4540873131">Lastbil <b>40 87 31 31</b></a></div>
+    </section>
+    <section class="info-focus-grid screen-section" aria-label="Information genveje">
+      ${infoSections.map(section => `<button class="${activeInfoCategory === section.id ? 'active' : ''}" data-info-category="${section.id}">
+        <span>${icon(section.icon)}</span><b>${text(section.title)}</b><small>${text(section.subtitle)}</small>
+      </button>`).join('')}
+    </section>
+    <label class="search-box info-search"><input data-info-search placeholder="Søg fx køre hviletid, CMR eller miljøzone..." value="${text(infoQuery)}" /><span>${filteredLinks.length} hits</span></label>
+    <section class="info-tabs">
+      <button class="${activeInfoCategory === 'all' ? 'active' : ''}" data-info-category="all">Alle</button>
+      <button class="${activeInfoCategory === 'favorites' ? 'active' : ''}" data-info-category="favorites">Favoritter</button>
+      ${infoSections.map(section => `<button class="${activeInfoCategory === section.id ? 'active' : ''}" data-info-category="${section.id}">${text(section.title)}</button>`).join('')}
+    </section>
+    <section class="info-alert">
+      <b>Varebil: ny regel fra 1. juli 2026</b>
+      <span>International godskørsel med varebiler over 2,5 ton får krav om takograf samt køre- og hviletid i relevante tilfælde.</span>
+      <a href="https://www.fstyr.dk/nyheder/2026/mar/varebiler-bliver-en-del-af-koere-og-hviletidskontrollen" target="_blank" rel="noreferrer">Åbn officiel kilde</a>
+    </section>
+    <section class="info-card-list">${filteredLinks.length ? filteredLinks.map(item => `
+      <article class="info-card-link ${item.href ? '' : 'no-link'}">
+        <span class="utility-icon">${icon(item.icon)}</span>
+        <span><em>${text(item.source)}</em><b>${text(item.title)}</b><small>${text(item.description)}</small></span>
+        <button type="button" class="favorite-info-btn ${infoFavorites.includes(item.id) ? 'active' : ''}" data-info-favorite="${text(item.id)}">${infoFavorites.includes(item.id) ? '★' : '☆'}</button>
+        ${item.href ? `<a class="open-info-link" href="${text(item.href)}" target="${item.href.startsWith('http') ? '_blank' : '_self'}" rel="noreferrer">Åbn</a>` : '<strong>Info</strong>'}
+      </article>` ).join('') : '<p class="empty-state">Ingen information matcher din søgning.</p>'}
+    </section>
+    <details class="info-more-section">
+      <summary>Flere værktøjer og guides</summary>
+      <section class="fast-answer-panel screen-section">
+        <div><span>Hurtige svar</span><small>20 sekunder</small><button data-action="open-rule-updates">Regelnyt</button></div>
+        ${fastAnswers.map(answer => `<article><b>${text(answer.title)}</b><small>${text(answer.audience)}</small><p>${text(answer.body)}</p></article>`).join('')}
+      </section>
+      <section class="favorite-info-panel screen-section">
+        <div><span>Favoritter</span><small>${favoriteLinks.length} gemt</small></div>
+        ${favoriteLinks.length ? favoriteLinks.slice(0, 3).map(item => `<button data-info-category="${text(item.category)}"><b>${text(item.title)}</b><small>${text(item.source)} · ${text(item.description)}</small></button>`).join('') : '<p>Tryk på stjernen ved et link for at gemme det her.</p>'}
+      </section>
+      <section class="quick-guide-grid">
+        ${quickGuides.map((guide, index) => guide.href
+          ? `<a class="quick-guide-card" href="${text(guide.href)}" target="${guide.href.startsWith('http') ? '_blank' : '_self'}" rel="noreferrer"><span>${icon(guide.icon)}</span><em>${text(guide.audience)}</em><b>${text(guide.title)}</b><small>${text(guide.body)}</small><strong>${text(guide.action)}</strong></a>`
+          : `<button class="quick-guide-card" data-guide="${index}"><span>${icon(guide.icon)}</span><em>${text(guide.audience)}</em><b>${text(guide.title)}</b><small>${text(guide.body)}</small><strong>${text(guide.action)}</strong></button>`
+        ).join('')}
+      </section>
+      <section class="country-guide-panel screen-section">
+        <div><span>Landeguider</span><small>Hurtige noter</small></div>
+        ${countryGuides.map(guide => `<article><b>${text(guide.country)}</b><small>${text(guide.audience)}</small><p>${text(guide.body)}</p></article>`).join('')}
+      </section>
+      <section class="checklist-panel screen-section">
+        <div><span>Checkliste</span><small>To tryk og videre</small></div>
+        ${infoChecklists.map(list => `<article><b>${text(list.title)}</b>${list.items.map(item => `<small>${icon('check')} ${text(item)}</small>`).join('')}</article>`).join('')}
+      </section>
+    </details>
+    <section class="terminal-note"><b>Terminal og kontor</b><span>Ved Milepælen 2 · 8361 Hasselager</span></section>
+    <section class="source-note">Regler kan ændre sig. Brug links til de officielle kilder ved tvivl, og få virksomhedens interne procedurer kvalitetssikret af driften.</section>`;
+}
+
+const routes = { home: renderHome, work: renderWork, team: renderTeam, map: renderMap, chat: renderChat, info: renderInfo, more: renderMore };
+
+function openProfileModal(employee = currentEmployee(), isNew = false) {
+  const ownId = session?.userId || 'th';
+  const isOwnProfile = employee.id === ownId || employee.id === 'th';
+  const editable = isOwnProfile || isNew || canManageEmployees();
+  const canEditRights = canManageEmployees();
+  const canEditAdminFields = isNew || canEditRights;
+  const source = isNew ? {} : (isOwnProfile ? { ...employee, ...profile } : employee);
+  const modal = document.createElement('div');
+  modal.className = 'modal-backdrop';
+  modal.innerHTML = `<form class="profile-modal">
+    <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
+    ${avatar(employee, 'modal-avatar')}
+    <p class="eyebrow">${isNew ? 'Registrér kollega' : 'Medarbejderprofil'}</p>
+    <h3>${isNew ? 'Opret invitation' : text(employee.name)}</h3>
+    ${isNew ? '<section class="invite-help"><b>Sådan virker det</b><span>Chef/admin registrerer kollegaen her. Kollegaen får et link og opretter selv konto med samme mail.</span></section>' : ''}
+    ${!isNew ? `<section class="profile-completion"><span><b style="width:${profileCompletion(source)}%"></b></span><small>${profileCompletion(source)}% udfyldt · ${text(accessRoleLabel(source.accessRole))}</small></section>` : ''}
+    ${!isNew ? `<section class="profile-summary-grid">
+      <span><b>${text(source.role || 'Rolle mangler')}</b><small>Titel</small></span>
+      <span><b>${text(vehicleLabel(source.vehicleType))}</b><small>Funktion</small></span>
+      <span><b>${text(source.truck || 'Ingen bil')}</b><small>Bil/enhed</small></span>
+      <span><b>${text(source.department || 'Ikke sat')}</b><small>Afdeling</small></span>
+    </section>` : ''}
+    ${editable ? `
+      <section class="profile-form-section"><h4>Kontakt</h4>
+        <label>Navn<input name="name" value="${text(source.name || '')}" required /></label>
+        <label>Telefon<input name="phone" value="${text(source.phone || '')}" /></label>
+        <label>Arbejdsmail<input name="email" type="email" value="${text(source.email || '')}" /></label>
+        <label>Profilbillede<input name="photo" type="file" accept="image/*" /></label>
+      </section>
+      <section class="profile-form-section"><h4>Arbejde</h4>
+        <label>Afdeling<input name="department" value="${text(source.department || '')}" placeholder="Lastbil, varebil, drift..." ${canEditAdminFields ? '' : 'disabled'} /></label>
+        <input type="hidden" name="department" value="${text(source.department || '')}" ${canEditAdminFields ? 'disabled' : ''} />
+        <label>Kørekort / beviser<input name="license" value="${text(source.license || '')}" placeholder="Fx C/E, EU kvalifikationsbevis" ${canEditAdminFields ? '' : 'disabled'} /></label>
+        <input type="hidden" name="license" value="${text(source.license || '')}" ${canEditAdminFields ? 'disabled' : ''} />
+        <label>Nødkontakt<input name="emergencyContact" value="${text(source.emergencyContact || '')}" placeholder="Navn og telefon" /></label>
+        <label>Sprog<input name="languages" value="${text(source.languages || '')}" placeholder="Dansk, engelsk, tysk..." /></label>
+      </section>
+      <section class="profile-form-section"><h4>Rettigheder</h4>
+        <label>Titel / rolle<select name="role" ${canEditAdminFields ? '' : 'disabled'}><option ${source.role === 'Chauffør' ? 'selected' : ''}>Chauffør</option><option ${source.role === 'Lastbilchauffør' ? 'selected' : ''}>Lastbilchauffør</option><option ${source.role === 'Varebilschauffør' ? 'selected' : ''}>Varebilschauffør</option><option ${source.role === 'Disponent' ? 'selected' : ''}>Disponent</option><option ${source.role === 'Chef' ? 'selected' : ''}>Chef</option><option ${source.role === 'Creator' ? 'selected' : ''}>Creator</option></select></label>
+        <input type="hidden" name="role" value="${text(source.role || 'Chauffør')}" ${canEditAdminFields ? 'disabled' : ''} />
+        <label>Rettighed<select name="accessRole" ${canEditAdminFields ? '' : 'disabled'}><option value="employee" ${source.accessRole === 'employee' ? 'selected' : ''}>Medarbejder</option><option value="dispatcher" ${source.accessRole === 'dispatcher' ? 'selected' : ''}>Disponent</option><option value="admin" ${source.accessRole === 'admin' ? 'selected' : ''}>Chef/admin</option><option value="owner" ${source.accessRole === 'owner' ? 'selected' : ''}>Creator</option></select></label>
+        <input type="hidden" name="accessRole" value="${text(source.accessRole || 'employee')}" ${canEditAdminFields ? 'disabled' : ''} />
+        <label>Køretøjstype<select name="vehicleType" ${canEditAdminFields ? '' : 'disabled'}><option value="truck" ${source.vehicleType === 'truck' ? 'selected' : ''}>Lastbil</option><option value="van" ${source.vehicleType === 'van' ? 'selected' : ''}>Varebil</option><option value="dispatch" ${source.vehicleType === 'dispatch' ? 'selected' : ''}>Kontor / disponent</option></select></label>
+        <input type="hidden" name="vehicleType" value="${text(source.vehicleType || 'truck')}" ${canEditAdminFields ? 'disabled' : ''} />
+        <label>Bil / enhed<input name="truck" value="${text(source.truck || '')}" ${canEditAdminFields ? '' : 'disabled'} /></label>
+        <input type="hidden" name="truck" value="${text(source.truck || '')}" ${canEditAdminFields ? 'disabled' : ''} />
+      </section>
+      <section class="profile-form-section"><h4>Privat</h4>
+        <label class="check-row"><input type="checkbox" name="logbook" ${!isNew && profile.logbook ? 'checked' : ''} /><span>Aktivér personlig logbog <small>Private minder og noter fra vejen</small></span></label>
+      </section>
+      ${canEditAdminFields ? '<p class="security-inline-note">Chef/admin kan ændre titel, rettighed, afdeling, beviser og køretøj. Almindelige medarbejdere kan kun ændre egne kontakt- og profiloplysninger.</p>' : '<p class="security-inline-note">Titel, rettighed, afdeling, beviser og køretøj er låst og skal ændres af chef/admin.</p>'}
+      <button class="save-btn">${isNew ? 'Registrér og lav invitation' : 'Gem profil'}</button>` : `
+      <div class="profile-details">${employee.photo ? `<img class="profile-photo-preview" src="${text(employee.photo.src)}" alt="${text(employee.name)}" />` : ''}<span><b>Rolle</b>${text(employee.role)} · ${text(accessRoleLabel(employee.accessRole))}</span><span><b>Bil</b>${text(employee.truck)}</span><span><b>Status</b>${text(employee.status)}</span><span><b>Telefon</b>${text(employee.phone || 'Telefon mangler')}</span><span><b>Mail</b>${text(employee.email || 'Mail mangler')}</span><span><b>Beviser</b>${text(employee.license || 'Beviser ikke udfyldt')}</span><span><b>GPS</b>${employee.sharing ? `${text(employee.location)} · deler position` : 'Deler ikke position'}</span></div>
+      <button type="button" class="save-btn" data-direct-chat="${text(employee.id)}">Skriv en besked</button>`}
+  </form>`;
+  document.body.append(modal);
+  modal.addEventListener('submit', async event => {
+    event.preventDefault();
+    if (isNew) {
+      const data = new FormData(modal.querySelector('form'));
+      const name = data.get('name');
+      const newEmployee = { id: `employee-${Date.now()}`, name, initials: name.split(' ').map(part => part[0]).join('').slice(0, 2).toUpperCase(), role: data.get('role'), accessRole: data.get('accessRole'), vehicleType: data.get('vehicleType'), truck: data.get('truck') || 'Ingen bil', phone: data.get('phone'), email: data.get('email'), department: data.get('department'), license: data.get('license'), emergencyContact: data.get('emergencyContact'), languages: data.get('languages'), employmentStatus: 'active', status: onlineBackendActive() ? 'Invitation klargjort' : 'Ny medarbejder', location: 'Ikke delt', online: false, sharing: false, logbook: data.has('logbook') };
+      employees.push(newEmployee);
+      save('employees', employees);
+      recordAdminAudit('Medarbejder oprettet', `${name} blev oprettet som ${accessRoleLabel(data.get('accessRole'))}`);
+      if (onlineBackendActive()) {
+        try {
+          newEmployee.invitationId = await createSupabaseEmployeeInvitation(newEmployee);
+          save('employees', employees);
+        } catch (error) {
+          showToast(`Profilen er oprettet lokalt, men invitationen kom ikke online: ${error.message}`);
+        }
+      }
+      modal.remove(); render(); showToast('Medarbejderen er oprettet');
+      openEmployeeInviteResultModal(newEmployee, newEmployee.invitationId || '');
+      return;
+    }
+    const data = new FormData(modal.querySelector('form'));
+    const photo = await readImageFile(data.get('photo'));
+    const targetIndex = employees.findIndex(item => item.id === employee.id);
+    const previous = isOwnProfile ? { ...currentEmployee(), ...profile } : employees[targetIndex];
+    const updated = {
+      ...previous,
+      name: data.get('name'),
+      phone: data.get('phone'),
+      email: data.get('email'),
+      emergencyContact: data.get('emergencyContact'),
+      languages: data.get('languages'),
+      department: canEditAdminFields ? data.get('department') : previous.department,
+      license: canEditAdminFields ? data.get('license') : previous.license,
+      role: canEditAdminFields ? data.get('role') : previous.role,
+      accessRole: canEditAdminFields ? data.get('accessRole') : previous.accessRole,
+      vehicleType: canEditAdminFields ? data.get('vehicleType') : previous.vehicleType,
+      truck: canEditAdminFields ? data.get('truck') : previous.truck,
+      photo: photo || previous.photo || null,
+      logbook: isOwnProfile ? data.has('logbook') : previous.logbook,
+    };
+    if (isOwnProfile) {
+      profile = { ...profile, ...updated };
+      const ownIndex = employees.findIndex(item => item.id === ownId || item.id === 'th');
+      if (ownIndex >= 0) employees[ownIndex] = { ...employees[ownIndex], ...updated };
+      else employees.unshift({ ...currentEmployee(), ...updated, id: ownId });
+      save('profile', profile);
+    } else if (targetIndex >= 0 && canEditAdminFields) {
+      employees[targetIndex] = { ...employees[targetIndex], ...updated };
+      recordAdminAudit('Medarbejderprofil ændret', `${updated.name} · ${updated.role} · ${accessRoleLabel(updated.accessRole)}`);
+      if (onlineBackendActive()) {
+        try {
+          await updateSupabaseEmployeeProfile(updated);
+        } catch (error) {
+          showToast(`Profilen er gemt lokalt, men ikke online: ${error.message}`);
+        }
+      }
+    }
+    save('employees', employees);
+    modal.remove(); render(); showToast(isOwnProfile ? 'Din profil er opdateret' : 'Medarbejderprofilen er opdateret');
+  });
+}
+
+function openEmployeeInviteResultModal(employee, invitationId = '') {
+  const link = inviteLink(employee, invitationId);
+  const modal = document.createElement('div');
+  modal.className = 'modal-backdrop';
+  modal.innerHTML = `<section class="profile-modal invite-result-modal">
+    <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
+    <p class="eyebrow">Invitation klar</p>
+    <h3>${text(employee.name)} kan registrere sig</h3>
+    <section class="invite-help">
+      <b>Send dette til kollegaen</b>
+      <span>Kollegaen skal bruge mailen <strong>${text(employee.email || 'mangler mail')}</strong> og trykke “Opret konto via invitation” på login-siden.</span>
+    </section>
+    <label>Invitationslink<input readonly value="${text(link)}" /></label>
+    <div class="invite-actions">
+      <button type="button" data-action="share-last-invite">Send/dele invitation</button>
+      <button type="button" data-action="close-modal">Færdig</button>
+    </div>
+  </section>`;
+  modal.dataset.inviteEmployee = employee.id;
+  modal.dataset.inviteId = invitationId;
+  document.body.append(modal);
+}
+
+function openLogbookModal() {
+  if (!coreSettings.logbook) {
+    showToast('Logbogen er midlertidigt slået fra af chef/admin');
+    return;
+  }
+  syncLogbookDrafts();
+  const stats = logbookStats();
+  const suggestions = logbookSuggestions();
+  const summary = dailyLogbookSummary(stats);
+  const automationRows = [
+    ['smartLogbook', 'Smart logbog', 'Hovedkontakt: appen laver kun private kladder, når denne er slået til.'],
+    ['autoPlace', 'Steder jeg besøger', 'Foreslår nye byer, lande og favoritsteder.'],
+    ['autoStops', 'Pauser og stop', 'Foreslår en pause-note, når du holder stille.'],
+    ['autoPickup', 'Afhentninger', 'Logger hjælper-opgaver, status og aflevering som private kladder.'],
+    ['autoVehicle', 'Køretøj og arbejdsdag', 'Foreslår dagens bil, rute og arbejdsdag.'],
+  ];
+  const modal = document.createElement('div');
+  modal.className = 'modal-backdrop';
+  modal.innerHTML = `<section class="profile-modal logbook-modal">
+    <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
+    <p class="eyebrow">Kun synlig for dig</p><h3>Personlig logbog</h3>
+    <p class="privacy-note">Privat område: chef, disponenter og kollegaer skal ikke kunne læse dine personlige minder. Automatikken laver forslag, du godkender selv.</p>
+    <div class="logbook-stats">
+      <span><b>${stats.total}</b><small>Indlæg</small></span>
+      <span><b>${stats.places}</b><small>Mine steder</small></span>
+      <span><b>${stats.auto}</b><small>Automatik</small></span>
+      <span><b>${stats.images}</b><small>Billeder</small></span>
+    </div>
+    <section class="daily-logbook-summary">
+      <div><span>Dagens opsamling</span><b>${text(summary.title)}</b><small>${text(summary.meta)}</small><p>${text(summary.body)}</p></div>
+      <button type="button" data-logbook-suggestion="workday">Gem dagen som minde</button>
+    </section>
+    <section class="logbook-automation">
+      <h4>Logbog Automation</h4>
+      ${automationRows.map(([key, title, description]) => `<button type="button" class="${logbookAutomation[key] ? 'active' : ''}" data-logbook-toggle="${text(key)}"><span><b>${text(title)}</b><small>${text(description)}</small></span><em>${logbookAutomation[key] ? 'Til' : 'Fra'}</em></button>`).join('')}
+    </section>
+    <section class="logbook-drafts">
+      <div><h4>Private kladder</h4>${logbookDrafts.length ? '<button type="button" data-action="clear-logbook-drafts">Ryd kladder</button>' : ''}</div>
+      ${logbookDrafts.length ? logbookDrafts.map(draft => `<article>
+        <p>${text(draft.date || 'I dag')} · ${text(draft.place)}</p>
+        <b>${text(draft.title)}</b>
+        <span>${text(draft.note)}</span>
+        <footer><button type="button" data-approve-logbook-draft="${text(draft.id)}">Gem</button><button type="button" data-delete-logbook-draft="${text(draft.id)}">Slet</button></footer>
+      </article>`).join('') : '<p class="empty-state">Ingen private kladder endnu. Når appen opdager et sted, en pause, en afhentning eller dagens køretøj, lander forslaget her.</p>'}
+    </section>
+    <section class="logbook-suggestions">
+      <h4>Automatiske forslag</h4>
+      ${logbookAutomation.autoDrafts && suggestions.length ? suggestions.map(item => `<button type="button" data-logbook-suggestion="${text(item.kind)}"><span><b>${text(item.title)}</b><small>${text(item.place)} · ${text(item.note)}</small></span>${icon('plus')}</button>`).join('') : '<p class="empty-state">Slå automatiske kladder til for at få hurtige forslag fra GPS, afhentninger og køretøj.</p>'}
+    </section>
+    <div class="logbook-entries">${logEntries.map(renderLogbookEntry).join('')}</div>
+    <form class="log-entry-form">
+      <label>Kategori<select name="category"><option>Pause</option><option>Levering</option><option>Grænse</option><option>Godt sted</option><option>Afhentning</option><option>Andet</option></select></label>
+      <label>Sted<span class="place-picker"><input name="place" placeholder="Hvor er du?" required /><button type="button" data-action="use-current-logbook-place">Brug min lokation</button></span><small>${text(currentLogbookPlace())}</small></label>
+      <label>Note<input name="note" placeholder="Hvad vil du huske?" required /></label>
+      <label>Billede<input name="image" type="file" accept="image/*" /></label>
+      <label class="check-row"><input type="checkbox" name="favorite" /><span>Marker som favorit <small>Gør mindet nemt at finde senere</small></span></label>
+      <button class="save-btn">Gem privat minde</button>
+    </form>
+  </section>`;
+  document.body.append(modal);
+}
+
+function openPickupModal() {
+  const quickColleague = employees.find(employee => employee.id !== currentEmployee().id && employee.id !== session?.userId);
+  const modal = document.createElement('div');
+  modal.className = 'modal-backdrop';
+  modal.innerHTML = `<form class="profile-modal pickup-form">
+    <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
+    <p class="eyebrow">Midlertidig GPS-deling</p><h3>Hent for en kollega</h3>
+    <p class="info-intro">Vælg kollegaen, sted og prioritet. Når du markerer opgaven som færdig, stopper den opgaverelaterede GPS-deling igen.</p>
+    ${quickColleague ? `<section class="pickup-quick-start">
+      <b>Hurtig start</b><span>Start med ét tryk, og skriv flere detaljer senere i live noter.</span>
+      <button type="button" data-quick-pickup="15">15 min for ${text(quickColleague.name.split(' ')[0])}</button>
+      <button type="button" data-quick-pickup="30">30 min for ${text(quickColleague.name.split(' ')[0])}</button>
+    </section>` : ''}
+    <label>Kollega<select name="employee">${employees.filter(employee => employee.id !== currentEmployee().id && employee.id !== session?.userId).map(employee => `<option value="${text(employee.id)}">${text(employee.name)} · ${text(employee.truck)}</option>`).join('')}</select></label>
+    <label>Afhentningssted<input name="pickupPlace" placeholder="Fx Kolding terminal eller kundens port" /></label>
+    <label>Afleveringssted<input name="dropoffPlace" placeholder="Fx Hasselager kontor eller kollegaens bil" /></label>
+    <label>Reference<input name="reference" placeholder="Fx ordrenr., port eller kontaktperson" /></label>
+    <label>Prioritet<select name="priority"><option>Normal</option><option>Haster</option><option>Kan vente</option></select></label>
+    <label>Delingstid<select name="duration"><option value="15">15 minutter</option><option value="30" selected>30 minutter</option><option value="60">60 minutter</option><option value="until-done">Indtil færdig</option></select></label>
+    <label>Kort note<input name="note" placeholder="Fx Jeg henter pallen i Kolding" /></label>
+    <div class="pickup-form-checklist"><b>Tjekliste</b>${pickupChecklistItems().map(item => `<span>${text(item.label)}</span>`).join('')}</div>
+    <label>Billede / dokumentation<input name="image" type="file" accept="image/*" /></label>
+    <button class="save-btn">Start opgave og del position</button>
+  </form>`;
+  document.body.append(modal);
+}
+
+async function updatePickupStatus(status) {
+  if (!activePickup) return;
+  activePickup.status = status;
+  activePickup.checklist = ensurePickupChecklist(activePickup);
+  activePickup.steps = activePickup.steps || [];
+  activePickup.steps.push({ status, at: new Date().toISOString() });
+  save('activePickup', activePickup);
+  if (onlineBackendActive()) {
+    updateSupabasePickupTask().catch(error => showToast(`Status blev gemt lokalt, men ikke online: ${error.message}`));
+  }
+  addNotification({
+    type: 'Afhentning',
+    title: `Afhentning: ${pickupStatusLabel(status)}`,
+    body: activePickup.note || 'Status er opdateret på opgaven.',
+    level: status === 'blocked' ? 'urgent' : 'task',
+  });
+  syncLogbookDrafts();
+  render();
+  showToast(`Afhentning markeret: ${pickupStatusLabel(status)}`);
+}
+
+function enforcePickupExpiry() {
+  if (!activePickup?.expiresAt) return;
+  if (Date.now() < new Date(activePickup.expiresAt).getTime()) return;
+  const shouldStopLocationSharing = activePickup.startedLocationSharing;
+  const expiredPickup = {
+    ...activePickup,
+    status: 'cancelled',
+    completedAt: new Date().toISOString(),
+    steps: [...(activePickup.steps || []), { status: 'cancelled', at: new Date().toISOString(), reason: 'expired' }],
+  };
+  if (onlineBackendActive() && activePickup.id) {
+    activePickup = expiredPickup;
+    updateSupabasePickupTask({ status: 'cancelled', completed_at: expiredPickup.completedAt }).catch(error => showToast(`Afhentningen udløb lokalt, men ikke online: ${error.message}`));
+  }
+  activePickup = null;
+  save('activePickup', null);
+  if (shouldStopLocationSharing && location.sharing) {
+    stopLocationSharing('Afhentningsdelingen udløb automatisk');
+    return;
+  }
+  showToast('Afhentningsdelingen udløb automatisk');
+}
+
+async function finishPickup() {
+  if (!activePickup) return;
+  const stopTaskSharing = activePickup.startedLocationSharing;
+  activePickup.status = 'delivered';
+  activePickup.completedAt = new Date().toISOString();
+  activePickup.checklist = ensurePickupChecklist(activePickup);
+  activePickup.steps = [...(activePickup.steps || []), { status: 'delivered', at: activePickup.completedAt }];
+  if (onlineBackendActive()) {
+    updateSupabasePickupTask({ status: 'delivered', completed_at: activePickup.completedAt }).catch(error => showToast(`Afhentningen blev lukket lokalt, men ikke online: ${error.message}`));
+  }
+  addNotification({
+    type: 'Afhentning',
+    title: 'Afhentning afleveret',
+    body: activePickup.note || 'Opgaven er afsluttet.',
+    level: 'task',
+  });
+  pickupHistory.unshift({
+    ...activePickup,
+    status: 'delivered',
+    completedAt: activePickup.completedAt,
+    checklist: activePickup.checklist,
+  });
+  save('pickupHistory', pickupHistory.slice(0, 20));
+  activePickup = null;
+  save('activePickup', null);
+  if (stopTaskSharing) {
+    stopLocationSharing('Afhentningen er afsluttet, og GPS-delingen er stoppet');
+    return;
+  }
+  render();
+  showToast('Afhentningen er afsluttet');
+}
+
+function openNewChatModal() {
+  const modal = document.createElement('div');
+  modal.className = 'modal-backdrop';
+  modal.innerHTML = `<form class="profile-modal new-chat-form">
+    <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
+    <p class="eyebrow">Intern besked</p><h3>Start ny samtale</h3>
+    <label>Vælg kollega<select name="employee">${employees.filter(employee => employee.id !== currentEmployee().id && employee.id !== session?.userId).map(employee => `<option value="${text(employee.id)}">${text(employee.name)}</option>`).join('')}</select></label>
+    <label>Besked<input name="message" placeholder="Skriv din første besked..." required /></label>
+    <button class="save-btn">Start samtale</button>
+  </form>`;
+  document.body.append(modal);
+}
+
+function openSettingsModal() {
+  const config = supabaseConfig();
+  const backend = supabaseStatus();
+  const modal = document.createElement('div');
+  modal.className = 'modal-backdrop';
+  modal.innerHTML = `<form class="profile-modal settings-form">
+    <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
+    <p class="eyebrow">XpressIntra</p><h3>Indstillinger</h3>
+    <section class="backend-settings ${backend.ready ? 'online' : 'demo'}">
+      <b>Online backend: ${text(backend.label)}</b>
+      <small>${text(backend.detail)}</small>
+      <label>Supabase URL<input name="supabaseUrl" placeholder="https://xxxxx.supabase.co" value="${text(config.url)}" /></label>
+      <label>Offentlig anon key<input name="supabaseAnonKey" placeholder="eyJ..." value="${text(config.anonKey)}" /></label>
+      <small>Brug kun den offentlige anon/publishable key her. Service-role nøgler må aldrig ind i appen.</small>
+      <button type="button" data-action="test-supabase">Test Supabase-forbindelse</button>
+    </section>
+    ${renderUpdateSummary()}
+    <div class="settings-switches">
+      <h4>Når jeg møder ind</h4>
+      <label><span><b>Start GPS</b><small>Del tur automatisk ved Mød ind</small></span><input type="checkbox" name="workGps" ${workdayPrivacy.gps ? 'checked' : ''} /></label>
+      <label><span><b>Automatisk logbog</b><small>Lav private kladder fra dagens tur</small></span><input type="checkbox" name="workLogbook" ${workdayPrivacy.logbook ? 'checked' : ''} /></label>
+      <label><span><b>Arbejdsnotifikationer</b><small>Beskeder og regelnyt under arbejdsdag</small></span><input type="checkbox" name="workNotifications" ${workdayPrivacy.notifications ? 'checked' : ''} /></label>
+      <label><span><b>Hvem må se min position?</b><small>Gælder når du møder ind eller deler tur</small></span><select name="workAudience"><option value="all" ${workdayPrivacy.audience === 'all' ? 'selected' : ''}>Alle kollegaer</option><option value="truck" ${workdayPrivacy.audience === 'truck' ? 'selected' : ''}>Kun lastbilholdet</option><option value="van" ${workdayPrivacy.audience === 'van' ? 'selected' : ''}>Kun varebilholdet</option><option value="none" ${workdayPrivacy.audience === 'none' ? 'selected' : ''}>Ingen automatisk deling</option></select></label>
+      <label><span><b>Vis fart</b><small>Kollegaer kan se km/t fra GPS</small></span><input type="checkbox" name="showSpeed" ${workdayPrivacy.showSpeed ? 'checked' : ''} /></label>
+      <label><span><b>Vis bil og status</b><small>Vis køretøj og kort status på kortet</small></span><input type="checkbox" name="showVehicle" ${workdayPrivacy.showVehicle ? 'checked' : ''} /></label>
+      <label><span><b>Vis arbejdstatus</b><small>Fx deler GPS, pause eller aktiv</small></span><input type="checkbox" name="showStatus" ${workdayPrivacy.showStatus ? 'checked' : ''} /></label>
+      <h4>Notifikationer</h4>
+      <label><span><b>Kontoropslag</b><small>Vigtige beskeder fra driften</small></span><input type="checkbox" name="office" ${notificationPrefs.office ? 'checked' : ''} /></label>
+      <label><span><b>Regelnyt</b><small>Godkendte ændringer til din kørsel</small></span><input type="checkbox" name="rules" ${notificationPrefs.rules ? 'checked' : ''} /></label>
+      <label><span><b>Chatbeskeder</b><small>Direkte beskeder og dine kanaler</small></span><input type="checkbox" name="chat" ${notificationPrefs.chat ? 'checked' : ''} /></label>
+      <label><span><b>Daglige påmindelser</b><small>Dagens tjekliste på forsiden</small></span><input type="checkbox" name="dailyBrief" ${notificationPrefs.dailyBrief ? 'checked' : ''} /></label>
+      <label><span><b>Stille tid</b><small>Kun vigtige beskeder efter kl. 19.00</small></span><input type="checkbox" name="quietHours" ${notificationPrefs.quietHours ? 'checked' : ''} /></label>
+    </div>
+    <p class="settings-help">Når Supabase forbindes, kan login, beskeder og profiler deles sikkert mellem medarbejderne.</p>
+    <button class="save-btn">Gem indstillinger</button>
+  </form>`;
+  document.body.append(modal);
+}
+
+async function startPickupTask(task, modalElement = null) {
+  const startedLocationSharing = !location.sharing;
+  activePickup = {
+    driverId: session?.userId || currentEmployee().id,
+    image: null,
+    priority: 'Normal',
+    status: 'started',
+    checklist: pickupChecklistItems().map(item => ({ ...item, done: item.id === 'route' })),
+    steps: [{ status: 'started', at: new Date().toISOString() }],
+    startedAt: new Date().toISOString(),
+    startedLocationSharing,
+    ...task,
+    expiresAt: task.duration === 'until-done' ? null : new Date(Date.now() + Number(task.duration || 30) * 60 * 1000).toISOString(),
+  };
+  save('activePickup', activePickup);
+  if (onlineBackendActive()) {
+    try {
+      await createSupabasePickupTask();
+    } catch (error) {
+      showToast(`Afhentningen er startet lokalt, men Supabase fejlede: ${error.message}`);
+    }
+  }
+  addNotification({ type: 'Afhentning', title: 'Afhentning startet', body: activePickup.note || 'Midlertidig opgave er startet.', level: 'task' });
+  modalElement?.remove();
+  if (startedLocationSharing) {
+    startLocationSharing('Afhentningen er startet, og din position deles midlertidigt');
+  } else {
+    render();
+    showToast('Afhentningen er startet');
+  }
+}
+
+async function openSupabaseDiagnosticsModal() {
+  const modal = document.createElement('div');
+  modal.className = 'modal-backdrop';
+  modal.innerHTML = `<section class="profile-modal supabase-diagnostics-modal">
+    <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
+    <p class="eyebrow">Supabase</p><h3>Tester forbindelse</h3>
+    <p class="info-intro">Appen tester URL, nøgle, Auth og Data API fra denne enhed.</p>
+    <section class="diagnostic-list"><span>Tester...</span></section>
+  </section>`;
+  document.body.append(modal);
+  const list = modal.querySelector('.diagnostic-list');
+  try {
+    const checks = await runSupabaseDiagnostics();
+    list.innerHTML = checks.map(check => `<article class="${check.ok ? 'ok' : 'fail'}"><b>${check.ok ? '✓' : '!' } ${text(check.name)}</b><small>${text(check.detail)}</small></article>`).join('');
+  } catch (error) {
+    list.innerHTML = `<article class="fail"><b>! Test fejlede</b><small>${text(error.message)}</small></article>`;
+  }
+}
+
+function openMyDataModal() {
+  const modal = document.createElement('div');
+  modal.className = 'modal-backdrop';
+  modal.innerHTML = `<section class="profile-modal my-data-modal">
+    <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
+    <p class="eyebrow">Personbeskyttelse</p><h3>Mine data</h3>
+    <p class="info-intro">Her kan medarbejderen se de vigtigste oplysninger, der findes i appen, og sende en intern dataanmodning. I online-versionen gemmes anmodningen i databasen.</p>
+    <section class="employee-privacy-notice compact">
+      <b>Dine vigtigste valg</b>
+      <span>GPS er frivillig og kan begrænses i Indstillinger. Din personlige logbog er privat. Du kan bede om indsigt, rettelse, sletning, eksport, begrænsning eller indsigelse herfra.</span>
+    </section>
+    <div class="data-summary-grid">
+      ${myDataSummary().map(([label, value, detail]) => `<span><b>${text(label)}</b><strong>${text(value)}</strong><small>${text(detail)}</small></span>`).join('')}
+    </div>
+    <form class="data-request-form">
+      <h4>Send dataanmodning</h4>
+      <label>Type<select name="requestType"><option value="access">Indsigt</option><option value="rectification">Rettelse</option><option value="erasure">Sletning</option><option value="export">Eksport</option><option value="restriction">Begrænsning</option><option value="objection">Indsigelse</option></select></label>
+      <label>Kort besked<input name="message" placeholder="Skriv hvad du ønsker hjælp til..." required /></label>
+      <button class="save-btn">Send anmodning</button>
+    </form>
+    <div class="request-list">
+      <h4>Tidligere anmodninger</h4>
+      ${dataRequests.length ? dataRequests.map(request => `<span><b>${text(request.label)}</b><small>${text(request.message)} · ${text(request.status)} · ${text(request.createdAt)}</small></span>`).join('') : '<p class="empty-state">Ingen dataanmodninger i demoen endnu.</p>'}
+    </div>
+  </section>`;
+  document.body.append(modal);
+}
+
+function openVehiclesModal() {
+  const modal = document.createElement('div');
+  modal.className = 'modal-backdrop';
+  modal.innerHTML = `<section class="profile-modal vehicles-modal">
+    <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
+    <p class="eyebrow">Flåde og status</p><h3>Køretøjsregister</h3>
+    <p class="info-intro">Demo-register over biler og enheder. I online-versionen bør det kobles til rigtige køretøjsdata, service, skade og chaufførtilknytning.</p>
+    <div class="vehicle-list">
+      ${vehicles.map(vehicle => {
+        const driver = vehicleDriver(vehicle);
+        return `<article>
+          <span class="vehicle-icon">${icon(vehicle.type === 'Varebil' ? 'van' : 'truck')}</span>
+          <div><b>${text(vehicle.unit)}</b><small>${text(vehicle.type)} · ${text(vehicle.plate)}</small><em>${text(vehicle.equipment)}</em></div>
+          <strong>${text(vehicle.status)}</strong>
+          <small>${text(driver?.name || 'Ingen chauffør')} · ${text(vehicle.nextCheck)}</small>
+        </article>`;
+      }).join('')}
+    </div>
+  </section>`;
+  document.body.append(modal);
+}
+
+function openNotificationsModal() {
+  const summary = notificationSummary();
+  const priorityNotifications = notifications.filter(item => item.level === 'urgent' || item.priority === 'high');
+  const unread = notifications.filter(item => item.unread);
+  const modal = document.createElement('div');
+  modal.className = 'modal-backdrop';
+  modal.innerHTML = `<section class="profile-modal notifications-modal">
+    <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
+    <p class="eyebrow">Rolige beskeder</p><h3>Notifikationer</h3>
+    <p class="info-intro">Rolige standarder: vigtige beskeder prioriteres, stille tid kan være slået til, og du vælger selv hvilke typer der må larme.</p>
+    <div class="notification-digest">
+      <span><b>${summary.unread}</b><small>ulæste</small></span>
+      <span><b>${summary.urgent}</b><small>haster</small></span>
+      <span><b>${notificationPrefs.quietHours ? 'Til' : 'Fra'}</b><small>Stille tid</small></span>
+    </div>
+    <div class="section-title"><h3>Prioritet</h3><button data-action="mark-notifications-read">Marker alt som læst</button></div>
+    ${priorityNotifications.length ? `<div class="notification-list priority">${priorityNotifications.map(item => `<article class="${text(item.level)}"><small>${text(item.type)} · ${text(item.time)}</small><b>${text(item.title)}</b><span>${text(item.body)}</span></article>`).join('')}</div>` : '<p class="empty-state">Ingen hastebeskeder lige nu.</p>'}
+    <div class="section-title"><h3>Ulæst</h3><span>${unread.length} stk.</span></div>
+    ${unread.length ? `<div class="notification-list unread">${unread.map(item => `<article class="${text(item.level)}"><small>${text(item.type)} · ${text(item.time)}</small><b>${text(item.title)}</b><span>${text(item.body)}</span></article>`).join('')}</div>` : '<p class="empty-state">Du er ajour.</p>'}
+    <div class="section-title"><h3>Alle beskeder</h3><span>${notifications.length} total</span></div>
+    <div class="notification-list">
+      ${notifications.map(item => `<article class="${text(item.level)}">
+        <small>${text(item.type)} · ${text(item.time)}</small>
+        <b>${text(item.title)}</b>
+        <span>${text(item.body)}</span>
+      </article>`).join('')}
+    </div>
+  </section>`;
+  document.body.append(modal);
+}
+
+function openTaskOverviewModal() {
+  const tasks = [
+    ...(activePickup ? [{
+      title: 'Afhentning for kollega',
+      body: activePickup.note || 'Midlertidig hjælpeopgave er aktiv',
+      action: 'open-pickup',
+      status: pickupStatusLabel(activePickup.status),
+    }] : []),
+    ...logbookDrafts.map(draft => ({
+      title: draft.title,
+      body: `${draft.place} · ${draft.note}`,
+      action: 'open-logbook',
+      status: 'Logbogskladde',
+    })),
+    ...notifications.filter(item => item.unread).map(item => ({
+      title: item.title,
+      body: item.body,
+      action: 'open-notifications',
+      status: item.type || 'Ulæst',
+    })),
+  ];
+  const modal = document.createElement('div');
+  modal.className = 'modal-backdrop';
+  modal.innerHTML = `<section class="profile-modal task-overview-modal">
+    <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
+    <p class="eyebrow">Overblik</p><h3>Opgaver og kladder</h3>
+    <p class="info-intro">Her samles det, der kræver handling fra dig. Tryk på en linje for at gå direkte til det rigtige sted.</p>
+    <div class="request-list">
+      ${tasks.length ? tasks.map(task => `<button type="button" data-action="${text(task.action)}"><b>${text(task.title)}</b><small>${text(task.status)} · ${text(task.body)}</small></button>`).join('') : '<p class="empty-state">Ingen aktive opgaver eller kladder lige nu.</p>'}
+    </div>
+  </section>`;
+  document.body.append(modal);
+}
+
+function openCommentsModal(postId) {
+  const post = announcements.find(item => item.id === postId);
+  if (!post) return;
+  const modal = document.createElement('div');
+  modal.className = 'modal-backdrop';
+  modal.innerHTML = `<section class="profile-modal comments-modal">
+    <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
+    <p class="eyebrow">Internt opslag</p><h3>Kommentarer</h3>
+    <div class="comment-list">${post.comments.length ? post.comments.map(comment => `<span><b>Kollega</b><small>${text(comment)}</small></span>`).join('') : '<p class="empty-state">Ingen kommentarer endnu.</p>'}</div>
+    <form class="comment-form" data-post="${text(post.id)}"><label>Skriv kommentar<input name="comment" placeholder="Skriv en kort kommentar..." required /></label><button class="save-btn">Tilføj kommentar</button></form>
+  </section>`;
+  document.body.append(modal);
+}
+
+function openInfoModal(id) {
+  const section = infoDetails[id];
+  if (!section) return;
+  const modal = document.createElement('div');
+  modal.className = 'modal-backdrop';
+  modal.innerHTML = `<section class="profile-modal info-modal">
+    <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
+    <p class="eyebrow">Intern information</p><h3>${text(section.title)}</h3>
+    <p class="info-intro">${text(section.intro)}</p>
+    <div class="info-detail-list">${section.rows.map(([title, description, href]) => href
+      ? `<a href="${text(href)}" target="${href.startsWith('http') ? '_blank' : '_self'}" rel="noreferrer"><b>${text(title)}</b><small>${text(description)}</small>${icon('arrow', 'row-arrow')}</a>`
+      : `<span><b>${text(title)}</b><small>${text(description)}</small></span>`
+    ).join('')}</div>
+  </section>`;
+  document.body.append(modal);
+}
+
+function openRuleUpdatesModal() {
+  const modal = document.createElement('div');
+  modal.className = 'modal-backdrop';
+  modal.innerHTML = `<section class="profile-modal rule-updates-modal">
+    <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
+    <p class="eyebrow">Overvågede kilder</p><h3>Regelnyt</h3>
+    <p class="info-intro">Når appen forbindes online, kan den kontrollere udvalgte officielle kilder automatisk. Nye tekster bør godkendes internt, før medarbejderne får en besked.</p>
+    <div class="rule-update-list">${ruleUpdates.map(update => `
+      <a href="${text(update.href)}" target="_blank" rel="noreferrer">
+        <div class="rule-meta"><small>${text(update.audience)}</small><i class="approval-pill ${text(update.status)}">${text(update.status === 'approved' ? 'Godkendt' : 'Kladde')}</i></div>
+        <b>${text(update.title)}</b>
+        <span>${text(update.body)}</span><em>${text(update.source)} · ${text(update.checked)}</em>
+        <strong>${text(update.effectiveDate)} · ${text(update.whyItMatters)}</strong>
+      </a>`).join('')}</div>
+    <p class="source-note">Planlagt kontrol: dagligt. Notifikation: kun ved godkendte ændringer, så medarbejderne ikke bliver støjbelastet.</p>
+  </section>`;
+  document.body.append(modal);
+}
+
+function openAnnouncementModal() {
+  if (!coreSettings.employeePosts && !canPublishOfficePosts()) {
+    showToast('Kollegaopslag er midlertidigt slået fra');
+    return;
+  }
+  const modal = document.createElement('div');
+  modal.className = 'modal-backdrop';
+  modal.innerHTML = `<form class="profile-modal announcement-form">
+    <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
+    <p class="eyebrow">Internt opslag</p><h3>Del med holdet</h3>
+    <label>Overskrift<input name="title" placeholder="Hvad skal holdet vide?" required /></label>
+    <label>Besked<input name="body" placeholder="Skriv en kort besked..." required /></label>
+    <label>Billede<input name="image" type="file" accept="image/*" /></label>
+    <label>Vis til<select name="audience"><option>Alle medarbejdere</option><option>Lastbilchauffører</option><option>Varebilschauffører</option></select></label>
+    <button class="save-btn">Del opslag</button>
+  </form>`;
+  document.body.append(modal);
+}
+
+function openDispatchModal() {
+  const online = employees.filter(employee => employee.online);
+  const sharing = employees.filter(employee => employee.sharing);
+  const trucks = employees.filter(employee => employee.vehicleType === 'truck');
+  const vans = employees.filter(employee => employee.vehicleType === 'van');
+  const visiblePeople = visibleMapPeople();
+  const activePickupCount = activePickup ? 1 : 0;
+  const pendingRuleDrafts = ruleUpdates.filter(update => update.status !== 'approved').length;
+  const modal = document.createElement('div');
+  modal.className = 'modal-backdrop';
+  modal.innerHTML = `<section class="profile-modal dispatch-modal">
+    <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
+    <p class="eyebrow">Kun disponenter</p><h3>Driftsoverblik</h3>
+    <div class="dispatch-stats"><span><b>${online.length}</b><small>online</small></span><span><b>${visiblePeople.length}</b><small>synlige GPS</small></span><span><b>${trucks.length}</b><small>lastbiler</small></span><span><b>${vans.length}</b><small>varebiler</small></span><span><b>${activePickupCount}</b><small>afhentning</small></span><span><b>${pendingRuleDrafts}</b><small>regelkladder</small></span></div>
+    <div class="dispatch-actions">
+      <button data-action="new-announcement">Nyt opslag</button>
+      <button data-action="open-rule-updates">Regelnyt</button>
+      <button data-tab="map">Live-kort</button>
+      <button data-tab="info">Information</button>
+    </div>
+    <div class="dispatch-privacy-box"><b>Privat chaufførchat er lukket</b><span>Disponentoverblikket viser drift, status og frivillig GPS. Det viser ikke indhold fra lastbilchatten eller varebilchatten.</span></div>
+    <div class="dispatch-driver-list">${employees.map(employee => `<span><b>${text(employee.name)}</b><small>${text(vehicleLabel(employee.vehicleType))} · ${text(employee.status)} · ${employee.sharing ? 'deler GPS' : 'skjult'}</small></span>`).join('')}</div>
+  </section>`;
+  document.body.append(modal);
+}
+
+function openAdminModal() {
+  const admins = employees.filter(employee => ['admin', 'owner'].includes(employee.accessRole));
+  const dispatchers = employees.filter(employee => employee.accessRole === 'dispatcher');
+  const lockedChannels = chats.filter(chat => chat.channel).length;
+  const activeEmployees = employees.filter(employee => employee.employmentStatus !== 'offboarded');
+  const modal = document.createElement('div');
+  modal.className = 'modal-backdrop';
+  modal.innerHTML = `<section class="profile-modal admin-modal">
+    <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
+    <p class="eyebrow">${canManageEmployees() ? 'Chef/admin' : 'Sikkerhedsmodel'}</p><h3>Rettigheder og sikkerhed</h3>
+    <section class="admin-stats">
+      <span><b>${admins.length}</b><small>chef/admin</small></span>
+      <span><b>${dispatchers.length}</b><small>disponenter</small></span>
+      <span><b>${lockedChannels}</b><small>låste kanaler</small></span>
+      <span><b>${activeEmployees.length}</b><small>aktive profiler</small></span>
+    </section>
+    <section class="permission-grid">
+      <span><b>Medarbejder</b><small>Kan redigere egne kontaktoplysninger, logbog og GPS-deling. Kan ikke ændre egen rettighed.</small></span>
+      <span><b>Disponent</b><small>Kan oprette driftsopslag og se driftsoverblik, men ikke læse lastbil- eller varebilchatten.</small></span>
+      <span><b>Chef/admin</b><small>Kan oprette medarbejdere, ændre roller, godkende regelnyt og styre sikkerhedsindstillinger.</small></span>
+      <span><b>Privat data</b><small>Logbog er privat. GPS er frivillig. Historik bør slettes efter aftalt periode i online-versionen.</small></span>
+    </section>
+    ${canManageEmployees() ? `${renderAdminDashboard()}<div class="admin-actions"><button data-action="new-employee">Registrér kollega</button><button data-action="open-rule-updates">Godkend regelnyt</button><button data-action="open-dispatch">Driftsoverblik</button></div>
+    <form class="core-settings-form">
+      <h4>Kernefunktioner</h4>
+      <label><span><b>GPS-deling</b><small>Medarbejdere kan dele liveposition frivilligt</small></span><input type="checkbox" name="gps" ${coreSettings.gps ? 'checked' : ''} /></label>
+      <label><span><b>Billeder</b><small>Upload til chat, opslag, profil og logbog</small></span><input type="checkbox" name="media" ${coreSettings.media ? 'checked' : ''} /></label>
+      <label><span><b>Personlig logbog</b><small>Private noter og billeder fra vejen</small></span><input type="checkbox" name="logbook" ${coreSettings.logbook ? 'checked' : ''} /></label>
+      <label><span><b>Kollegaopslag</b><small>Medarbejdere kan skrive opslag på forsiden</small></span><input type="checkbox" name="employeePosts" ${coreSettings.employeePosts ? 'checked' : ''} /></label>
+      <label><span><b>Regelgodkendelse</b><small>Regelnyt skal godkendes før udsendelse</small></span><input type="checkbox" name="ruleApproval" ${coreSettings.ruleApproval ? 'checked' : ''} /></label>
+      <button class="save-btn">Gem kernefunktioner</button>
+    </form>
+    <section class="admin-employee-list">
+      <h4>Medarbejdere</h4>
+      ${employees.map(employee => `<article class="${employee.employmentStatus === 'offboarded' ? 'offboarded' : ''}">
+        <span><b>${text(employee.name)}</b><small>${text(employee.role)} · ${text(accessRoleLabel(employee.accessRole))} · ${text(employee.employmentStatus || 'active')}</small></span>
+        ${employee.id === 'th' ? '<em>Dig</em>' : `<button data-remove-employee="${text(employee.id)}">${employee.employmentStatus === 'offboarded' ? 'Fjern helt' : 'Deaktivér'}</button>`}
+      </article>`).join('')}
+    </section>` : (DEMO_MODE ? `<button class="save-btn" type="button" data-action="demo-admin">Prøv chefvisning i demo</button>` : '<p class="security-inline-note">Chefvisning kan kun gives af en eksisterende chef/admin.</p>')}
+    <section class="admin-audit">
+      <b>Chef/admin kan styre drift, ikke læse alt</b>
+      <small>Chefrollen kan oprette/deaktivere medarbejdere og styre kernefunktioner. Lastbil- og varebilchat følger arbejdsfunktion, mens direkte samtaler kun er for deltagerne. Supabase håndhæver dette med RLS.</small>
+    </section>
+  </section>`;
+  document.body.append(modal);
+}
+
+function openLaunchChecklistModal() {
+  const readiness = launchReadiness();
+  const backend = supabaseStatus();
+  const modal = document.createElement('div');
+  modal.className = 'modal-backdrop';
+  modal.innerHTML = `<section class="profile-modal launch-modal">
+    <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
+    <p class="eyebrow">Go-live</p><h3>Klar til drift</h3>
+    <section class="launch-score">
+      <span><b>${readiness.percent}%</b><small>${readiness.done}/${readiness.total} punkter klar</small></span>
+      <em><i style="width:${readiness.percent}%"></i></em>
+      <p>${text(backend.ready ? 'Supabase-forbindelsen er sat. Test nu med rigtige brugere og telefoner.' : 'Appen kører stadig som demo, indtil Supabase URL og offentlig nøgle er sat.')}</p>
+    </section>
+    <div class="launch-checklist">
+      ${readiness.items.map(item => `<article class="${item.done ? 'done' : ''}">
+        <b>${item.done ? '✓' : '○'} ${text(item.title)}</b>
+        <small>${text(item.body)}</small>
+      </article>`).join('')}
+    </div>
+    <section class="launch-next-steps">
+      <h4>Praktisk rækkefølge</h4>
+      <span>1. Opret Supabase-projekt og kør <b>supabase/schema.sql</b>.</span>
+      <span>2. Opret første bruger i Supabase Auth og kør <b>supabase/first-admin.sql</b>.</span>
+      <span>3. Sæt URL og offentlig nøgle under Indstillinger.</span>
+      <span>4. Test to medarbejdere samtidig: chat, opslag, mød ind, GPS, livekort, billeder og afhentning.</span>
+      <span>5. Godkend jura, slettefrister og databehandleraftale før rigtig drift.</span>
+    </section>
+    <div class="launch-actions">
+      <button type="button" data-action="open-settings">Indstillinger</button>
+      <button type="button" data-action="open-legal">Jura</button>
+      <button type="button" data-action="open-admin">Chef/admin</button>
+    </div>
+  </section>`;
+  document.body.append(modal);
+}
+
+function openGdprGoLiveModal() {
+  const readiness = gdprGoLiveReadiness();
+  const pendingRequests = dataRequests.filter(request => !/completed|closed|done|afsluttet|rejected/i.test(request.status || ''));
+  const modal = document.createElement('div');
+  modal.className = 'modal-backdrop';
+  modal.innerHTML = `<section class="profile-modal gdpr-modal">
+    <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
+    <p class="eyebrow">GDPR go-live</p><h3>Persondata klar til drift</h3>
+    <p class="info-intro">Samlet pakke til medarbejderinformation, slettefrister, dataanmodninger og intern risikovurdering. Den hjælper jer tættere på GDPR, men virksomheden skal stadig godkende det juridisk.</p>
+    ${renderGdprGoLivePanel()}
+    <section class="employee-privacy-notice">
+      <h4>Medarbejderinformation i klart sprog</h4>
+      <p>XpressIntra bruges til intern drift: beskeder, kollegaoverblik, frivillig live-position, dokumentation, profiloplysninger og privat logbog. GPS kan stoppes, begrænses til hold og skjule fart, bil og status. Chef/admin kan styre drift og medarbejdere, men må ikke læse private direkte beskeder eller private logbøger.</p>
+      <p>Medarbejderen kan bede om indsigt, rettelse, sletning, eksport, begrænsning eller indsigelse under Mine data.</p>
+    </section>
+    <section class="gdpr-data-areas">
+      <h4>Dataområder og formål</h4>
+      ${gdprDataAreas.map(item => `<article><b>${text(item.area)}</b><span>${text(item.purpose)}</span><small>${text(item.employeeControl)}</small></article>`).join('')}
+    </section>
+    <section class="gdpr-retention">
+      <h4>Slettefrister</h4>
+      ${gdprRetentionPlan.map(item => `<span><b>${text(item.label)}</b><strong>${item.days} dag${item.days === 1 ? '' : 'e'}</strong><small>${text(item.description)}</small></span>`).join('')}
+    </section>
+    <section class="gdpr-request-admin">
+      <div class="section-title"><h3>Dataanmodninger</h3><span>${pendingRequests.length} åben</span></div>
+      ${dataRequests.length ? dataRequests.map(request => `<article>
+        <span><b>${text(request.label || request.requestType)}</b><small>${text(request.message || 'Ingen besked')} · ${text(request.status || 'open')} · ${text(request.createdAt || '')}</small></span>
+        ${(canManageEmployees() || isCreatorOwner()) && !/completed|closed|done|afsluttet|rejected/i.test(request.status || '') ? `<button data-complete-data-request="${text(request.id)}">Marker behandlet</button>` : ''}
+      </article>`).join('') : '<p class="empty-state">Ingen dataanmodninger endnu.</p>'}
+    </section>
+    <section class="gdpr-next-steps">
+      <h4>Skal stadig besluttes uden for appen</h4>
+      <span>Databehandleraftaler med Supabase, hosting, kort og mail.</span>
+      <span>Lovligt grundlag for hvert dataområde.</span>
+      <span>Risikovurdering/DPIA for GPS og medarbejderkontrol.</span>
+      <span>Procedure for sikkerhedsbrud og 72-timers vurdering.</span>
+    </section>
+    <div class="launch-actions">
+      <button type="button" data-action="open-my-data">Mine data</button>
+      <button type="button" data-action="open-legal">Jura-accept</button>
+      <button type="button" data-action="open-launch-checklist">Go-live tjek</button>
+    </div>
+  </section>`;
+  document.body.append(modal);
+}
+
+function openSecurityCenterModal() {
+  const readiness = securityReadiness();
+  const backend = supabaseStatus();
+  const criticalOpen = readiness.items.filter(item => !item.done).slice(0, 4);
+  const modal = document.createElement('div');
+  modal.className = 'modal-backdrop';
+  modal.innerHTML = `<section class="profile-modal security-center-modal">
+    <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
+    <p class="eyebrow">Creator / sikkerhed</p><h3>Sikkerhedscenter</h3>
+    <p class="info-intro">Her samles hacking-beskyttelse, admin-adgang, mistet telefon, upload, audit-log og de Supabase-ting der skal kontrolleres før appen bruges bredt.</p>
+    <section class="security-score-card">
+      <span><b>${readiness.percent}%</b><small>${readiness.done}/${readiness.total} punkter klar</small></span>
+      <em><i style="width:${readiness.percent}%"></i></em>
+      <p>${text(backend.ready ? 'Supabase er sat. Kør stadig Security Advisor og test med rigtige brugere.' : 'Supabase mangler stadig live-test, før sikkerheden kan vurderes færdig.')}</p>
+    </section>
+    <section class="security-check-list">
+      ${readiness.items.map(item => `<article class="${item.done ? 'done' : 'todo'}">
+        <b>${item.done ? '✓' : '•'} ${text(item.title)}</b>
+        <small>${text(item.body)}</small>
+      </article>`).join('')}
+    </section>
+    <section class="security-incident-plan">
+      <h4>Hvis noget går galt</h4>
+      <span><b>1. Stop adgang</b><small>Deaktiver brugeren, skift adgangskode og log/revoker sessioner i Supabase.</small></span>
+      <span><b>2. Begræns skade</b><small>Slå GPS, billeder eller opslag fra under kernefunktioner hvis fejlen vedrører data.</small></span>
+      <span><b>3. Spor hændelsen</b><small>Gem tidspunkt, bruger, handling og hvad der kan være set eller delt.</small></span>
+      <span><b>4. Vurder GDPR</b><small>Ved persondata-brud skal virksomheden vurdere Datatilsynet og medarbejderinformation hurtigt.</small></span>
+    </section>
+    <section class="security-next-actions">
+      <h4>Næste praktiske handlinger</h4>
+      ${criticalOpen.length ? criticalOpen.map(item => `<span>${text(item.title)}: ${text(item.body)}</span>`).join('') : '<span>Ingen åbne sikkerhedspunkter i appens interne tjek lige nu.</span>'}
+    </section>
+    <div class="launch-actions">
+      <button type="button" data-action="test-supabase">Test Supabase</button>
+      <button type="button" data-action="open-admin">Kernefunktioner</button>
+      <button type="button" data-action="open-gdpr-go-live">GDPR pakke</button>
+    </div>
+  </section>`;
+  document.body.append(modal);
+}
+
+function openLegalModal() {
+  const modal = document.createElement('div');
+  modal.className = 'modal-backdrop';
+  modal.innerHTML = `<section class="profile-modal legal-modal">
+    <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
+    <p class="eyebrow">Intern politik</p><h3>Sikkerhed & jura</h3>
+    <section class="legal-status-card">
+      <b>${text(legalStatusText())}</b>
+      <span>Alle medarbejdere bør gennemgå denne side før rigtig drift. Demo-accept gemmes kun lokalt.</span>
+    </section>
+    ${renderGdprGoLivePanel({ compact: true })}
+    <button class="save-btn secondary" type="button" data-action="open-gdpr-go-live">Åbn GDPR go-live pakke</button>
+    <div class="legal-grid">
+      <article><b>GPS</b><span>GPS er frivillig, synlig og kan stoppes. Chef/admin må ikke bruge appen som skjult overvågning.</span></article>
+      <article><b>Chats</b><span>Fælleschat er intern. Lastbil- og varebilchat følger arbejdsfunktion. Chef/admin kan kun se kanalchat, hvis profilen også er sat som lastbil- eller varebilsfunktion.</span></article>
+      <article><b>Billeder</b><span>Billeder kan være persondata. Undgå kunder, uvedkommende personer og følsomme dokumenter i delte billeder.</span></article>
+      <article><b>Logbog</b><span>Personlig logbog er privat som standard og må ikke bruges som kontrolværktøj.</span></article>
+      <article><b>Profiler</b><span>Kontaktoplysninger, beviser, sprog og nødkontakt skal kun bruges til drift og sikkerhed.</span></article>
+      <article><b>Sletning</b><span>GPS bør gemmes kort. Chat, billeder og audit-log skal have aftalte slettefrister før online drift.</span></article>
+    </div>
+    <section class="privacy-rights">
+      <h4>Personbeskyttelse</h4>
+      <p>Appen skal bygges efter privatliv som standard: mindst mulig data, tydelig adgang, og medarbejderen skal kunne forstå og styre egne oplysninger.</p>
+      <div>
+        <span><b>Indsigt</b><small>Medarbejderen skal kunne se hvilke data appen gemmer om personen.</small></span>
+        <span><b>Rettelse</b><small>Forkerte profiloplysninger skal kunne rettes hurtigt.</small></span>
+        <span><b>Sletning</b><small>Data skal slettes når formålet er væk eller fristen er udløbet.</small></span>
+        <span><b>Eksport</b><small>Egne data boer kunne hentes ud i et laesbart format.</small></span>
+        <span><b>Begrænsning</b><small>Frivillige ting som profilbillede, logbog og GPS skal kunne slås fra.</small></span>
+        <span><b>Adgangsspor</b><small>Adminhandlinger logges, men private chats og logboeger maa ikke indgaa.</small></span>
+      </div>
+    </section>
+    <section class="gdpr-readiness">
+      <h4>GDPR-driftstjek før rigtig brug</h4>
+      <span><b>Formål</b><small>Skriv kort hvorfor appen bruger profil, chat, GPS, billeder, logbog og dokumenter.</small></span>
+      <span><b>Lovligt grundlag</b><small>Aftal med virksomheden hvilket grundlag der bruges for hvert dataområde. GPS bør være frivillig og tydelig.</small></span>
+      <span><b>Dataminimering</b><small>Slå ting fra som ikke er nødvendige. Fart, bil og status skal kun deles hvis medarbejderen har valgt det.</small></span>
+      <span><b>Databehandler</b><small>Supabase, hosting og eventuelle kort-/mailtjenester kræver aftaler og dokumenteret opsætning.</small></span>
+      <span><b>Risikovurdering</b><small>Lav en enkel DPIA/risikovurdering især for GPS, medarbejderkontrol og billeder.</small></span>
+      <span><b>Sikkerhedsbrud</b><small>Aftal hvem der reagerer ved læk, forkert adgang, mistet telefon eller delte billeder med persondata.</small></span>
+    </section>
+    <section class="retention-list">
+      <h4>Foreslåede slettefrister</h4>
+      <span><b>Live GPS</b><small>Seneste position, overskrives løbende</small></span>
+      <span><b>Afhentningsdeling</b><small>Udløber automatisk eller ved færdigmelding</small></span>
+      <span><b>Chat</b><small>12-24 måneder, besluttes internt</small></span>
+      <span><b>Billeder</b><small>3-12 måneder afhængigt af dokumentationsformål</small></span>
+      <span><b>Audit-log</b><small>24 måneder</small></span>
+    </section>
+    <section class="legal-decision-list">
+      <h4>Skal besluttes af virksomheden</h4>
+      <span>Hvem er dataansvarlig?</span>
+      <span>Hvem må være chef/admin?</span>
+      <span>Skal GPS kun være live, eller må der gemmes historik?</span>
+      <span>Hvilke billeder må deles?</span>
+      <span>Hvordan håndteres fratrådte medarbejdere?</span>
+    </section>
+    <button class="save-btn" type="button" data-action="accept-legal">Jeg har læst og forstået</button>
+  </section>`;
+  document.body.append(modal);
+}
+
+function acceptLegal() {
+  legalAcceptance = { date: new Date().toLocaleDateString('da-DK'), version: GDPR_POLICY_VERSION };
+  save('legalAcceptance', legalAcceptance);
+  if (onlineBackendActive()) {
+    acceptSupabaseLegal().catch(error => showToast(`Accepten blev gemt lokalt, men ikke online: ${error.message}`));
+  }
+  document.querySelector('.modal-backdrop')?.remove();
+  render();
+  showToast('Sikkerhed & jura er markeret som læst');
+}
+
+function removeEmployee(employeeId) {
+  if (!canManageEmployees()) {
+    showToast('Kun chef/admin kan fjerne medarbejdere');
+    return;
+  }
+  const employee = employees.find(item => item.id === employeeId);
+  if (!employee || employee.id === 'th') return;
+  if (employee.employmentStatus === 'offboarded') {
+    employees = employees.filter(item => item.id !== employeeId);
+    chats = chats.filter(chat => chat.id !== employeeId);
+    delete messages[employeeId];
+    recordAdminAudit('Medarbejder fjernet', `${employee.name} blev fjernet fra demoen`);
+    showToast('Medarbejderen er fjernet fra demoen');
+  } else {
+    employee.employmentStatus = 'offboarded';
+    employee.online = false;
+    employee.sharing = false;
+    employee.status = 'Deaktiveret';
+    recordAdminAudit('Medarbejder deaktiveret', `${employee.name} blev deaktiveret`);
+    if (onlineBackendActive()) {
+      updateSupabaseEmployeeProfile(employee).catch(error => showToast(`Medarbejderen er deaktiveret lokalt, men ikke online: ${error.message}`));
+    }
+    showToast('Medarbejderen er deaktiveret');
+  }
+  save('employees', employees);
+  save('chats', chats);
+  save('messages', messages);
+  document.querySelector('.modal-backdrop')?.remove();
+  render();
+  openAdminModal();
+}
+
+function enableDemoAdmin() {
+  if (!DEMO_MODE) {
+    showToast('Demo-admin er slået fra i denne version');
+    return;
+  }
+  profile = { ...profile, role: 'Chef', accessRole: 'admin', vehicleType: 'dispatch', truck: 'Ledelse' };
+  if (!employees.length) employees.unshift(currentEmployee());
+  employees[0] = { ...employees[0], role: 'Chef', accessRole: 'admin', vehicleType: 'dispatch', truck: 'Ledelse', status: 'Demo: chef/admin' };
+  save('profile', profile);
+  save('employees', employees);
+  document.querySelector('.modal-backdrop')?.remove();
+  render();
+  showToast('Demoen viser nu chef/admin-rettigheder');
+}
+
+function resetDemo() {
+  if (!DEMO_MODE) {
+    showToast('Demo-data er slået fra i produktionsappen');
+    return;
+  }
+  navigator.geolocation?.clearWatch(location.watchId);
+  clearInterval(location.timer);
+  location = { sharing: false, demo: false, speed: 0, points: 0, watchId: null, timer: null, coords: null, startedAt: null, expiresAt: null, lastUpdatedAt: null, shareMode: null };
+  Object.keys(localStorage).filter(key => key.startsWith('roadlog:') && key !== 'roadlog:session').forEach(key => localStorage.removeItem(key));
+  employees = clone(seedEmployees);
+  chats = clone(seedChats);
+  messages = clone(seedMessages);
+  announcements = clone(seedAnnouncements);
+  feedLikes = {};
+  infoFavorites = [];
+  notificationPrefs = { ...defaultNotificationPrefs };
+  workdayPrivacy = { gps: true, logbook: true, notifications: true, audience: 'all', showSpeed: false, showVehicle: true, showStatus: true };
+  coreSettings = { gps: true, logbook: true, media: true, employeePosts: true, ruleApproval: true };
+  workday = { active: false, startedAt: null, endsAt: null, permissions: { gps: true, logbook: true, notifications: true } };
+  vehicles = clone(seedVehicles);
+  notifications = clone(seedNotifications);
+  dataRequests = [];
+  adminAuditEvents = [];
+  activePickup = null;
+  pickupHistory = [];
+  creatorRoleTester = { active: false, originalProfile: null, currentRole: null };
+  profile = { name: 'Tommy Hansen', phone: '+45 22 44 18 90', email: 'stralner2711@gmail.com', role: 'Appansvarlig · Lastbilchauffør', accessRole: 'owner', vehicleType: 'truck', truck: 'TR 42 918', department: 'Lastbil', license: 'C/E · EU kvalifikationsbevis', emergencyContact: 'Anne · +45 22 11 90 90', languages: 'Dansk, engelsk, tysk', logbook: true };
+  logEntries = [
+    { place: 'Flensburg', note: 'God kaffe og en rolig pause ved grænsen.', date: '28. maj' },
+    { place: 'Hamburg', note: 'Solnedgang ved havnen efter aflæsning.', date: '25. maj' },
+  ];
+  logbookDrafts = [];
+  logbookAutomation = { smartLogbook: true, autoDrafts: true, autoPlace: true, autoStops: true, autoPickup: true, autoVehicle: true, autoMilestones: false };
+  render();
+  showToast('Demoen er nulstillet');
+}
+
+function currentScrollState() {
+  const content = document.querySelector('.content');
+  return {
+    top: content ? content.scrollTop : window.scrollY,
+    left: content ? content.scrollLeft : window.scrollX,
+  };
+}
+
+function restoreScrollState(state) {
+  const content = document.querySelector('.content');
+  if (content) {
+    content.scrollTop = state.top;
+    content.scrollLeft = state.left;
+    return;
+  }
+  window.scrollTo(state.left, state.top);
+}
+
+function render(options = {}) {
+  const scrollState = options.preserveScroll ? currentScrollState() : null;
+  enforceLocationExpiry();
+  enforceWorkdayExpiry();
+  enforcePickupExpiry();
+  document.querySelector('#app').innerHTML = session ? appShell(routes[activeTab]()) : renderLogin();
+  if (!document.querySelector('.toast')) document.body.insertAdjacentHTML('beforeend', '<div class="toast"></div>');
+  if (scrollState) {
+    const nextFrame = window.requestAnimationFrame || (callback => setTimeout(callback, 0));
+    nextFrame(() => restoreScrollState(scrollState));
+    setTimeout(() => restoreScrollState(scrollState), 0);
+  }
+  ensureLaunchSplash();
+  scheduleLaunchSplashExit();
+  setTimeout(initializeMaps, 0);
+}
+
+document.addEventListener('click', async event => {
+  const tab = event.target.closest('[data-tab]')?.dataset.tab;
+  const action = event.target.closest('[data-action]')?.dataset.action;
+  const employeeId = event.target.closest('[data-employee]')?.dataset.employee;
+  let chatId = event.target.closest('[data-chat]')?.dataset.chat;
+  const directChatEmployeeId = event.target.closest('[data-direct-chat]')?.dataset.directChat;
+  const postId = event.target.closest('[data-post]')?.dataset.post;
+  const nextMapFilter = event.target.closest('[data-map-filter]')?.dataset.mapFilter;
+  const quickGuideIndex = event.target.closest('[data-guide]')?.dataset.guide;
+  const emoji = event.target.closest('[data-emoji]')?.dataset.emoji;
+  const removeEmployeeId = event.target.closest('[data-remove-employee]')?.dataset.removeEmployee;
+  const pickupStatus = event.target.closest('[data-pickup-status]')?.dataset.pickupStatus;
+  const pickupCheck = event.target.closest('[data-pickup-check]')?.dataset.pickupCheck;
+  const logbookSuggestion = event.target.closest('[data-logbook-suggestion]')?.dataset.logbookSuggestion;
+  const logbookToggle = event.target.closest('[data-logbook-toggle]')?.dataset.logbookToggle;
+  const approveDraftId = event.target.closest('[data-approve-logbook-draft]')?.dataset.approveLogbookDraft;
+  const deleteDraftId = event.target.closest('[data-delete-logbook-draft]')?.dataset.deleteLogbookDraft;
+  const infoFavoriteId = event.target.closest('[data-info-favorite]')?.dataset.infoFavorite;
+  const locationDuration = event.target.closest('[data-location-duration]')?.dataset.locationDuration;
+  const creatorRole = event.target.closest('[data-creator-role]')?.dataset.creatorRole;
+  const quickPickupDuration = event.target.closest('[data-quick-pickup]')?.dataset.quickPickup;
+  const completeDataRequestId = event.target.closest('[data-complete-data-request]')?.dataset.completeDataRequest;
+  const searchResult = event.target.closest('[data-search-target]');
+  if (searchResult) {
+    activeTab = searchResult.dataset.searchTarget;
+    activeChat = searchResult.dataset.searchChat || null;
+    if (searchResult.dataset.searchInfo) activeInfoCategory = searchResult.dataset.searchInfo;
+    globalQuery = '';
+    event.target.closest('.modal-backdrop')?.remove();
+    render();
+    if (searchResult.dataset.searchAction === 'open-vehicles') openVehiclesModal();
+    if (searchResult.dataset.searchAction === 'open-logbook') openLogbookModal();
+    return;
+  }
+  if (removeEmployeeId) {
+    removeEmployee(removeEmployeeId);
+    return;
+  }
+  if (completeDataRequestId) {
+    completeDataRequest(completeDataRequestId);
+    return;
+  }
+  if (emoji) {
+    const input = document.querySelector('.message-form input[name="message"]');
+    if (input) {
+      input.value = `${input.value}${emoji}`;
+      input.focus();
+    }
+    return;
+  }
+  if (tab) { activeTab = tab; activeChat = null; event.target.closest('.modal-backdrop')?.remove(); render(); }
+  if (nextMapFilter) {
+    mapFilter = nextMapFilter;
+    save('mapFilter', mapFilter);
+    render();
+  }
+  if (pickupStatus) await updatePickupStatus(pickupStatus);
+  if (quickPickupDuration) {
+    const form = event.target.closest('.pickup-form');
+    const selectedEmployee = form?.querySelector('select[name="employee"]')?.value || employees.find(employee => employee.id !== currentEmployee().id && employee.id !== session?.userId)?.id;
+    const colleague = employees.find(employee => employee.id === selectedEmployee);
+    await startPickupTask({
+      employeeId: selectedEmployee,
+      duration: quickPickupDuration,
+      pickupPlace: colleague?.location || 'Aftales i live noter',
+      dropoffPlace: currentEmployee().location || profile.department || 'Min position',
+      reference: 'Hurtig opgave',
+      note: `Hurtig afhentning for ${colleague?.name || 'kollega'}`,
+    }, event.target.closest('.modal-backdrop'));
+    return;
+  }
+  if (pickupCheck) {
+    await togglePickupChecklist(pickupCheck);
+    return;
+  }
+  if (approveDraftId) {
+    approveLogbookDraft(approveDraftId);
+    event.target.closest('.modal-backdrop')?.remove();
+    openLogbookModal();
+    render();
+    showToast('Kladden er gemt i din private logbog');
+    return;
+  }
+  if (deleteDraftId) {
+    deleteLogbookDraft(deleteDraftId);
+    event.target.closest('.modal-backdrop')?.remove();
+    openLogbookModal();
+    showToast('Kladden er slettet');
+    return;
+  }
+  if (logbookSuggestion) {
+    createAutoLogEntry(logbookSuggestion);
+    event.target.closest('.modal-backdrop')?.remove();
+    openLogbookModal();
+    render();
+    showToast('Forslaget er gemt i din private logbog');
+    return;
+  }
+  if (logbookToggle) {
+    toggleLogbookAutomation(logbookToggle);
+    event.target.closest('.modal-backdrop')?.remove();
+    openLogbookModal();
+    showToast('Logbogens automatik er opdateret');
+    return;
+  }
+  if (infoFavoriteId) {
+    event.preventDefault();
+    toggleInfoFavorite(infoFavoriteId);
+    render();
+    showToast(infoFavorites.includes(infoFavoriteId) ? 'Gemt som favorit' : 'Fjernet fra favoritter');
+    return;
+  }
+  if (locationDuration) {
+    startTimedLocationSharing(Number(locationDuration));
+    return;
+  }
+  if (creatorRole) {
+    applyCreatorPerspective(creatorRole);
+    return;
+  }
+  if (chatId) {
+    if (chatId === 'all') chatId = chats.find(item => item.community)?.id || chatId;
+    activeTab = 'chat';
+    activeChat = chatId;
+    const chat = chats.find(item => item.id === chatId);
+    if (!canAccessChat(chat)) { showToast('Du har ikke adgang til denne kanal'); return; }
+    if (chat) chat.unread = 0;
+    save('chats', chats);
+    event.target.closest('.modal-backdrop')?.remove();
+    render();
+  }
+  if (employeeId) {
+    event.target.closest('.modal-backdrop')?.remove();
+    openProfileModal(employees.find(employee => employee.id === employeeId));
+  }
+  if (directChatEmployeeId) {
+    const employee = employees.find(item => item.id === directChatEmployeeId);
+    if (employee) {
+      const chatId = await ensureDirectChat(employee);
+      if (!chatId) return;
+      activeTab = 'chat';
+      activeChat = chatId;
+      event.target.closest('.modal-backdrop')?.remove();
+      render();
+    }
+  }
+  const modalReplacingActions = [
+    'open-pickup',
+    'open-profile',
+    'open-logbook',
+    'open-my-data',
+    'open-vehicles',
+    'open-notifications',
+    'open-task-overview',
+    'new-chat',
+    'open-settings',
+    'test-supabase',
+    'show-update-status',
+    'open-admin',
+    'open-launch-checklist',
+    'open-gdpr-go-live',
+    'open-legal',
+    'open-info',
+    'open-rule-updates',
+    'new-announcement',
+    'open-dispatch',
+  ];
+  if (action && modalReplacingActions.includes(action)) {
+    event.target.closest('.modal-backdrop')?.remove();
+  }
+  if (action === 'toggle-location') toggleLocation();
+  if (action === 'start-workday') await startWorkday();
+  if (action === 'end-workday') await endWorkday();
+  if (action === 'open-pickup') openPickupModal();
+  if (action === 'finish-pickup') await finishPickup();
+  if (action === 'open-profile') openProfileModal();
+  if (action === 'open-logbook') openLogbookModal();
+  if (action === 'open-my-data') openMyDataModal();
+  if (action === 'open-vehicles') openVehiclesModal();
+  if (action === 'open-notifications') openNotificationsModal();
+  if (action === 'open-task-overview') openTaskOverviewModal();
+  if (action === 'mark-notifications-read') {
+    markAllNotificationsRead();
+    event.target.closest('.modal-backdrop')?.remove();
+    openNotificationsModal();
+    render();
+  }
+  if (action === 'new-chat') openNewChatModal();
+  if (action === 'open-settings') openSettingsModal();
+  if (action === 'test-supabase') openSupabaseDiagnosticsModal();
+  if (action === 'check-update') await checkForAppUpdate({ manual: true });
+  if (action === 'show-update-status') openUpdateStatusModal();
+  if (action === 'install-update') openExternalUpdateLink(appUpdateState.required?.apkDownloadUrl || appUpdateState.latest?.apkDownloadUrl);
+  if (action === 'dismiss-update') {
+    if (appUpdateState.latest) appUpdateState.dismissedVersionCode = appUpdateState.latest.activeVersionCode;
+    saveAppUpdateState();
+    event.target.closest('.modal-backdrop')?.remove();
+    showToast('Opdateringen vises igen senere');
+  }
+  if (action === 'open-download-page') openExternalUpdateLink(appUpdateState.latest?.downloadPageUrl || './download.html');
+  if (action === 'open-version-json') openExternalUpdateLink(appUpdateConfig.versionUrl || './version.json');
+  if (action === 'open-admin') openAdminModal();
+  if (action === 'open-security-center') openSecurityCenterModal();
+  if (action === 'open-launch-checklist') openLaunchChecklistModal();
+  if (action === 'open-gdpr-go-live') openGdprGoLiveModal();
+  if (action === 'open-legal') openLegalModal();
+  if (action === 'accept-legal') acceptLegal();
+  if (action === 'demo-admin') enableDemoAdmin();
+  if (action === 'share-last-invite') {
+    const modal = event.target.closest('.modal-backdrop');
+    const employee = employees.find(item => item.id === modal?.dataset.inviteEmployee);
+    if (employee) {
+      shareEmployeeInvite(employee, modal?.dataset.inviteId || employee.invitationId || '').catch(error => showToast(`Invitationen kunne ikke deles: ${error.message}`));
+    }
+  }
+  if (action === 'open-info') openInfoModal(event.target.closest('[data-info]')?.dataset.info);
+  if (action === 'open-work') { activeTab = 'work'; activeChat = null; render(); }
+  if (quickGuideIndex) {
+    const guide = quickGuides[Number(quickGuideIndex)];
+    if (guide?.chat) {
+      activeTab = 'chat';
+      activeChat = guide.chat;
+      render();
+    } else if (guide?.category) {
+      activeTab = 'info';
+      activeInfoCategory = guide.category;
+      render();
+    }
+  }
+  if (action === 'open-rule-updates') openRuleUpdatesModal();
+  if (action === 'use-current-logbook-place') {
+    const input = event.target.closest('.log-entry-form')?.querySelector('input[name="place"]');
+    if (input) {
+      input.value = currentLogbookPlace();
+      input.focus();
+      showToast('Din lokation er sat som sted');
+    }
+  }
+  if (action === 'clear-logbook-drafts') {
+    clearLogbookDrafts();
+    event.target.closest('.modal-backdrop')?.remove();
+    openLogbookModal();
+    showToast('Private kladder er ryddet');
+  }
+  if (action === 'open-comments') openCommentsModal(postId);
+  if (action === 'toggle-like' && postId) {
+    feedLikes[postId] = !feedLikes[postId];
+    save('feedLikes', feedLikes);
+    if (onlineBackendActive()) {
+      syncSupabaseAnnouncementReaction(postId, feedLikes[postId]).catch(error => showToast(`Reaktionen blev gemt lokalt, men ikke online: ${error.message}`));
+    }
+    render();
+  }
+  if (action === 'zoom-in') { mapZoom = Math.min(2, mapZoom + 1); render(); }
+  if (action === 'zoom-out') { mapZoom = Math.max(0, mapZoom - 1); render(); }
+  const infoCategory = event.target.closest('[data-info-category]')?.dataset.infoCategory;
+  if (infoCategory) { activeInfoCategory = infoCategory; render(); }
+  if (action === 'new-announcement') openAnnouncementModal();
+  if (action === 'open-dispatch') openDispatchModal();
+  if (action === 'new-employee') {
+    event.target.closest('.modal-backdrop')?.remove();
+    openProfileModal({ id: 'new', initials: '+', online: false, accessRole: 'employee', vehicleType: 'truck' }, true);
+  }
+  if (action === 'close-modal') event.target.closest('.modal-backdrop').remove();
+  if (action === 'back-chats') { activeChat = null; render(); }
+  if (action === 'logout') await signOut();
+  if (action === 'reset-demo') resetDemo();
+});
+
+document.addEventListener('input', event => {
+  if (event.target.matches('[data-global-search]')) {
+    globalQuery = event.target.value;
+    render();
+    document.querySelector('[data-global-search]')?.focus();
+  }
+  if (event.target.matches('[data-team-search]')) {
+    teamQuery = event.target.value;
+    render();
+    document.querySelector('[data-team-search]')?.focus();
+  }
+  if (event.target.matches('[data-info-search]')) {
+    infoQuery = event.target.value;
+    render();
+    document.querySelector('[data-info-search]')?.focus();
+  }
+  if (event.target.matches('[data-chat-search]')) {
+    chatQuery = event.target.value;
+    render();
+    document.querySelector('[data-chat-search]')?.focus();
+  }
+});
+
+document.addEventListener('submit', async event => {
+  if (event.target.matches('.login-form')) {
+    event.preventDefault();
+    const data = new FormData(event.target);
+    if (onlineBackendActive()) {
+      try {
+        if (event.submitter?.dataset.action === 'signup-invite') {
+          const message = await signUpSupabase(data.get('email'), data.get('password'));
+          showToast(message);
+        } else {
+          await signInSupabase(data.get('email'), data.get('password'));
+          showToast('Du er logget ind med Supabase');
+        }
+      } catch (error) {
+        showToast(`Login fejlede: ${error.message}`);
+      }
+      return;
+    }
+    if (!DEMO_MODE) {
+      showToast('Supabase skal sættes op før login i produktionsappen');
+      return;
+    }
+    session = { email: data.get('email'), signedInAt: new Date().toISOString(), mode: 'demo' };
+    save('session', session);
+    render();
+    showToast('Du er logget ind');
+    return;
+  }
+  if (event.target.matches('.log-entry-form')) {
+    event.preventDefault();
+    const data = new FormData(event.target);
+    const image = await readImageFile(data.get('image'));
+    logEntries.unshift({
+      place: data.get('place'),
+      note: data.get('note'),
+      image,
+      date: 'I dag',
+      category: data.get('category') || 'Andet',
+      source: 'manual',
+      favorite: data.has('favorite'),
+    });
+    save('logEntries', logEntries);
+    event.target.closest('.modal-backdrop').remove();
+    render();
+    showToast('Dit private minde er gemt');
+    return;
+  }
+  if (event.target.matches('.new-chat-form')) {
+    event.preventDefault();
+    const data = new FormData(event.target);
+    const employee = employees.find(item => item.id === data.get('employee'));
+    if (onlineBackendActive()) {
+      try {
+        const chatId = await startSupabaseDirectChat(employee, data.get('message'));
+        activeTab = 'chat';
+        activeChat = chatId;
+        event.target.closest('.modal-backdrop').remove();
+        render();
+        showToast('Direkte samtale er startet');
+      } catch (error) {
+        showToast(`Samtalen kunne ikke startes: ${error.message}`);
+      }
+      return;
+    }
+    const chatId = employee.id;
+    if (!chats.some(chat => chat.id === chatId)) chats.unshift({ id: chatId, name: employee.name, initials: employee.initials, preview: data.get('message'), time: 'Nu', unread: 0 });
+    save('chats', chats);
+    messages[chatId] = messages[chatId] || [];
+    messages[chatId].push({
+      side: 'me',
+      senderId: session?.userId || currentEmployee().id,
+      senderName: currentEmployee().name,
+      senderInitials: currentEmployee().initials,
+      senderRole: currentEmployee().role,
+      senderVehicle: currentEmployee().truck,
+      body: data.get('message'),
+      createdAt: new Date().toISOString(),
+      time: new Date().toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' }),
+    });
+    save('messages', messages);
+    activeTab = 'chat';
+    activeChat = chatId;
+    event.target.closest('.modal-backdrop').remove();
+    render();
+    return;
+  }
+  if (event.target.matches('.pickup-form')) {
+    event.preventDefault();
+    const data = new FormData(event.target);
+    const image = await readImageFile(data.get('image'));
+    await startPickupTask({
+      employeeId: data.get('employee'),
+      note: data.get('note'),
+      image,
+      duration: data.get('duration'),
+      pickupPlace: data.get('pickupPlace'),
+      dropoffPlace: data.get('dropoffPlace'),
+      reference: data.get('reference'),
+      priority: data.get('priority') || 'Normal',
+    }, event.target.closest('.modal-backdrop'));
+    return;
+  }
+  if (event.target.matches('.pickup-note-form')) {
+    event.preventDefault();
+    const data = new FormData(event.target);
+    await addPickupLiveNote(String(data.get('note') || ''));
+    return;
+  }
+  if (event.target.matches('.data-request-form')) {
+    event.preventDefault();
+    const data = new FormData(event.target);
+    const labels = {
+      access: 'Indsigt',
+      rectification: 'Rettelse',
+      erasure: 'Sletning',
+      export: 'Eksport',
+      restriction: 'Begrænsning',
+      objection: 'Indsigelse',
+    };
+    const requestType = data.get('requestType');
+    dataRequests.unshift({
+      id: `data-request-${Date.now()}`,
+      requestType,
+      label: labels[requestType] || 'Dataanmodning',
+      message: data.get('message'),
+      status: 'Sendt i demo',
+      createdAt: new Date().toLocaleDateString('da-DK'),
+    });
+    save('dataRequests', dataRequests);
+    if (onlineBackendActive()) {
+      try {
+        await createSupabaseDataRequest(dataRequests[0]);
+      } catch (error) {
+        showToast(`Dataanmodningen er gemt lokalt, men ikke online: ${error.message}`);
+      }
+    }
+    addNotification({ type: 'Persondata', title: 'Dataanmodning sendt', body: `${labels[requestType] || 'Dataanmodning'} er registreret i demoen.`, level: 'privacy' });
+    event.target.closest('.modal-backdrop').remove();
+    render();
+    showToast('Dataanmodningen er gemt i demoen');
+    return;
+  }
+  if (event.target.matches('.announcement-form')) {
+    event.preventDefault();
+    const data = new FormData(event.target);
+    const imageFile = data.get('image');
+    const image = await readImageFile(imageFile);
+    const post = { id: `post-${Date.now()}`, title: data.get('title'), body: data.get('body'), image, time: 'Nu', tone: 'green', kind: canPublishOfficePosts() ? 'office' : 'colleague', author: profile.name, initials: currentEmployee().initials, audience: data.get('audience'), likes: 0, comments: [] };
+    if (onlineBackendActive()) {
+      try {
+        await createSupabaseAnnouncement(post, imageFile);
+        await notifySupabaseAudience(post);
+      } catch (error) {
+        showToast(`Opslaget er gemt lokalt, men ikke online: ${error.message}`);
+      }
+    }
+    announcements.unshift(post);
+    save('announcements', announcements);
+    event.target.closest('.modal-backdrop').remove();
+    render();
+    showToast('Opslaget er delt med holdet');
+    return;
+  }
+  if (event.target.matches('.comment-form')) {
+    event.preventDefault();
+    const post = announcements.find(item => item.id === event.target.dataset.post);
+    const data = new FormData(event.target);
+    if (!post) return;
+    post.comments.push(data.get('comment'));
+    save('announcements', announcements);
+    if (onlineBackendActive()) {
+      try {
+        await createSupabaseAnnouncementComment(post.id, data.get('comment'));
+      } catch (error) {
+        showToast(`Kommentaren er gemt lokalt, men ikke online: ${error.message}`);
+      }
+    }
+    event.target.closest('.modal-backdrop').remove();
+    render();
+    showToast('Kommentaren er tilføjet');
+    return;
+  }
+  if (event.target.matches('.settings-form')) {
+    event.preventDefault();
+    const data = new FormData(event.target);
+    const nextConfig = {
+      url: String(data.get('supabaseUrl') || '').trim(),
+      anonKey: String(data.get('supabaseAnonKey') || '').trim(),
+    };
+    if (nextConfig.url || nextConfig.anonKey) {
+      save(SUPABASE_CONFIG_KEY, nextConfig);
+    } else {
+      localStorage.removeItem(`roadlog:${SUPABASE_CONFIG_KEY}`);
+    }
+    supabaseClientInstance = null;
+    workdayPrivacy = {
+      gps: data.has('workGps'),
+      logbook: data.has('workLogbook'),
+      notifications: data.has('workNotifications'),
+      audience: data.get('workAudience') || 'all',
+      showSpeed: data.has('showSpeed'),
+      showVehicle: data.has('showVehicle'),
+      showStatus: data.has('showStatus'),
+    };
+    save('workdayPrivacy', workdayPrivacy);
+    notificationPrefs = { office: data.has('office'), rules: data.has('rules'), chat: data.has('chat'), dailyBrief: data.has('dailyBrief'), quietHours: data.has('quietHours') };
+  save('notificationPrefs', notificationPrefs);
+  save('workdayPrivacy', workdayPrivacy);
+    if (onlineBackendActive()) {
+      try {
+        await syncSupabaseNotificationPrefs();
+      } catch (error) {
+        showToast(`Notifikationsvalg er gemt lokalt, men ikke online: ${error.message}`);
+      }
+    }
+    event.target.closest('.modal-backdrop').remove();
+    showToast(nextConfig.url && nextConfig.anonKey ? 'Indstillinger og Supabase-forbindelse er gemt' : 'Dine indstillinger er gemt');
+    return;
+  }
+  if (event.target.matches('.core-settings-form')) {
+    event.preventDefault();
+    const data = new FormData(event.target);
+    coreSettings = {
+      gps: data.has('gps'),
+      media: data.has('media'),
+      logbook: data.has('logbook'),
+      employeePosts: data.has('employeePosts'),
+      ruleApproval: data.has('ruleApproval'),
+    };
+    save('coreSettings', coreSettings);
+    recordAdminAudit('Kernefunktioner opdateret', `GPS ${coreSettings.gps ? 'til' : 'fra'} · billeder ${coreSettings.media ? 'til' : 'fra'} · logbog ${coreSettings.logbook ? 'til' : 'fra'}`);
+    if (onlineBackendActive()) {
+      try {
+        await syncSupabaseCoreSettings();
+      } catch (error) {
+        showToast(`Kernefunktionerne er gemt lokalt, men ikke online: ${error.message}`);
+      }
+    }
+    event.target.closest('.modal-backdrop').remove();
+    render();
+    showToast('Kernefunktioner er opdateret');
+    return;
+  }
+  if (!event.target.matches('.message-form')) return;
+  event.preventDefault();
+  const input = event.target.elements.message;
+  if (onlineBackendActive()) {
+    const file = event.target.elements.image.files[0];
+    if (!input.value.trim() && !file) return;
+    const client = getSupabaseClient();
+    const { data: inserted, error } = await client.from('messages').insert({
+      conversation_id: activeChat,
+      sender_id: session.userId,
+      body: input.value.trim() || 'Sendte et billede',
+    }).select('*').maybeSingle();
+    if (error) {
+      showToast(`Beskeden kunne ikke sendes: ${error.message}`);
+      return;
+    }
+    if (file) {
+      try {
+        const uploadedImage = await uploadSupabaseChatImage(file, inserted.id);
+        messages[activeChat] = messages[activeChat] || [];
+        const localMessage = messages[activeChat].find(message => message.id === inserted.id) || messageFromSupabase(inserted, session.userId);
+        localMessage.image = uploadedImage;
+        if (!messages[activeChat].some(message => message.id === inserted.id)) messages[activeChat].push(localMessage);
+        save('messages', messages);
+      } catch (uploadError) {
+        showToast(`Beskeden blev sendt, men billedet fejlede: ${uploadError.message}`);
+        return;
+      }
+    }
+    input.value = '';
+    event.target.elements.image.value = '';
+    render();
+    return;
+  }
+  const image = await readImageFile(event.target.elements.image.files[0]);
+  if (!input.value.trim() && !image) return;
+  messages[activeChat].push({
+    side: 'me',
+    senderId: session?.userId || currentEmployee().id,
+    senderName: currentEmployee().name,
+    senderInitials: currentEmployee().initials,
+    senderRole: currentEmployee().role,
+    senderVehicle: currentEmployee().truck,
+    body: input.value.trim(),
+    image,
+    createdAt: new Date().toISOString(),
+    time: new Date().toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' }),
+  });
+  const chat = chats.find(item => item.id === activeChat);
+  if (chat) {
+    chat.preview = image && !input.value.trim() ? 'Tommy: sendte et billede' : `Tommy: ${input.value.trim()}`;
+    chat.time = 'Nu';
+    chat.unread = 0;
+    save('chats', chats);
+  }
+  save('messages', messages);
+  render();
+});
+
+render();
+restoreSupabaseSession().catch(() => {});
+setTimeout(() => {
+  if (appUpdateState.required && appUpdateState.required.activeVersionCode !== APP_VERSION_CODE) {
+    openAppUpdateModal(appUpdateState.required, { force: true, offline: true });
+  }
+  checkForAppUpdate({ silent: true });
+}, 900);
+
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js').catch(() => {});

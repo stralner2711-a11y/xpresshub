@@ -1,0 +1,19 @@
+Emne: Pilotoplæg til XpressIntra
+
+Hej,
+
+Jeg sender hermed et kort pilotoplæg til XpressIntra.
+
+Oplægget er ikke tænkt som et nyt flåde- eller opgavestyringssystem. Det er tænkt som et internt kommunikationslag ved siden af de systemer, der allerede bruges.
+
+PDF'en viser den foreslåede kerne:
+- fælles opslag og interne beskeder samlet ét sted
+- direkte kontakt mellem chauffør, kontor og ledelse
+- vigtige dokumenter, links og vejledninger i samme app
+- rollebaseret adgang, så medarbejdere kun ser det relevante
+- datasikkerhed med sikkert login, adgangsstyring, databegrænsning, logning og aftalte slettefrister
+
+PDF'en er kun en visuel præsentation. Den indeholder ingen rigtige medarbejderdata, ingen loginadgang og ingen programfil.
+
+Venlig hilsen
+Tommy
