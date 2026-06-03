@@ -1,9 +1,9 @@
-const fs = require('fs');
+﻿const fs = require('fs');
 const vm = require('vm');
 
 function createHarness(session = true) {
   const code = fs.readFileSync('src/app.js', 'utf8');
-  const storage = new Map(session ? [['roadlog:session', JSON.stringify({ email: 'demo@xpressintra.local' })]] : []);
+  const storage = new Map(session ? [['roadlog:session', JSON.stringify({ email: 'demo@xpressintra.local', mode: 'demo' })]] : []);
   const appElement = { innerHTML: '', classList: { add() {}, remove() {} } };
   const toast = { textContent: '', classList: { add() {}, remove() {} } };
   const modalNodes = [];
@@ -105,3 +105,5 @@ assert(notificationModal, 'Notification modal should open');
 assert(notificationModal.innerHTML.includes('Direkte besked'), 'Notifications should include direct message');
 
 console.log('Feature package smoke test passed');
+
+

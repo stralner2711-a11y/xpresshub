@@ -1,9 +1,9 @@
-const fs = require('fs');
+﻿const fs = require('fs');
 const vm = require('vm');
 
 function createHarness(session = true) {
   const code = fs.readFileSync('src/app.js', 'utf8');
-  const storage = new Map(session ? [['roadlog:session', JSON.stringify({ email: 'demo@xpressintra.local' })]] : []);
+  const storage = new Map(session ? [['roadlog:session', JSON.stringify({ email: 'demo@xpressintra.local', mode: 'demo' })]] : []);
   const appElement = { innerHTML: '', classList: { add() {}, remove() {} } };
   const toast = { textContent: '', classList: { add() {}, remove() {} } };
   const modalNodes = [];
@@ -88,8 +88,8 @@ assert(harness.appElement.innerHTML.includes('Indstil hvad der deles'), 'Work pa
 
 harness.run('openSettingsModal();');
 const settingsModal = harness.modalNodes.find(node => node.innerHTML.includes('Indstillinger'));
-assert(settingsModal.innerHTML.includes('NÃ¥r jeg mÃ¸der ind') || settingsModal.innerHTML.includes('Når jeg møder ind'), 'Settings should expose workday permissions');
-assert(settingsModal.innerHTML.includes('Hvem mÃ¥ se min position?') || settingsModal.innerHTML.includes('Hvem må se min position?'), 'Settings should expose location audience');
+assert(settingsModal.innerHTML.includes('Når jeg møder ind') || settingsModal.innerHTML.includes('Når jeg møder ind'), 'Settings should expose workday permissions');
+assert(settingsModal.innerHTML.includes('Hvem mÃƒÂ¥ se min position?') || settingsModal.innerHTML.includes('Hvem må se min position?'), 'Settings should expose location audience');
 assert(settingsModal.innerHTML.includes('Vis fart'), 'Settings should let users decide if speed is visible');
 
 harness.run("workdayPrivacy = { ...workdayPrivacy, gps: false }; save('workdayPrivacy', workdayPrivacy);");
@@ -118,3 +118,5 @@ assert(harness.run('workday.active') === false, 'Workday should end automaticall
 assert(harness.run('location.sharing') === false, 'Automatic end should stop location sharing');
 
 console.log('Workday check-in smoke test passed');
+
+

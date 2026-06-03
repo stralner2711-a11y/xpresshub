@@ -1,9 +1,9 @@
-const fs = require('fs');
+﻿const fs = require('fs');
 const vm = require('vm');
 
 function createHarness() {
   const code = fs.readFileSync('src/app.js', 'utf8');
-  const storage = new Map([['roadlog:session', JSON.stringify({ email: 'demo@xpressintra.local' })]]);
+  const storage = new Map([['roadlog:session', JSON.stringify({ email: 'demo@xpressintra.local', mode: 'demo' })]]);
   const appElement = { innerHTML: '', classList: { add() {}, remove() {} } };
   const modalNodes = [];
 
@@ -97,7 +97,7 @@ assert(creatorModal.innerHTML.includes('Appens drift'), 'Creator operations pane
 assert(creatorModal.innerHTML.includes('Test Supabase') && creatorModal.innerHTML.includes('Go-live tjek'), 'Creator should get important operations actions');
 assert(creatorModal.innerHTML.includes('Sikkerhedscenter'), 'Creator should get the security center shortcut');
 assert(creatorModal.innerHTML.includes('Dataanmodninger'), 'Creator should see privacy/data operations status');
-assert(!creatorModal.innerHTML.includes('Godmorgen Tommy. Din nÃ¦ste aflÃ¦sning'), 'Creator operations panel should not expose private/direct chat message content');
+assert(!creatorModal.innerHTML.includes('Godmorgen Tommy. Din næste aflæsning'), 'Creator operations panel should not expose private/direct chat message content');
 
 assert(creatorModal.innerHTML.includes('Hvad skal du holde øje med?'), 'Creator should see prioritized action items');
 assert(creatorModal.innerHTML.includes('Creator genveje'), 'Creator should see operations shortcuts');
@@ -112,3 +112,5 @@ assert(securityModal.innerHTML.includes('Mistet telefon'), 'Security center shou
 assert(securityModal.innerHTML.includes('Supabase Security Advisor'), 'Security center should include Supabase Security Advisor');
 
 console.log('Admin dashboard smoke test passed');
+
+

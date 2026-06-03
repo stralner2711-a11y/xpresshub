@@ -1,9 +1,9 @@
-const fs = require('fs');
+﻿const fs = require('fs');
 const vm = require('vm');
 
 function createHarness() {
   const code = fs.readFileSync('src/app.js', 'utf8');
-  const storage = new Map([['roadlog:session', JSON.stringify({ email: 'demo@xpressintra.local' })]]);
+  const storage = new Map([['roadlog:session', JSON.stringify({ email: 'demo@xpressintra.local', mode: 'demo' })]]);
   const appElement = { innerHTML: '', classList: { add() {}, remove() {} } };
 
   function makeNode() {
@@ -81,3 +81,5 @@ harness.run("globalQuery = 'TR 42'; render();");
 assert(harness.appElement.innerHTML.includes('Køretøj') || harness.appElement.innerHTML.includes('Kollega'), 'Global search should find vehicles or employees');
 
 console.log('Global search smoke test passed');
+
+

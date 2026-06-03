@@ -1,4 +1,4 @@
-const fs = require('fs');
+﻿const fs = require('fs');
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -12,3 +12,5 @@ assert(app.includes("return { title: 'Varebilchat', subtitle: 'Kun varebilholdet
 assert(app.includes('<b>${text(heading.title)}</b><small>${text(heading.subtitle)}</small>'), 'Conversation header should render the cleaned heading');
 
 console.log('Chat heading smoke test passed');
+
+

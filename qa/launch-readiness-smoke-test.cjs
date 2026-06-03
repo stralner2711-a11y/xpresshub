@@ -1,4 +1,4 @@
-const fs = require('fs');
+﻿const fs = require('fs');
 const vm = require('vm');
 
 function createHarness() {
@@ -87,3 +87,5 @@ assert(modal.innerHTML.includes('supabase/first-admin.sql'), 'Launch modal shoul
 assert(harness.run('launchReadiness().items.length') === 8, 'Launch readiness should track eight core go-live items');
 
 console.log('Launch readiness smoke test passed');
+
+

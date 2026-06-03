@@ -1,4 +1,4 @@
-const fs = require('fs');
+﻿const fs = require('fs');
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -40,3 +40,5 @@ assert(app.includes('openSecurityCenterModal'), 'App should expose a security ce
 assert(app.includes("data-action=\"open-security-center\""), 'Creator/admin UI should link to the security center');
 
 console.log('Security hardening smoke test passed');
+
+

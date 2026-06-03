@@ -1,9 +1,9 @@
-const fs = require('fs');
+﻿const fs = require('fs');
 const vm = require('vm');
 
 function createHarness() {
   const code = fs.readFileSync('src/app.js', 'utf8');
-  const storage = new Map([['roadlog:session', JSON.stringify({ email: 'demo@xpressintra.local' })]]);
+  const storage = new Map([['roadlog:session', JSON.stringify({ email: 'demo@xpressintra.local', mode: 'demo' })]]);
   const appElement = { innerHTML: '', classList: { add() {}, remove() {} } };
   const toast = { textContent: '', classList: { add() {}, remove() {} } };
   const modalNodes = [];
@@ -104,3 +104,5 @@ assert(schema.includes('purge_expired_operational_data'), 'Supabase schema shoul
 assert(schema.includes('auto_delete boolean not null default false'), 'Retention policies should track automatic cleanup');
 
 console.log('GDPR go-live smoke test passed');
+
+

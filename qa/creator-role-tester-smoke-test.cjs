@@ -1,9 +1,9 @@
-const fs = require('fs');
+﻿const fs = require('fs');
 const vm = require('vm');
 
 function createHarness() {
   const code = fs.readFileSync('src/app.js', 'utf8');
-  const storage = new Map([['roadlog:session', JSON.stringify({ email: 'stralner2711@gmail.com' })]]);
+  const storage = new Map([['roadlog:session', JSON.stringify({ email: 'stralner2711@gmail.com', mode: 'demo' })]]);
   const appElement = { innerHTML: '', classList: { add() {}, remove() {} } };
 
   const document = {
@@ -85,3 +85,5 @@ harness.run("applyCreatorPerspective('creator'); activeTab = 'more'; render();")
 assert(harness.run("profile.accessRole") === 'owner', 'Creator perspective should restore owner access');
 
 console.log('Creator role tester smoke test passed');
+
+

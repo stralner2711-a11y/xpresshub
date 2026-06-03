@@ -26,9 +26,13 @@ const icons = {
   search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>',
 };
 
-const APP_VERSION = '1.2.5-release-v56';
-const APP_DISPLAY_VERSION = '1.2.5';
-const APP_VERSION_CODE = 8;
+const APP_VERSION = '1.2.6-release-v57';
+const APP_DISPLAY_VERSION = '1.2.6';
+const APP_VERSION_CODE = 9;
+const IMAGE_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
+const PROFILE_PHOTO_MAX_DIMENSION = 512;
+const PROFILE_PHOTO_QUALITY = 0.84;
+const SUPPORTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 const UPDATE_CONFIG_KEY = 'appUpdateState';
 const defaultUpdateConfig = {
   versionUrl: 'https://stralner2711-a11y.github.io/xpresshub/version.json',
@@ -37,7 +41,13 @@ const defaultUpdateConfig = {
 };
 const appUpdateConfig = { ...defaultUpdateConfig, ...(window.XPRESSINTRA_UPDATE || {}) };
 const SUPABASE_CONFIG_KEY = 'supabaseConfig';
-const injectedSupabaseForMode = typeof window !== 'undefined' ? (window.XPRESSINTRA_SUPABASE || {}) : {};
+const defaultSupabaseConfig = {
+  url: 'https://mtfbdoajzmlgqbeiubxe.supabase.co',
+  anonKey: 'sb_publishable_O5_UP9V86eoCG_5f7xksCQ_uoW0jcJd',
+};
+const injectedSupabaseForMode = typeof window !== 'undefined'
+  ? { ...defaultSupabaseConfig, ...(window.XPRESSINTRA_SUPABASE || {}) }
+  : defaultSupabaseConfig;
 const storedSupabaseConfigForMode = (() => {
   try { return JSON.parse(localStorage.getItem(`roadlog:${SUPABASE_CONFIG_KEY}`)); } catch { return null; }
 })();
@@ -48,7 +58,9 @@ const hasSupabaseConfigForMode = Boolean(
 const storedSessionForMode = (() => {
   try { return JSON.parse(localStorage.getItem('roadlog:session')); } catch { return null; }
 })();
-const DEMO_MODE = Boolean(window.XPRESSINTRA_DEMO_MODE) || Boolean(!hasSupabaseConfigForMode && storedSessionForMode && storedSessionForMode.mode !== 'supabase');
+const DEMO_MODE = Boolean(window.XPRESSINTRA_DEMO_MODE)
+  || Boolean(storedSessionForMode?.mode === 'demo')
+  || Boolean(!hasSupabaseConfigForMode && storedSessionForMode && storedSessionForMode.mode !== 'supabase');
 let launchSplashVisible = typeof sessionStorage !== 'undefined' && !sessionStorage.getItem('xpressintra:launchSplashSeen');
 let launchSplashScheduled = false;
 const SUPABASE_PUBLIC_CHATS = {
@@ -351,8 +363,8 @@ function supabaseConfig() {
   const injected = typeof window !== 'undefined' ? (window.XPRESSINTRA_SUPABASE || {}) : {};
   const local = stored(SUPABASE_CONFIG_KEY) || {};
   return {
-    url: String(injected.url || local.url || '').trim(),
-    anonKey: String(injected.anonKey || injected.key || local.anonKey || local.key || '').trim(),
+    url: String(injected.url || local.url || defaultSupabaseConfig.url || '').trim(),
+    anonKey: String(injected.anonKey || injected.key || local.anonKey || local.key || defaultSupabaseConfig.anonKey || '').trim(),
   };
 }
 
@@ -434,7 +446,53 @@ function onlineBackendActive() {
   return Boolean(getSupabaseClient());
 }
 
-function readImageFile(file) {
+function isSupportedImageFile(file) {
+  if (!file || !file.type?.startsWith('image/')) return false;
+  return SUPPORTED_IMAGE_TYPES.includes(file.type);
+}
+
+function fileToDataUrl(file) {
+  return new Promise(resolve => {
+    const reader = new FileReader();
+    reader.addEventListener('load', () => resolve({ src: reader.result, name: file.name, type: file.type, size: file.size }));
+    reader.addEventListener('error', () => resolve(null));
+    reader.readAsDataURL(file);
+  });
+}
+
+function resizeImageFile(file, options = {}) {
+  if (typeof Image === 'undefined' || typeof document?.createElement !== 'function') return fileToDataUrl(file);
+  if (file.type === 'image/gif') return fileToDataUrl(file);
+  return new Promise(resolve => {
+    const reader = new FileReader();
+    reader.addEventListener('error', () => resolve(null));
+    reader.addEventListener('load', () => {
+      const image = new Image();
+      image.addEventListener('error', () => resolve(null));
+      image.addEventListener('load', () => {
+        const maxDimension = options.maxDimension || PROFILE_PHOTO_MAX_DIMENSION;
+        const ratio = Math.min(1, maxDimension / Math.max(image.width, image.height));
+        const width = Math.max(1, Math.round(image.width * ratio));
+        const height = Math.max(1, Math.round(image.height * ratio));
+        const canvas = document.createElement('canvas');
+        if (!canvas?.getContext) {
+          resolve({ src: reader.result, name: file.name, type: file.type, size: file.size });
+          return;
+        }
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext('2d').drawImage(image, 0, 0, width, height);
+        const type = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
+        const src = canvas.toDataURL(type, options.quality || PROFILE_PHOTO_QUALITY);
+        resolve({ src, name: file.name, type, size: Math.round((src.length * 3) / 4), originalSize: file.size });
+      });
+      image.src = reader.result;
+    });
+    reader.readAsDataURL(file);
+  });
+}
+
+function legacyReadImageFile(file) {
   if (!coreSettings.media) {
     showToast('Billeder er midlertidigt slået fra af chef/admin');
     return Promise.resolve(null);
@@ -450,6 +508,27 @@ function readImageFile(file) {
     reader.addEventListener('error', () => resolve(null));
     reader.readAsDataURL(file);
   });
+}
+
+async function readImageFile(file, options = {}) {
+  if (!coreSettings.media) {
+    showToast('Billeder er midlertidigt slået fra af chef/admin');
+    return null;
+  }
+  if (!file || !file.size) return null;
+  if (!isSupportedImageFile(file)) {
+    showToast('Vælg et billede som JPG, PNG, WebP eller GIF');
+    return null;
+  }
+  if (file.size > IMAGE_UPLOAD_MAX_BYTES) {
+    showToast('Billedet er for stort. Vælg max 10 MB.');
+    return null;
+  }
+  if (options.kind === 'profile') {
+    const resized = await resizeImageFile(file, { maxDimension: PROFILE_PHOTO_MAX_DIMENSION, quality: PROFILE_PHOTO_QUALITY });
+    if (resized) return resized;
+  }
+  return fileToDataUrl(file);
 }
 
 function normalizeMessage(message) {
@@ -3883,7 +3962,13 @@ function openProfileModal(employee = currentEmployee(), isNew = false) {
         <label>Navn<input name="name" value="${text(source.name || '')}" required /></label>
         <label>Telefon<input name="phone" value="${text(source.phone || '')}" /></label>
         <label>Arbejdsmail<input name="email" type="email" value="${text(source.email || '')}" /></label>
-        <label>Profilbillede<input name="photo" type="file" accept="image/*" /></label>
+        <label class="profile-photo-field">Profilbillede
+          <span class="profile-photo-preview ${source.photo ? '' : 'is-empty'}" data-profile-photo-preview>
+            ${source.photo ? `<img src="${text(source.photo.src)}" alt="${text(source.name || 'Profilbillede')}" />` : '<b>+</b><small>Vælg billede</small>'}
+          </span>
+          <input name="photo" type="file" accept="image/jpeg,image/png,image/webp,image/gif" />
+          <small>JPG, PNG, WebP eller GIF · max 10 MB. Store billeder skaleres ned til profilvisning.</small>
+        </label>
       </section>
       <section class="profile-form-section"><h4>Arbejde</h4>
         <label>Afdeling<input name="department" value="${text(source.department || '')}" placeholder="Lastbil, varebil, drift..." ${canEditAdminFields ? '' : 'disabled'} /></label>
@@ -3934,7 +4019,7 @@ function openProfileModal(employee = currentEmployee(), isNew = false) {
       return;
     }
     const data = new FormData(modal.querySelector('form'));
-    const photo = await readImageFile(data.get('photo'));
+    const photo = await readImageFile(data.get('photo'), { kind: 'profile' });
     const targetIndex = employees.findIndex(item => item.id === employee.id);
     const previous = isOwnProfile ? { ...currentEmployee(), ...profile } : employees[targetIndex];
     const updated = {
@@ -5131,6 +5216,16 @@ document.addEventListener('input', event => {
     render();
     document.querySelector('[data-chat-search]')?.focus();
   }
+});
+
+document.addEventListener('change', async event => {
+  const input = event.target;
+  if (!input.matches('input[name="photo"]')) return;
+  const preview = input.closest('.profile-photo-field')?.querySelector('[data-profile-photo-preview]');
+  const image = await readImageFile(input.files?.[0], { kind: 'profile' });
+  if (!preview || !image) return;
+  preview.classList.remove('is-empty');
+  preview.innerHTML = `<img src="${text(image.src)}" alt="Valgt profilbillede" />`;
 });
 
 document.addEventListener('submit', async event => {

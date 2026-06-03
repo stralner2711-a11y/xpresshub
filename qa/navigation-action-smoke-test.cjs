@@ -1,4 +1,4 @@
-const fs = require('fs');
+﻿const fs = require('fs');
 
 const source = fs.readFileSync('src/app.js', 'utf8');
 
@@ -22,3 +22,5 @@ assert(source.includes("modalReplacingActions"), 'Modal-to-modal navigation shou
 assert(source.includes("canPublishOfficePosts() ? '<button data-action=\"new-announcement\">Nyt opslag</button>' : ''"), 'Office post button should only show for office/dispatch roles');
 
 console.log('Navigation action smoke test passed');
+
+

@@ -1,4 +1,4 @@
-const fs = require('fs');
+﻿const fs = require('fs');
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -17,10 +17,12 @@ assert(app.includes('}, 5000);'), 'Launch splash should stay visible for 5 secon
 assert(app.includes('XpressBudet præsenterer'), 'Launch splash should keep Danish æ correctly');
 assert(app.includes('Indlæser ruter, køretøjer og dagens drift'), 'Launch splash should keep Danish æ/ø correctly');
 assert(app.includes('<span>Chauffører</span>'), 'Launch splash should keep Danish ø correctly');
-assert(!app.match(/pr(&aelig;|Ã|Â).*senterer|Indl(&aelig;|Ã|Â)/), 'Launch splash should not contain mojibake or HTML entities for Danish text');
+assert(!app.match(/pr(&aelig;|Ãƒ|Ã‚).*senterer|Indl(&aelig;|Ãƒ|Ã‚)/), 'Launch splash should not contain mojibake or HTML entities for Danish text');
 
 assert(css.includes('.launch-vehicle'), 'Launch vehicle styling should exist');
 assert(css.includes('@keyframes launchDriveOut'), 'Vehicle drive-out animation should exist');
 assert(css.includes('animation: launchDriveOut 5s'), 'Drive-out animation should run for 5 seconds');
 
 console.log('Launch splash smoke test passed');
+
+

@@ -1,9 +1,9 @@
-const fs = require('fs');
+﻿const fs = require('fs');
 const vm = require('vm');
 
 function createHarness() {
   const code = fs.readFileSync('src/app.js', 'utf8');
-  const storage = new Map([['roadlog:session', JSON.stringify({ email: 'demo@xpressintra.local' })]]);
+  const storage = new Map([['roadlog:session', JSON.stringify({ email: 'demo@xpressintra.local', mode: 'demo' })]]);
   const appElement = { innerHTML: '', classList: { add() {}, remove() {} } };
   const modalNodes = [];
 
@@ -105,3 +105,5 @@ assert(styles.includes('font-size: 12px'), 'Styles should lift small mobile text
 assert(!styles.includes('.daily-assistant'), 'Styles should not keep removed daily assistant layout');
 
 console.log('User experience smoke test passed');
+
+

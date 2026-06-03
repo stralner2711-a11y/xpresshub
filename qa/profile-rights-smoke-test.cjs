@@ -1,9 +1,9 @@
-const fs = require('fs');
+﻿const fs = require('fs');
 const vm = require('vm');
 
 function createHarness() {
   const code = fs.readFileSync('src/app.js', 'utf8');
-  const storage = new Map([['roadlog:session', JSON.stringify({ email: 'demo@xpressintra.local' })]]);
+  const storage = new Map([['roadlog:session', JSON.stringify({ email: 'demo@xpressintra.local', mode: 'demo' })]]);
   const appElement = { innerHTML: '', classList: { add() {}, remove() {} } };
   const modalNodes = [];
 
@@ -93,3 +93,5 @@ assert(!adminModal.innerHTML.match(/<input name="department"[^>]*disabled/), 'Ad
 assert(!adminModal.innerHTML.match(/<input name="truck"[^>]*disabled/), 'Admin vehicle/unit field should be editable');
 
 console.log('Profile rights smoke test passed');
+
+

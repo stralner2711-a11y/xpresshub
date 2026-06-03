@@ -1,9 +1,9 @@
-const fs = require('fs');
+﻿const fs = require('fs');
 const vm = require('vm');
 
 function createHarness(session = true) {
   const code = fs.readFileSync('src/app.js', 'utf8');
-  const storage = new Map(session ? [['roadlog:session', JSON.stringify({ email: 'demo@xpressintra.local' })]] : []);
+  const storage = new Map(session ? [['roadlog:session', JSON.stringify({ email: 'demo@xpressintra.local', mode: 'demo' })]] : []);
   const appElement = { innerHTML: '', classList: { add() {}, remove() {} } };
   const toast = { textContent: '', classList: { add() {}, remove() {} } };
   const modalNodes = [];
@@ -104,3 +104,5 @@ harness.run('markAllNotificationsRead();');
 assert(harness.run('notifications.every(item => item.unread === false)') === true, 'Mark all read should clear unread flags');
 
 console.log('Notification center smoke test passed');
+
+

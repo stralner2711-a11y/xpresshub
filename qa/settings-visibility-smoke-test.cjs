@@ -1,4 +1,4 @@
-const fs = require('fs');
+﻿const fs = require('fs');
 const vm = require('vm');
 
 function assert(condition, message) {
@@ -68,7 +68,7 @@ const employeeSettings = harness.modalNodes.at(-1).innerHTML;
 assert(!employeeSettings.includes('Supabase URL'), 'Employee settings should not show Supabase URL field');
 assert(!employeeSettings.includes('Offentlig anon key'), 'Employee settings should not show public key field');
 assert(!employeeSettings.includes('Test Supabase-forbindelse'), 'Employee settings should not show Supabase diagnostics');
-assert(employeeSettings.includes('Når jeg møder ind') || employeeSettings.includes('NÃ¥r jeg mÃ¸der ind'), 'Employee settings should still show workday privacy controls');
+assert(employeeSettings.includes('Når jeg møder ind') || employeeSettings.includes('Når jeg møder ind'), 'Employee settings should still show workday privacy controls');
 
 harness.run("profile = { ...profile, name: 'Tommy Hansen', email: 'stralner2711@gmail.com', accessRole: 'owner', role: 'Appansvarlig · Lastbilchauffør' }; openSettingsModal();");
 const creatorSettings = harness.modalNodes.at(-1).innerHTML;
@@ -79,3 +79,5 @@ assert(creatorSettings.includes('Test Supabase-forbindelse'), 'Creator settings 
 assert(fs.readFileSync('src/app.js', 'utf8').includes('if (isCreatorOwner()) {\n      if (nextConfig.url || nextConfig.anonKey)'), 'Only creator should be able to change stored Supabase config from settings');
 
 console.log('Settings visibility smoke test passed');
+
+

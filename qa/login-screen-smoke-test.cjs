@@ -1,4 +1,4 @@
-const fs = require('fs');
+﻿const fs = require('fs');
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -17,3 +17,5 @@ assert(loginBlock.includes('hasInviteLink'), 'Signup should be gated behind a re
 assert(loginBlock.includes('data-action="signup-invite"'), 'Invite signup should still exist for invited users');
 
 console.log('Login screen smoke test passed');
+
+

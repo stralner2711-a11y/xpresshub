@@ -1,4 +1,4 @@
-const fs = require('fs');
+﻿const fs = require('fs');
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -12,3 +12,5 @@ assert(app.includes('if (!DEMO_MODE)'), 'Demo admin elevation should refuse outs
 assert(app.includes('Demo-admin er slået fra'), 'Demo admin refusal should explain itself');
 
 console.log('Demo admin isolation smoke test passed');
+
+

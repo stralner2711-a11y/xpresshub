@@ -1,4 +1,4 @@
-const fs = require('fs');
+﻿const fs = require('fs');
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -13,3 +13,5 @@ assert(!app.includes("Godmorgen, ${text(profile.name.split(' ')[0])}"), 'Home he
 assert(app.includes("name: row?.full_name || profile.name || ''"), 'Supabase profile fallback should not turn email into display name');
 
 console.log('Home greeting smoke test passed');
+
+

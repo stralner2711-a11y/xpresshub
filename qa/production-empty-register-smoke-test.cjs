@@ -1,4 +1,4 @@
-const fs = require('fs');
+﻿const fs = require('fs');
 const vm = require('vm');
 
 const code = fs.readFileSync('src/app.js', 'utf8');
@@ -53,6 +53,8 @@ function assert(condition, message) {
 }
 
 assert(vm.runInContext('DEMO_MODE', context) === false, 'Fresh production app should not enable demo mode');
+assert(vm.runInContext('supabaseConfig().url', context) === 'https://mtfbdoajzmlgqbeiubxe.supabase.co', 'Production app should include the bundled Supabase URL fallback');
+assert(vm.runInContext('supabaseConfig().anonKey', context).startsWith('sb_publishable_'), 'Production app should include the bundled Supabase publishable key fallback');
 assert(vm.runInContext('employees.length', context) === 0, 'Fresh production app should start with an empty employee register');
 assert(vm.runInContext('vehicles.length', context) === 0, 'Fresh production app should start without demo vehicles');
 assert(vm.runInContext('announcements.length', context) === 0, 'Fresh production app should start without demo posts');
@@ -60,3 +62,5 @@ assert(!appElement.innerHTML.includes('demo@xpressintra.local'), 'Production log
 assert(appElement.innerHTML.includes('Har du ikke adgang endnu'), 'Production login should explain that access requires an invitation');
 
 console.log('Production empty register smoke test passed');
+
+

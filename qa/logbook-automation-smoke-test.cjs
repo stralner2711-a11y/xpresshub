@@ -1,9 +1,9 @@
-const fs = require('fs');
+﻿const fs = require('fs');
 const vm = require('vm');
 
 function createHarness(session = true) {
   const code = fs.readFileSync('src/app.js', 'utf8');
-  const storage = new Map(session ? [['roadlog:session', JSON.stringify({ email: 'demo@xpressintra.local' })]] : []);
+  const storage = new Map(session ? [['roadlog:session', JSON.stringify({ email: 'demo@xpressintra.local', mode: 'demo' })]] : []);
   const appElement = { innerHTML: '', classList: { add() {}, remove() {} } };
   const toast = { textContent: '', classList: { add() {}, remove() {} } };
   const modalNodes = [];
@@ -119,3 +119,5 @@ const disabledSettings = JSON.parse(harness.storage.get('roadlog:logbookAutomati
 assert(disabledSettings.smartLogbook === false, 'Smart logbook master switch should be persisted');
 
 console.log('Logbook automation smoke test passed');
+
+

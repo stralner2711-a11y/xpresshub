@@ -1,4 +1,4 @@
-const CACHE_NAME = 'xpressintra-v56-action-guards';
+const CACHE_NAME = 'xpressintra-v57-profile-photo';
 const APP_FILES = [
   './',
   './index.html',

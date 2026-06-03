@@ -1,9 +1,9 @@
-const fs = require('fs');
+﻿const fs = require('fs');
 const vm = require('vm');
 
 function createHarness(session = true) {
   const code = fs.readFileSync('src/app.js', 'utf8');
-  const storage = new Map(session ? [['roadlog:session', JSON.stringify({ email: 'demo@xpressintra.local' })]] : []);
+  const storage = new Map(session ? [['roadlog:session', JSON.stringify({ email: 'demo@xpressintra.local', mode: 'demo' })]] : []);
   const appElement = { innerHTML: '', classList: { add() {}, remove() {} } };
   const toast = { textContent: '', classList: { add() {}, remove() {} } };
   const modalNodes = [];
@@ -102,3 +102,5 @@ harness.run("enforceLocationExpiry(new Date(new Date(location.expiresAt).getTime
 assert(harness.run('location.sharing') === false, 'Timed sharing should stop automatically after expiry');
 
 console.log('Live map smoke test passed');
+
+

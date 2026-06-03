@@ -1,4 +1,4 @@
-const fs = require('fs');
+﻿const fs = require('fs');
 const vm = require('vm');
 
 function assert(condition, message) {
@@ -91,3 +91,5 @@ listeners.click({ target: makeNode('test-supabase'), preventDefault() {} });
 assert(modalNodes.length === 1 && modalNodes[0].innerHTML.includes('Supabase'), 'Creator should still be able to open Supabase diagnostics');
 
 console.log('Employee action guard smoke test passed');
+
+

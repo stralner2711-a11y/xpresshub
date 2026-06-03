@@ -1,4 +1,4 @@
-const fs = require('fs');
+﻿const fs = require('fs');
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -104,3 +104,5 @@ assert(schema.includes('alter publication supabase_realtime add table public.ann
 assert(schema.includes('alter publication supabase_realtime add table public.notifications;'), 'Notifications should be available through realtime');
 
 console.log('Supabase security smoke test passed');
+
+
