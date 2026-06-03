@@ -40,33 +40,38 @@ function Test-Admin {
   return $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 }
 
-function Invoke-LoggedCommand($label, $workingDirectory, $filePath, [string[]]$arguments = @(), $allowedExitCodes = @(0)) {
-  Write-Log ''
-  Write-Log $label
+function ConvertTo-CmdArgument($value) {
+  $text = [string]$value
+  if ($text -notmatch '[\s"&<>|^]') { return $text }
+  return '"' + ($text -replace '"', '\"') + '"'
+}
+
+function ConvertTo-CmdLine($filePath, [string[]]$arguments = @()) {
+  @((ConvertTo-CmdArgument $filePath)) + ($arguments | ForEach-Object { ConvertTo-CmdArgument $_ }) -join ' '
+}
+
+function Invoke-NativeToLog($filePath, [string[]]$arguments = @(), $workingDirectory = $project, $allowedExitCodes = @(0)) {
   Push-Location -LiteralPath $workingDirectory
   try {
-    & $filePath @arguments *>> $log
+    $command = ConvertTo-CmdLine $filePath $arguments
+    & cmd.exe /D /C "$command >> `"$log`" 2>&1"
     $code = $LASTEXITCODE
     if ($allowedExitCodes -notcontains $code) {
-      Stop-Release "$label fejlede med kode $code"
+      Stop-Release "$filePath fejlede med kode $code"
     }
   } finally {
     Pop-Location
   }
 }
 
+function Invoke-LoggedCommand($label, $workingDirectory, $filePath, [string[]]$arguments = @(), $allowedExitCodes = @(0)) {
+  Write-Log ''
+  Write-Log $label
+  Invoke-NativeToLog $filePath $arguments $workingDirectory $allowedExitCodes
+}
+
 function Invoke-Git($arguments, $failureMessage) {
-  $oldErrorActionPreference = $ErrorActionPreference
-  try {
-    $script:ErrorActionPreference = 'Continue'
-    & $git -C $repo @arguments 2>&1 | Tee-Object -FilePath $log -Append | Out-Host
-    $code = $LASTEXITCODE
-  } finally {
-    $script:ErrorActionPreference = $oldErrorActionPreference
-  }
-  if ($code -ne 0) {
-    Stop-Release "$failureMessage (Git-kode $code)"
-  }
+  Invoke-NativeToLog $git (@('-C', $repo) + $arguments) $project @(0)
 }
 
 function Invoke-Robocopy($source, $destination, [string[]]$extraArgs = @()) {
@@ -122,7 +127,7 @@ if (!(Test-Path -LiteralPath (Join-Path $repo '.git'))) { Stop-Release "GitHub-r
 if (!(Test-Path -LiteralPath $git)) { Stop-Release "Git blev ikke fundet: $git" }
 if (!(Test-Path -LiteralPath $gh)) { Stop-Release "GitHub CLI blev ikke fundet: $gh" }
 
-& $git config --global --add safe.directory ($repo -replace '\\', '/') *>> $log
+Invoke-NativeToLog $git @('config', '--global', '--add', 'safe.directory', ($repo -replace '\\', '/')) $project @(0)
 
 Invoke-LoggedCommand '[1/7] Tjekker Supabase og faelles login-config...' $project 'powershell.exe' @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', (Join-Path $project 'tools\supabase-release-check.ps1'))
 Invoke-LoggedCommand '[2/7] Tjekker GitHub login...' $project $gh @('auth', 'status')
@@ -177,9 +182,11 @@ Invoke-Robocopy $ready $repo
 Write-Log ''
 Write-Log '[6/7] Committer og pusher til GitHub...'
 $statusFile = Join-Path $env:TEMP 'xpressintra-status.txt'
-& $git -C $repo status --short *> $statusFile
+$statusCommand = ConvertTo-CmdLine $git @('-C', $repo, 'status', '--short')
+& cmd.exe /D /C "$statusCommand > `"$statusFile`" 2>&1"
+$statusCode = $LASTEXITCODE
 Get-Content -LiteralPath $statusFile -ErrorAction SilentlyContinue | Out-File -FilePath $log -Append
-if ($LASTEXITCODE -ne 0) { Stop-Release 'Kunne ikke laese Git status. Se Git-fejlen lige ovenfor i loggen.' }
+if ($statusCode -ne 0) { Stop-Release 'Kunne ikke laese Git status. Se Git-fejlen lige ovenfor i loggen.' }
 $status = Get-Content -LiteralPath $statusFile -ErrorAction SilentlyContinue
 if ([string]::IsNullOrWhiteSpace(($status -join "`n"))) {
   Write-Log 'Ingen nye GitHub-aendringer at committe.'
