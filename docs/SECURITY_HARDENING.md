@@ -23,6 +23,8 @@ This is the practical security baseline for running XpressIntra as an internal e
 ## Supabase Checklist Before Real Launch
 
 - Enable MFA on the owner/admin Supabase accounts.
+- Use Supabase Auth for passwords. XpressIntra must never store employee passwords in tables, localStorage, logs, screenshots or exported files.
+- Employees should create accounts only through an invitation created by creator/chef/admin.
 - Keep Auth JWT expiry short enough for an employee app, especially if phones can be lost.
 - Confirm the app uses only the publishable/anon key in frontend files.
 - Run Supabase Security Advisor and Performance Advisor before launch.
@@ -38,6 +40,21 @@ This is the practical security baseline for running XpressIntra as an internal e
 - Do not share APKs publicly. Treat the APK as internal company software.
 - Have a short incident plan: who is contacted, what is disabled, what is logged, and when employees are informed.
 - Review GDPR retention cleanup monthly until automatic cleanup is proven stable.
+- Treat direct chats and role chats as private employee communication. Creator/admin can manage employees and settings, but should not get extra chat access unless they are a member or match the work role, for example truck driver.
+
+## Password Safety Verdict
+
+The current app is designed so employees type their password into Supabase Auth. The app sends the password to Supabase over HTTPS and stores the returned session token, not the password itself. That is the normal pattern for a mobile/web app.
+
+This is safe enough for internal pilot use when these conditions are met:
+
+- Supabase Auth is the only login backend.
+- MFA is enabled for creator, boss/admin and GitHub/Supabase owner accounts.
+- The public app config contains only the publishable/anon key.
+- Lost-phone handling is agreed before inviting the whole company.
+- The APK/download link is treated as internal company software.
+
+It should not be called fully production-grade until Supabase Security Advisor has been reviewed on the live project and at least two real phones have tested login, logout, profile image upload, chat, GPS sharing and update flow.
 
 ## Remaining High-Value Improvements
 

@@ -129,12 +129,13 @@ if (!(Test-Path -LiteralPath $gh)) { Stop-Release "GitHub CLI blev ikke fundet: 
 
 Invoke-NativeToLog $git @('config', '--global', '--add', 'safe.directory', ($repo -replace '\\', '/')) $project @(0)
 
-Invoke-LoggedCommand '[1/7] Tjekker Supabase og faelles login-config...' $project 'powershell.exe' @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', (Join-Path $project 'tools\supabase-release-check.ps1'))
-Invoke-LoggedCommand '[2/7] Tjekker GitHub login...' $project $gh @('auth', 'status')
-Invoke-LoggedCommand '[3/7] Bygger og synkroniserer Android-filer...' $project 'npm.cmd' @('run', 'android:sync')
+Invoke-LoggedCommand '[1/8] Tjekker Supabase og faelles login-config...' $project 'powershell.exe' @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', (Join-Path $project 'tools\supabase-release-check.ps1'))
+Invoke-LoggedCommand '[2/8] Tjekker login- og privatlivssikkerhed...' $project 'node.exe' @('qa/credential-privacy-smoke-test.cjs')
+Invoke-LoggedCommand '[3/8] Tjekker GitHub login...' $project $gh @('auth', 'status')
+Invoke-LoggedCommand '[4/8] Bygger og synkroniserer Android-filer...' $project 'npm.cmd' @('run', 'android:sync')
 
 Write-Log ''
-Write-Log '[4/7] Klargor GitHub-pakke...'
+Write-Log '[5/8] Klargor GitHub-pakke...'
 if (!(Test-Path -LiteralPath $ready)) { New-Item -ItemType Directory -Path $ready -Force | Out-Null }
 foreach ($folder in @('assets', 'docs', 'public', 'qa', 'src', 'supabase', 'tools')) {
   Copy-Folder $folder
@@ -174,13 +175,13 @@ foreach ($file in @(
 }
 
 Write-Log ''
-Write-Log '[5/7] Kopierer pakken til GitHub-repo...'
+Write-Log '[6/8] Kopierer pakken til GitHub-repo...'
 & attrib -R (Join-Path $repo '*') /S /D *>> $log
 & icacls $repo /grant "$env:USERNAME`:(OI)(CI)F" /T /C *>> $log
 Invoke-Robocopy $ready $repo
 
 Write-Log ''
-Write-Log '[6/7] Committer og pusher til GitHub...'
+Write-Log '[7/8] Committer og pusher til GitHub...'
 $statusFile = Join-Path $env:TEMP 'xpressintra-status.txt'
 $statusCommand = ConvertTo-CmdLine $git @('-C', $repo, 'status', '--short')
 & cmd.exe /D /C "$statusCommand > `"$statusFile`" 2>&1"
@@ -196,7 +197,7 @@ if ([string]::IsNullOrWhiteSpace(($status -join "`n"))) {
   Invoke-Git -arguments @('push', 'origin', 'main') -failureMessage 'Git push fejlede'
 }
 
-Invoke-LoggedCommand '[7/7] Bygger APK og opretter/overskriver release...' $project 'powershell.exe' @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', (Join-Path $project 'Udgiv APK til GitHub.ps1'))
+Invoke-LoggedCommand '[8/8] Bygger APK og opretter/overskriver release...' $project 'powershell.exe' @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', (Join-Path $project 'Udgiv APK til GitHub.ps1'))
 
 Write-Log ''
 Write-Log '============================================================'

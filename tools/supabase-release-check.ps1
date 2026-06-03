@@ -23,18 +23,33 @@ $configPath = Join-Path $ProjectRoot 'public\app-config.js'
 $schemaPath = Join-Path $ProjectRoot 'supabase\schema.sql'
 $fullSetupPath = Join-Path $ProjectRoot 'supabase\RUN_THIS_FROM_SCRATCH_IN_SUPABASE.sql'
 $setupNotePath = Join-Path $ProjectRoot 'supabase\XPRESSINTRA_CURRENT_SUPABASE_SETUP.md'
+$appPath = Join-Path $ProjectRoot 'src\app.js'
+$workerPath = Join-Path $ProjectRoot 'public\service-worker.js'
 
 if (!(Test-Path $configPath)) { Fail "public/app-config.js mangler" }
 if (!(Test-Path $schemaPath)) { Fail "supabase/schema.sql mangler" }
 if (!(Test-Path $fullSetupPath)) { Fail "supabase/RUN_THIS_FROM_SCRATCH_IN_SUPABASE.sql mangler" }
 if (!(Test-Path $setupNotePath)) { Fail "supabase/XPRESSINTRA_CURRENT_SUPABASE_SETUP.md mangler" }
+if (!(Test-Path $appPath)) { Fail "src/app.js mangler" }
+if (!(Test-Path $workerPath)) { Fail "public/service-worker.js mangler" }
 
 $config = Get-Content $configPath -Raw
 $schema = Get-Content $schemaPath -Raw
 $fullSetup = Get-Content $fullSetupPath -Raw
+$app = Get-Content $appPath -Raw
+$worker = Get-Content $workerPath -Raw
 
 if ($config -match 'service_role|sb_secret_|SUPABASE_SERVICE_ROLE') {
   Fail "app-config.js maa ikke indeholde service_role eller hemmelige noegler"
+}
+if ($app -match 'service_role|sb_secret_|SUPABASE_SERVICE_ROLE') {
+  Fail "src/app.js maa ikke indeholde service_role eller hemmelige noegler"
+}
+if ($app -match "localStorage\.setItem\([^)]*password|sessionStorage\.setItem\([^)]*password|roadlog:[^'\""]*password") {
+  Fail "Appen maa ikke gemme adgangskoder lokalt"
+}
+if ($worker -notmatch "/auth/" -or $worker -notmatch "/rest/" -or $worker -notmatch "/storage/" -or $worker -notmatch "app-config\.js") {
+  Fail "Service worker skal springe login, API, storage og app-config over cache"
 }
 
 $urlMatch = [regex]::Match($config, "url:\s*'([^']+)'")
@@ -87,6 +102,7 @@ if ($fullSetup -notmatch '00000000-0000-4000-8000-000000000001') { Fail "Supabas
 Pass "Supabase config peger paa $supabaseUrl"
 Pass "Kun offentlig publishable/anon key bruges i app-config.js"
 Pass "Supabase SQL, RLS, Storage og standardchat er med i pakken"
+Pass "Login-sikkerhed tjekket: ingen gemte adgangskoder og ingen hemmelige noegler i appen"
 
 if ($env:XPRESSINTRA_SUPABASE_ONLINE_CHECK -eq '1') {
   try {

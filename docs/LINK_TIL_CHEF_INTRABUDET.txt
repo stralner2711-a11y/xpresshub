@@ -1,0 +1,17 @@
+Emne: IntraBudet - intern medarbejderapp
+
+Hej
+
+Her er linket til IntraBudet:
+
+Åbn IntraBudet
+
+Indsæt selve app-linket på teksten ovenfor, så modtageren kun ser navnet "Åbn IntraBudet".
+
+Hvis adressen også skal hedde IntraBudet i browserlinjen, skal appen have et domæne eller Vercel-alias, for eksempel:
+
+https://intrabudet.vercel.app
+https://intrabudet.xpressbudet.dk
+https://app.xpressbudet.dk
+
+Browseren kan ikke skjule den rigtige webadresse af sikkerhedshensyn.

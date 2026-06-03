@@ -358,6 +358,41 @@ let supabaseChatSubscription = null;
 let supabaseLocationSubscription = null;
 let supabasePickupSubscription = null;
 let supabaseSchemaState = { missingLocationShares: false, locationWarningShown: false };
+let deferredPwaInstallPrompt = null;
+let pwaInstallAvailable = false;
+let pwaInstalled = false;
+
+function isPwaStandalone() {
+  return Boolean(window.matchMedia?.('(display-mode: standalone)').matches || window.navigator?.standalone);
+}
+
+function pwaInstallLabel() {
+  if (pwaInstalled || isPwaStandalone()) return 'IntraBudet er installeret på denne enhed';
+  if (pwaInstallAvailable) return 'Installer IntraBudet på pc';
+  return 'Klargør IntraBudet som pc-app';
+}
+
+async function installPwaApp() {
+  if (pwaInstalled || isPwaStandalone()) {
+    showToast('IntraBudet er allerede åbnet som app');
+    return;
+  }
+  if (!deferredPwaInstallPrompt) {
+    showToast('Brug browserens installer-knap i adresselinjen, og godkend IntraBudet.');
+    return;
+  }
+  deferredPwaInstallPrompt.prompt();
+  const choice = await deferredPwaInstallPrompt.userChoice.catch(() => null);
+  deferredPwaInstallPrompt = null;
+  pwaInstallAvailable = false;
+  if (choice?.outcome === 'accepted') {
+    pwaInstalled = true;
+    showToast('IntraBudet er installeret og klar');
+  } else {
+    showToast('Installationen blev ikke gennemført endnu');
+  }
+  render();
+}
 
 function supabaseConfig() {
   const injected = typeof window !== 'undefined' ? (window.XPRESSINTRA_SUPABASE || {}) : {};
@@ -1815,6 +1850,15 @@ async function loadSupabasePickupTasks() {
   }
 }
 
+async function loadOptionalSupabaseArea(label, loader) {
+  try {
+    await loader();
+  } catch (error) {
+    console.warn(`Supabase ${label} kunne ikke hentes`, error);
+    showToast(`${label} blev ikke hentet online endnu. Resten af appen virker.`);
+  }
+}
+
 async function createSupabasePickupTask() {
   const client = getSupabaseClient();
   if (!client || !session?.userId || !activePickup) return;
@@ -2102,11 +2146,11 @@ async function loadSupabaseData(authSession) {
     announcements = rows.map(announcementFromSupabase);
     save('announcements', announcements);
   }
-  await loadSupabaseChats(authSession);
-  await loadSupabaseLocations();
-  await loadSupabaseWorkday();
-  await loadSupabasePickupTasks();
-  await loadSupabaseAdminAudit();
+  await loadOptionalSupabaseArea('Chat', () => loadSupabaseChats(authSession));
+  await loadOptionalSupabaseArea('GPS', loadSupabaseLocations);
+  await loadOptionalSupabaseArea('Arbejdsdag', loadSupabaseWorkday);
+  await loadOptionalSupabaseArea('Afhentningshjælp', loadSupabasePickupTasks);
+  await loadOptionalSupabaseArea('Adminlog', loadSupabaseAdminAudit);
 }
 
 async function applySupabaseSession(authSession) {
@@ -3599,6 +3643,11 @@ function renderLogin() {
   return `<section class="login-shell">
     <div class="login-brand">${brandLogo()}<small>XpressIntra · internt medarbejdersystem</small></div>
     <div class="login-copy"><h1>Godt at se dig.</h1><p>Log ind for at finde kollegaer, dele din position og skrive med holdet.</p></div>
+    <div class="pwa-install-card">
+      <b>Brug den som pc-app</b>
+      <span>Chefen kan klikke her, godkende installationen og åbne IntraBudet fra Windows som en almindelig app.</span>
+      <button type="button" data-action="install-pwa">${text(pwaInstallLabel())}</button>
+    </div>
     <form class="login-form">
       <label>Arbejdsmail<input name="email" type="email" value="${text(invitedEmail || (demoCredentials ? 'demo@xpressintra.local' : ''))}" required /></label>
       <label>Adgangskode<input name="password" type="password" value="${demoCredentials ? 'demo1234' : ''}" minlength="6" required /></label>
@@ -4049,8 +4098,7 @@ function renderMore() {
         <button class="utility-row" data-action="reset-demo"><span class="utility-icon">${icon('settings')}</span><span><b>Nulstil demo</b><small>Gendan de oprindelige eksempeldata</small></span>${icon('arrow', 'row-arrow')}</button>
         <button class="utility-row" data-action="logout"><span class="utility-icon">${icon('close')}</span><span><b>Log ud</b><small>Afslut din session på denne enhed</small></span>${icon('arrow', 'row-arrow')}</button>
       </details>
-    </section>
-    <section class="privacy-note"><b>XpressIntra er kun til medarbejdere</b><span>Profiler, beskeder og placeringer skal gemmes bag et sikkert login, når systemet forbindes til en server.</span></section>`;
+    </section>`;
 }
 
 function renderInfo() {
@@ -5306,6 +5354,7 @@ document.addEventListener('click', async event => {
   if (action === 'test-supabase') openSupabaseDiagnosticsModal();
   if (action === 'check-update') await checkForAppUpdate({ manual: true });
   if (action === 'show-update-status') openUpdateStatusModal();
+  if (action === 'install-pwa') await installPwaApp();
   if (action === 'install-update') await installAppUpdate(appUpdateState.required?.apkDownloadUrl || appUpdateState.latest?.apkDownloadUrl);
   if (action === 'dismiss-update') {
     if (appUpdateState.latest) appUpdateState.dismissedVersionCode = appUpdateState.latest.activeVersionCode;
@@ -5722,6 +5771,19 @@ document.addEventListener('submit', async event => {
 
 render();
 restoreSupabaseSession().catch(() => {});
+window.addEventListener('beforeinstallprompt', event => {
+  event.preventDefault();
+  deferredPwaInstallPrompt = event;
+  pwaInstallAvailable = true;
+  render();
+});
+window.addEventListener('appinstalled', () => {
+  deferredPwaInstallPrompt = null;
+  pwaInstallAvailable = false;
+  pwaInstalled = true;
+  showToast('IntraBudet er installeret og klar');
+  render();
+});
 setTimeout(() => {
   if (appUpdateState.required && appUpdateState.required.activeVersionCode !== APP_VERSION_CODE) {
     openAppUpdateModal(appUpdateState.required, { force: true, offline: true });
