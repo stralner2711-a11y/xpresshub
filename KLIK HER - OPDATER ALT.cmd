@@ -14,7 +14,7 @@ set "REPO=C:\Users\Tommy\Documents\GitHub\xpresshub"
 set "GIT=C:\Program Files\Git\cmd\git.exe"
 set "GH=C:\Program Files\GitHub CLI\gh.exe"
 set "LOG=%PROJECT%opdater-alt-log.txt"
-set "MSG=Release 1.2.3 robust update check"
+set "MSG=Release XpressIntra update"
 
 set "PATH=C:\Program Files\Git\cmd;C:\Program Files\GitHub CLI;%PATH%"
 

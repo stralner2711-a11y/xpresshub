@@ -27,8 +27,8 @@ const icons = {
 };
 
 const APP_VERSION = '0.3.1-supabase-ready-v54';
-const APP_DISPLAY_VERSION = '1.2.3';
-const APP_VERSION_CODE = 6;
+const APP_DISPLAY_VERSION = '1.2.4';
+const APP_VERSION_CODE = 7;
 const UPDATE_CONFIG_KEY = 'appUpdateState';
 const defaultUpdateConfig = {
   versionUrl: 'https://stralner2711-a11y.github.io/xpresshub/version.json',
@@ -788,6 +788,32 @@ function openExternalUpdateLink(url) {
   window.open(url, '_blank', 'noopener,noreferrer');
 }
 
+async function installAppUpdate(url) {
+  if (!url || !isAllowedUpdateUrl(url)) {
+    showToast('Downloadlinket er ikke godkendt');
+    return;
+  }
+
+  const updateInstaller = window.Capacitor?.Plugins?.UpdateInstaller;
+  if (!updateInstaller?.install) {
+    openExternalUpdateLink(url);
+    return;
+  }
+
+  showToast('Henter opdatering...');
+  try {
+    const result = await updateInstaller.install({ url });
+    if (result?.needsPermission) {
+      showToast('Slå "Tillad fra denne kilde" til og tryk Opdater igen');
+    } else {
+      showToast('Åbner Android-installation...');
+    }
+  } catch (error) {
+    showToast(`Kunne ikke starte opdatering: ${error.message || error}`);
+    openExternalUpdateLink(url);
+  }
+}
+
 function openAppUpdateModal(info = appUpdateState.latest, options = {}) {
   if (!info) {
     showToast('Der er ingen versionsdata endnu');
@@ -813,6 +839,7 @@ function openAppUpdateModal(info = appUpdateState.latest, options = {}) {
       ${info.changelog.length ? info.changelog.map(item => `<span>${text(item)}</span>`).join('') : '<span>Ingen changelog er skrevet endnu.</span>'}
     </section>
     ${isPlaceholderUpdateConfig() ? '<p class="update-warning">Creator: GitHub-placeholderen skal skiftes til det rigtige repository, før medarbejdere bruger opdateringslinket.</p>' : ''}
+    <p class="update-helper">På Android hentes opdateringen direkte i XpressIntra. Første gang skal du muligvis tillade installation fra XpressIntra. Det husker telefonen normalt bagefter.</p>
     <div class="update-actions">
       <button type="button" data-action="install-update">${rollback ? 'Installer stabil version' : 'Opdater nu'}</button>
       ${force ? '' : '<button type="button" class="secondary" data-action="dismiss-update">Senere</button>'}
@@ -1012,9 +1039,17 @@ function initialsFromName(name = '') {
   return String(name || 'XB').split(/\s+/).map(part => part[0]).join('').slice(0, 2).toUpperCase() || 'XB';
 }
 
+function profileGreetingName() {
+  const raw = String(profile.name || '').trim();
+  if (raw && !raw.includes('@') && raw.toLowerCase() !== 'medarbejder') return raw;
+  const employeeName = currentEmployee()?.name || '';
+  if (employeeName && !employeeName.includes('@') && employeeName.toLowerCase() !== 'medarbejder') return employeeName;
+  return 'kollega';
+}
+
 function profileFromSupabase(row, user, privateDetails) {
   return {
-    name: row?.full_name || user?.email || profile.name,
+    name: row?.full_name || profile.name || '',
     phone: row?.phone || profile.phone || '',
     email: row?.email || user?.email || profile.email || '',
     role: row?.role || profile.role || 'Chauffør',
@@ -3288,7 +3323,7 @@ function renderHome() {
     <section class="home-clean-hero surface-card">
       <div>
         <p class="eyebrow">Forside</p>
-        <h2>Godmorgen, ${text(profile.name.split(' ')[0])}</h2>
+        <h2>Godmorgen, ${text(profileGreetingName())}</h2>
         <span>${text(nowStatus)} · ${text(profile.truck || vehicleLabel(profile.vehicleType))} · ${text(locationText)}</span>
       </div>
       <button class="home-next-action" data-action="${text(nextAction.action)}">
@@ -4958,7 +4993,7 @@ document.addEventListener('click', async event => {
   if (action === 'test-supabase') openSupabaseDiagnosticsModal();
   if (action === 'check-update') await checkForAppUpdate({ manual: true });
   if (action === 'show-update-status') openUpdateStatusModal();
-  if (action === 'install-update') openExternalUpdateLink(appUpdateState.required?.apkDownloadUrl || appUpdateState.latest?.apkDownloadUrl);
+  if (action === 'install-update') await installAppUpdate(appUpdateState.required?.apkDownloadUrl || appUpdateState.latest?.apkDownloadUrl);
   if (action === 'dismiss-update') {
     if (appUpdateState.latest) appUpdateState.dismissedVersionCode = appUpdateState.latest.activeVersionCode;
     saveAppUpdateState();

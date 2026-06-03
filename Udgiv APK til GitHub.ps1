@@ -67,6 +67,7 @@ if ($LASTEXITCODE -ne 0) {
 
 Write-Host ""
 Write-Host "Bygger APK først..."
+$env:XPRESSINTRA_AUTO = "1"
 & (Join-Path $project "Build Android APK.cmd")
 if ($LASTEXITCODE -ne 0) {
   Write-Host ""
