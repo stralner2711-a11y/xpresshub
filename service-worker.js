@@ -1,10 +1,10 @@
-﻿const CACHE_NAME = 'xpressintra-v60-update-modal';
+const CACHE_NAME = 'xpressintra-v62-info-simple';
 const APP_FILES = [
   './',
-  './index.html',
+  './indep.html',
   './download.html',
   './manifest.webmanifest',
-  './xpressbudet-logo-transparent.png',
+  './ppressbudet-logo-transparent.png',
 ];
 
 function shouldBypassCache(request) {
@@ -62,7 +62,7 @@ self.addEventListener('fetch', event => {
         return response;
       })
       .catch(() => {
-        if (event.request.mode === 'navigate') return caches.match('./index.html');
+        if (event.request.mode === 'navigate') return caches.match('./indep.html');
         return caches.match(event.request);
       })
   );

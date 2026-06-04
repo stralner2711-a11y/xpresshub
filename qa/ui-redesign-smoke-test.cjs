@@ -112,7 +112,13 @@ assert(harness.appElement.innerHTML.includes('Rigtigt kort'), 'Map should explai
 assert(harness.appElement.innerHTML.includes('Synlige kollegaer'), 'Map should label visible colleagues');
 
 harness.run("activeTab = 'info'; render();");
+assert(harness.appElement.innerHTML.includes('Hvad har du brug for?'), 'Info should start with a simple user question');
+assert(harness.appElement.innerHTML.includes('info-simple-actions'), 'Info should have large simple action buttons');
+assert(harness.appElement.innerHTML.includes('Ring til drift'), 'Info should make the primary phone action obvious');
 assert(harness.appElement.innerHTML.includes('Nød og drift'), 'Info should surface emergency and operations first');
+assert(harness.appElement.innerHTML.includes('Kontaktliste'), 'Info should include a practical contact list');
+assert(harness.appElement.innerHTML.includes('open-contact-list'), 'Info should include a button to open the full contact list');
+assert(harness.appElement.innerHTML.includes('tel:+4540553131'), 'Info contact list should include direct call links');
 assert(harness.appElement.innerHTML.includes('Hurtige svar'), 'Info should label fast answers clearly');
 
 assert(harness.appElement.innerHTML.includes('info-more-section'), 'Info should tuck heavier guides behind a more section');
@@ -121,6 +127,8 @@ assert(styles.includes('.screen-section'), 'Styles should include reusable scree
 assert(styles.includes('.screen-guide'), 'Styles should include app-wide screen guide');
 assert(styles.includes('.creator-pro-list'), 'Styles should include professional completion plan');
 assert(styles.includes('.control-detail-group'), 'Styles should include collapsible control groups');
+assert(styles.includes('.contact-directory'), 'Styles should include the information contact directory');
+assert(styles.includes('.info-simple-actions'), 'Styles should include senior-friendly information action buttons');
 assert(styles.includes('min-height: 44px'), 'Tap targets should be enlarged for mobile use');
 
 console.log('UI redesign smoke test passed');

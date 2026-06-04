@@ -1,4 +1,4 @@
-﻿const icons = {
+const icons = {
   home: '<svg viewBox="0 0 24 24"><path d="m4 11 8-7 8 7v8a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z"/></svg>',
   users: '<svg viewBox="0 0 24 24"><path d="M16 20a4 4 0 0 0-8 0"/><circle cx="12" cy="9" r="3"/><path d="M19 20a3 3 0 0 0-2-2.83M17 6.13a3 3 0 0 1 0 5.74M5 20a3 3 0 0 1 2-2.83M7 6.13a3 3 0 0 0 0 5.74"/></svg>',
   map: '<svg viewBox="0 0 24 24"><path d="m9 18-6 3V6l6-3 6 3 6-3v15l-6 3z"/><path d="M9 3v15m6-12v15"/></svg>',
@@ -26,9 +26,9 @@
   search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>',
 };
 
-const APP_VERSION = '1.2.9-release-v60';
-const APP_DISPLAY_VERSION = '1.2.9';
-const APP_VERSION_CODE = 12;
+const APP_VERSION = '1.3.1-release-v62';
+const APP_DISPLAY_VERSION = '1.3.1';
+const APP_VERSION_CODE = 14;
 const IMAGE_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
 const PROFILE_PHOTO_MAX_DIMENSION = 512;
 const PROFILE_PHOTO_QUALITY = 0.84;
@@ -204,6 +204,13 @@ const infoSections = [
   { id: 'vans', icon: 'van', title: 'Varebil', subtitle: 'Tilladelser, miljøzoner og nye EU-regler' },
   { id: 'documents', icon: 'document', title: 'Dokumenter', subtitle: 'CMR, vilkår og relevante arbejdslinks' },
   { id: 'rules', icon: 'info', title: 'Regler', subtitle: 'Officielle regelkilder samlet ét sted' },
+];
+
+const companyContacts = [
+  { id: 'drift', name: 'Drift / budkørsel', role: 'Hurtig hjælp til opgaver, forsinkelser og akutte ændringer', group: 'Drift', phone: '+4540553131', email: '', initials: 'DR', priority: true },
+  { id: 'lastbil-drift', name: 'Lastbil / liftbil / trækker', role: 'Kontakt ved lastbil, liftbil, trækker og større opgaver', group: 'Lastbil', phone: '+4540873131', email: '', initials: 'LB', priority: true },
+  { id: 'alarm', name: 'Akut fare eller personskade', role: 'Ring 112 først. Kontakt derefter driften.', group: 'Akut', phone: '112', email: '', initials: '112', priority: true },
+  { id: 'kontor', name: 'Terminal og kontor', role: 'Ved Milepælen 2, 8361 Hasselager', group: 'Kontor', phone: '+4540553131', email: '', initials: 'XB', priority: false },
 ];
 
 const infoDetails = {
@@ -3013,6 +3020,46 @@ function vehicleLabel(vehicleType) {
   return 'Kontor';
 }
 
+function cleanPhone(phone = '') {
+  return String(phone).replace(/[^\d+]/g, '');
+}
+
+function contactDirectoryEntries() {
+  const employeeContacts = employees
+    .filter(employee => employee.employmentStatus !== 'offboarded')
+    .map(employee => ({
+      id: `employee-${employee.id}`,
+      name: employee.name || 'Kollega',
+      role: `${employee.role || vehicleLabel(employee.vehicleType)} · ${employee.truck || employee.department || 'XpressBudet'}`,
+      group: employee.department || vehicleLabel(employee.vehicleType),
+      phone: employee.phone || '',
+      email: employee.email || '',
+      initials: employee.initials || initialsFromName(employee.name),
+      priority: false,
+      employeeId: employee.id,
+    }));
+  return [...companyContacts, ...employeeContacts];
+}
+
+function renderContactDirectory({ limit = null, compact = false } = {}) {
+  const contacts = contactDirectoryEntries();
+  const visible = limit ? contacts.slice(0, limit) : contacts;
+  return `<section class="${compact ? 'contact-directory compact' : 'contact-directory'}">
+    ${visible.map(contact => {
+      const phone = cleanPhone(contact.phone);
+      return `<article class="${contact.priority ? 'priority' : ''}">
+        <span class="contact-avatar">${text(contact.initials)}</span>
+        <div><b>${text(contact.name)}</b><small>${text(contact.role)}</small><em>${text(contact.group)}</em></div>
+        <nav>
+          ${phone ? `<a href="tel:${text(phone)}" aria-label="Ring til ${text(contact.name)}">${icon('phone')} Ring</a>` : ''}
+          ${contact.email ? `<a href="mailto:${text(contact.email)}" aria-label="Send mail til ${text(contact.name)}">${icon('send')} Mail</a>` : ''}
+          ${contact.employeeId ? `<button type="button" data-employee="${text(contact.employeeId)}">Profil</button>` : ''}
+        </nav>
+      </article>`;
+    }).join('')}
+  </section>`;
+}
+
 function vehicleDriver(vehicle) {
   return employees.find(employee => employee.id === vehicle.driverId);
 }
@@ -4153,18 +4200,29 @@ function renderInfo() {
   const favoriteLinks = infoLinks.filter(item => infoFavorites.includes(item.id));
   return `
     <div class="page-heading"><div><p class="eyebrow">Værktøjskasse</p><h2>Information</h2></div><button class="round-btn" data-action="open-info" data-info="operations" aria-label="Åbn kontakter">${icon('phone')}</button></div>
+    <section class="screen-guide info-screen-guide"><b>Start her</b><span>Vælg en stor knap, ring direkte til drift eller søg med få ord. De lange regler ligger længere nede.</span></section>
     <section class="info-hero surface-card">
       <p class="section-kicker">Nød og drift</p>
-      <h3>Find det rigtige svar hurtigt</h3>
-      <p>Søg i kontakter, regler, dokumenter og officielle kilder. Links er sat op som rigtige knapper, så de er nemme at ramme fra mobilen.</p>
+      <h3>Hvad har du brug for?</h3>
+      <p>De vigtigste ting ligger først. Tryk på en stor knap, og brug søgning hvis du leder efter noget bestemt.</p>
       <div><a href="tel:+4540553131">Budkørsel <b>40 55 31 31</b></a><a href="tel:+4540873131">Lastbil <b>40 87 31 31</b></a></div>
     </section>
+    <section class="info-simple-actions screen-section" aria-label="Hurtige informationsvalg">
+      <a class="primary" href="tel:+4540553131">${icon('phone')}<span><b>Ring til drift</b><small>Akut hjælp, forsinkelse eller tvivl</small></span></a>
+      <button type="button" data-action="open-contact-list">${icon('users')}<span><b>Kontaktliste</b><small>Kollegaer, kontor og telefonnumre</small></span></button>
+      <button type="button" data-info-category="documents">${icon('document')}<span><b>Dokumenter</b><small>CMR, vilkår og links</small></span></button>
+      <button type="button" data-info-category="rules">${icon('info')}<span><b>Regler</b><small>Køre/hviletid, afgift og miljøzoner</small></span></button>
+    </section>
+    <section class="contact-quick-card screen-section">
+      <div class="screen-section-head"><span>Vigtige kontakter</span><small>Tryk Ring for direkte opkald</small><button type="button" data-action="open-contact-list">Se alle</button></div>
+      ${renderContactDirectory({ limit: 3, compact: true })}
+    </section>
+    <label class="search-box info-search simple"><input data-info-search placeholder="Søg efter fx CMR, miljøzone eller hviletid..." value="${text(infoQuery)}" /><span>${filteredLinks.length} fundet</span></label>
     <section class="info-focus-grid screen-section" aria-label="Information genveje">
       ${infoSections.map(section => `<button class="${activeInfoCategory === section.id ? 'active' : ''}" data-info-category="${section.id}">
         <span>${icon(section.icon)}</span><b>${text(section.title)}</b><small>${text(section.subtitle)}</small>
       </button>`).join('')}
     </section>
-    <label class="search-box info-search"><input data-info-search placeholder="Søg fx køre hviletid, CMR eller miljøzone..." value="${text(infoQuery)}" /><span>${filteredLinks.length} hits</span></label>
     <section class="info-tabs">
       <button class="${activeInfoCategory === 'all' ? 'active' : ''}" data-info-category="all">Alle</button>
       <button class="${activeInfoCategory === 'favorites' ? 'active' : ''}" data-info-category="favorites">Favoritter</button>
@@ -4175,6 +4233,7 @@ function renderInfo() {
       <span>International godskørsel med varebiler over 2,5 ton får krav om takograf samt køre- og hviletid i relevante tilfælde.</span>
       <a href="https://www.fstyr.dk/nyheder/2026/mar/varebiler-bliver-en-del-af-koere-og-hviletidskontrollen" target="_blank" rel="noreferrer">Åbn officiel kilde</a>
     </section>
+    <div class="screen-section-head info-results-head"><span>${activeInfoCategory === 'all' ? 'Alle opslag' : activeInfoCategory === 'favorites' ? 'Dine favoritter' : infoSections.find(section => section.id === activeInfoCategory)?.title || 'Opslag'}</span><small>${filteredLinks.length} resultater</small></div>
     <section class="info-card-list">${filteredLinks.length ? filteredLinks.map(item => `
       <article class="info-card-link ${item.href ? '' : 'no-link'}">
         <span class="utility-icon">${icon(item.icon)}</span>
@@ -4757,6 +4816,19 @@ function openCommentsModal(postId) {
     <p class="eyebrow">Internt opslag</p><h3>Kommentarer</h3>
     <div class="comment-list">${post.comments.length ? post.comments.map(comment => `<span><b>Kollega</b><small>${text(comment)}</small></span>`).join('') : '<p class="empty-state">Ingen kommentarer endnu.</p>'}</div>
     <form class="comment-form" data-post="${text(post.id)}"><label>Skriv kommentar<input name="comment" placeholder="Skriv en kort kommentar..." required /></label><button class="save-btn">Tilføj kommentar</button></form>
+  </section>`;
+  document.body.append(modal);
+}
+
+function openContactListModal() {
+  const modal = document.createElement('div');
+  modal.className = 'modal-backdrop';
+  modal.innerHTML = `<section class="profile-modal contact-list-modal">
+    <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
+    <p class="eyebrow">Information</p><h3>Kontaktliste</h3>
+    <p class="info-intro">Hurtig adgang til drift, akut hjælp og kollegaer. Brug kun listen til arbejdsrelateret kontakt.</p>
+    ${renderContactDirectory()}
+    <p class="source-note">Ved fare eller personskade: ring 112 først. Kontakt derefter driften.</p>
   </section>`;
   document.body.append(modal);
 }
@@ -5367,6 +5439,7 @@ document.addEventListener('click', async event => {
     'open-launch-checklist',
     'open-gdpr-go-live',
     'open-legal',
+    'open-contact-list',
     'open-info',
     'open-rule-updates',
     'new-announcement',
@@ -5413,6 +5486,7 @@ document.addEventListener('click', async event => {
   if (action === 'open-launch-checklist') openLaunchChecklistModal();
   if (action === 'open-gdpr-go-live') openGdprGoLiveModal();
   if (action === 'open-legal') openLegalModal();
+  if (action === 'open-contact-list') openContactListModal();
   if (action === 'accept-legal') acceptLegal();
   if (action === 'demo-admin') enableDemoAdmin();
   if (action === 'share-last-invite') {
