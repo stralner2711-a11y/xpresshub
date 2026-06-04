@@ -1,4 +1,4 @@
-﻿const CACHE_NAME = 'xpressintra-v72-reactivate-employees';
+﻿const CACHE_NAME = 'xpressintra-v73-employee-delete-restore';
 const APP_FILES = [
   './',
   './indep.html',
@@ -67,6 +67,7 @@ self.addEventListener('fetch', event => {
       })
   );
 });
+
 
 
 

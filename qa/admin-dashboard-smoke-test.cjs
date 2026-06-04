@@ -92,10 +92,14 @@ assert(!modal.innerHTML.includes('Godmorgen Tommy. Din næste aflæsning'), 'Adm
 harness.run("employees = employees.map(employee => employee.id === 'ma' ? { ...employee, employmentStatus: 'offboarded', status: 'Deaktiveret', online: false, sharing: false } : employee); openAdminModal();");
 const offboardedModal = harness.modalNodes.at(-1);
 assert(offboardedModal.innerHTML.includes('Aktivér igen'), 'Offboarded employees should be possible to reactivate from admin employees tab');
-assert(!offboardedModal.innerHTML.includes('Fjern helt'), 'Admin employees tab should not make permanent deletion the default recovery action');
+assert(offboardedModal.innerHTML.includes('Slet helt'), 'Offboarded employees should still be possible to delete permanently from admin employees tab');
+assert(offboardedModal.innerHTML.includes('employee-action-pair'), 'Offboarded employee actions should be visually grouped');
 harness.run("reactivateEmployee('ma');");
 assert(harness.run("employees.find(employee => employee.id === 'ma').employmentStatus") === 'active', 'Reactivating an employee should restore active employment status');
 assert(harness.run("adminAuditEvents.some(event => event.title === 'Medarbejder aktiveret')") === true, 'Reactivating an employee should write an admin audit event');
+harness.run("employees = employees.map(employee => employee.id === 'ma' ? { ...employee, employmentStatus: 'offboarded', status: 'Deaktiveret' } : employee); removeEmployee('ma');");
+assert(harness.run("employees.some(employee => employee.id === 'ma')") === false, 'Removing an already offboarded employee should delete it from the local employee list');
+assert(harness.run("adminAuditEvents.some(event => event.title === 'Medarbejder fjernet')") === true, 'Deleting an offboarded employee should write an admin audit event');
 
 assert(!modal.innerHTML.includes('Appens drift'), 'Normal admin should not see creator-only operations panel');
 
