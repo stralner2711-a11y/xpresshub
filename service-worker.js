@@ -1,4 +1,4 @@
-const CACHE_NAME = 'xpressintra-v71-invite-only-signup';
+﻿const CACHE_NAME = 'xpressintra-v72-reactivate-employees';
 const APP_FILES = [
   './',
   './indep.html',
@@ -67,5 +67,6 @@ self.addEventListener('fetch', event => {
       })
   );
 });
+
 
 

@@ -89,6 +89,14 @@ assert(modal.innerHTML.includes('Testhandling'), 'Dashboard should list recent a
 assert(modal.innerHTML.includes('Registrér kollega') && modal.innerHTML.includes('Kontoropslag'), 'Dashboard should expose core admin actions');
 assert(!modal.innerHTML.includes('Godmorgen Tommy. Din næste aflæsning'), 'Admin dashboard should not expose private/direct chat message content');
 
+harness.run("employees = employees.map(employee => employee.id === 'ma' ? { ...employee, employmentStatus: 'offboarded', status: 'Deaktiveret', online: false, sharing: false } : employee); openAdminModal();");
+const offboardedModal = harness.modalNodes.at(-1);
+assert(offboardedModal.innerHTML.includes('Aktivér igen'), 'Offboarded employees should be possible to reactivate from admin employees tab');
+assert(!offboardedModal.innerHTML.includes('Fjern helt'), 'Admin employees tab should not make permanent deletion the default recovery action');
+harness.run("reactivateEmployee('ma');");
+assert(harness.run("employees.find(employee => employee.id === 'ma').employmentStatus") === 'active', 'Reactivating an employee should restore active employment status');
+assert(harness.run("adminAuditEvents.some(event => event.title === 'Medarbejder aktiveret')") === true, 'Reactivating an employee should write an admin audit event');
+
 assert(!modal.innerHTML.includes('Appens drift'), 'Normal admin should not see creator-only operations panel');
 
 harness.run("profile = { ...profile, name: 'Tommy Hansen', email: 'stralner2711@gmail.com', role: 'Appansvarlig · Lastbilchauffør', accessRole: 'owner', vehicleType: 'truck' }; openAdminModal();");

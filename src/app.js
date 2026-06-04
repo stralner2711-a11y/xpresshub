@@ -1,4 +1,4 @@
-const icons = {
+﻿const icons = {
   home: '<svg viewBox="0 0 24 24"><path d="m4 11 8-7 8 7v8a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z"/></svg>',
   users: '<svg viewBox="0 0 24 24"><path d="M16 20a4 4 0 0 0-8 0"/><circle cx="12" cy="9" r="3"/><path d="M19 20a3 3 0 0 0-2-2.83M17 6.13a3 3 0 0 1 0 5.74M5 20a3 3 0 0 1 2-2.83M7 6.13a3 3 0 0 0 0 5.74"/></svg>',
   map: '<svg viewBox="0 0 24 24"><path d="m9 18-6 3V6l6-3 6 3 6-3v15l-6 3z"/><path d="M9 3v15m6-12v15"/></svg>',
@@ -26,9 +26,9 @@ const icons = {
   search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>',
 };
 
-const APP_VERSION = '1.3.10-release-v71';
-const APP_DISPLAY_VERSION = '1.3.10';
-const APP_VERSION_CODE = 23;
+const APP_VERSION = '1.3.11-release-v72';
+const APP_DISPLAY_VERSION = '1.3.11';
+const APP_VERSION_CODE = 24;
 const TEMPORARY_EMPLOYEE_PASSWORD = 'xpress';
 const IMAGE_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
 const PROFILE_PHOTO_MAX_DIMENSION = 512;
@@ -1269,7 +1269,7 @@ function markCurrentVersionSuspect() {
   const fallbackInfo = {
     activeVersion: APP_DISPLAY_VERSION,
     activeVersionCode: APP_VERSION_CODE,
-    apkDownloadUrl: 'https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.10/xpressintra.apk',
+    apkDownloadUrl: 'https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.11/xpressintra.apk',
   };
   const info = appUpdateState.latest || normalizeVersionInfo(fallbackInfo);
   const defective = new Set([...(info.defectiveVersions || []).map(String), APP_DISPLAY_VERSION, String(APP_VERSION_CODE)]);
@@ -5411,7 +5411,7 @@ function openAdminModal() {
       <h4>Medarbejdere</h4>
       ${employees.map(employee => `<article class="${employee.employmentStatus === 'offboarded' ? 'offboarded' : ''}">
         <span><b>${text(employee.name)}</b><small>${text(employee.role)} · ${text(accessRoleLabel(employee.accessRole))} · ${text(employee.employmentStatus || 'active')}</small></span>
-        ${employee.id === 'th' ? '<em>Dig</em>' : `<button data-remove-employee="${text(employee.id)}">${employee.employmentStatus === 'offboarded' ? 'Fjern helt' : 'Deaktivér'}</button>`}
+        ${employee.id === 'th' ? '<em>Dig</em>' : employee.employmentStatus === 'offboarded' ? `<button class="restore" data-reactivate-employee="${text(employee.id)}">Aktivér igen</button>` : `<button data-remove-employee="${text(employee.id)}">Deaktivér</button>`}
       </article>`).join('')}
     </section>` : (DEMO_MODE ? `<button class="save-btn" type="button" data-action="demo-admin">Prøv chefvisning i demo</button>` : '<p class="security-inline-note">Chefvisning kan kun gives af en eksisterende chef/admin.</p>')}
     <section class="admin-audit">
@@ -5650,6 +5650,28 @@ function removeEmployee(employeeId) {
   openAdminModal();
 }
 
+function reactivateEmployee(employeeId) {
+  if (!canManageEmployees()) {
+    showToast('Kun chef/admin kan aktivere medarbejdere');
+    return;
+  }
+  const employee = employees.find(item => item.id === employeeId);
+  if (!employee || employee.id === 'th') return;
+  employee.employmentStatus = 'active';
+  employee.status = 'Aktiv igen';
+  employee.online = false;
+  employee.sharing = false;
+  recordAdminAudit('Medarbejder aktiveret', `${employee.name} blev aktiveret igen`);
+  if (onlineBackendActive()) {
+    updateSupabaseEmployeeProfile(employee).catch(error => showToast(`Medarbejderen er aktiveret lokalt, men ikke online: ${error.message}`));
+  }
+  save('employees', employees);
+  document.querySelector('.modal-backdrop')?.remove();
+  render();
+  openAdminModal();
+  showToast('Medarbejderen er aktiveret igen');
+}
+
 function enableDemoAdmin() {
   if (!DEMO_MODE) {
     showToast('Demo-admin er slået fra i denne version');
@@ -5748,6 +5770,7 @@ document.addEventListener('click', async event => {
   const quickGuideIndex = event.target.closest('[data-guide]')?.dataset.guide;
   const emoji = event.target.closest('[data-emoji]')?.dataset.emoji;
   const removeEmployeeId = event.target.closest('[data-remove-employee]')?.dataset.removeEmployee;
+  const reactivateEmployeeId = event.target.closest('[data-reactivate-employee]')?.dataset.reactivateEmployee;
   const pickupStatus = event.target.closest('[data-pickup-status]')?.dataset.pickupStatus;
   const pickupCheck = event.target.closest('[data-pickup-check]')?.dataset.pickupCheck;
   const logbookSuggestion = event.target.closest('[data-logbook-suggestion]')?.dataset.logbookSuggestion;
@@ -5774,6 +5797,10 @@ document.addEventListener('click', async event => {
   }
   if (removeEmployeeId) {
     removeEmployee(removeEmployeeId);
+    return;
+  }
+  if (reactivateEmployeeId) {
+    reactivateEmployee(reactivateEmployeeId);
     return;
   }
   if (completeDataRequestId) {
@@ -6463,4 +6490,5 @@ setTimeout(() => {
 }, 900);
 
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js').catch(() => {});
+
 
