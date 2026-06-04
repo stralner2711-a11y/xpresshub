@@ -127,6 +127,7 @@ create table if not exists public.profiles (
   truck text,
   employment_status text not null default 'active' check (employment_status in ('active', 'paused', 'offboarded')),
   logbook_enabled boolean not null default false,
+  password_reset_required boolean not null default false,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -162,12 +163,19 @@ create table if not exists public.employee_invitations (
   languages text,
   emergency_contact text,
   logbook_enabled boolean not null default false,
+  onboarding_method text not null default 'standard_password' check (onboarding_method in ('standard_password', 'manual')),
+  password_reset_required boolean not null default true,
   status text not null default 'pending' check (status in ('pending', 'accepted', 'cancelled')),
   created_at timestamptz not null default now()
 );
 
+alter table public.profiles
+  add column if not exists password_reset_required boolean not null default false;
+
 alter table public.employee_invitations
-  alter column role set default 'Chauffør';
+  alter column role set default 'Chauffør',
+  add column if not exists onboarding_method text not null default 'standard_password' check (onboarding_method in ('standard_password', 'manual')),
+  add column if not exists password_reset_required boolean not null default true;
 
 create table if not exists public.core_settings (
   key text primary key,
@@ -1083,6 +1091,10 @@ begin
   order by created_at desc
   limit 1;
 
+  if invite.id is null and exists (select 1 from public.profiles) then
+    raise exception 'Din arbejdsmail er ikke oprettet i XpressIntra endnu. Kontakt chef eller creator.';
+  end if;
+
   insert into public.profiles (
     id,
     full_name,
@@ -1096,7 +1108,8 @@ begin
     vehicle_type,
     truck,
     employment_status,
-    logbook_enabled
+    logbook_enabled,
+    password_reset_required
   )
   values (
     new.id,
@@ -1111,7 +1124,8 @@ begin
     coalesce(invite.vehicle_type, 'van'),
     invite.truck,
     'active',
-    coalesce(invite.logbook_enabled, false)
+    coalesce(invite.logbook_enabled, false),
+    coalesce(invite.password_reset_required, false)
   )
   on conflict (id) do nothing;
 

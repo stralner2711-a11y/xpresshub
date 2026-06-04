@@ -26,9 +26,10 @@
   search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>',
 };
 
-const APP_VERSION = '1.3.4-release-v65';
-const APP_DISPLAY_VERSION = '1.3.4';
-const APP_VERSION_CODE = 17;
+const APP_VERSION = '1.3.7-release-v68';
+const APP_DISPLAY_VERSION = '1.3.7';
+const APP_VERSION_CODE = 20;
+const TEMPORARY_EMPLOYEE_PASSWORD = 'xpress';
 const IMAGE_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
 const PROFILE_PHOTO_MAX_DIMENSION = 512;
 const PROFILE_PHOTO_QUALITY = 0.84;
@@ -368,6 +369,16 @@ let supabaseSchemaState = { missingLocationShares: false, locationWarningShown: 
 let deferredPwaInstallPrompt = null;
 let pwaInstallAvailable = false;
 let pwaInstalled = false;
+const DESKTOP_VIEW_MODES = new Set(['compact', 'large', 'full']);
+
+function desktopViewMode() {
+  const mode = stored('desktopViewMode') || 'full';
+  return DESKTOP_VIEW_MODES.has(mode) ? mode : 'full';
+}
+
+function desktopViewModeOption(value, label) {
+  return `<option value="${value}" ${desktopViewMode() === value ? 'selected' : ''}>${label}</option>`;
+}
 
 function isPwaStandalone() {
   return Boolean(window.matchMedia?.('(display-mode: standalone)').matches || window.navigator?.standalone);
@@ -632,6 +643,18 @@ function createRestSupabaseClient(config) {
         if (authSession) saveSession(authSession);
         return { data: { session: authSession, user: result.data?.user || authSession?.user }, error: null };
       },
+      async updateUser(attributes) {
+        const sessionValue = readSession();
+        const response = await fetch(`${config.url}/auth/v1/user`, {
+          method: 'PUT',
+          headers: jsonHeaders(sessionValue),
+          body: JSON.stringify(attributes || {}),
+        });
+        const result = await parseJsonResponse(response);
+        if (result.error) return result;
+        if (result.data?.user && sessionValue) saveSession({ ...sessionValue, user: result.data.user });
+        return { data: { user: result.data?.user || sessionValue?.user }, error: null };
+      },
       async signOut() {
         saveSession(null);
         return { error: null };
@@ -804,6 +827,7 @@ let announcements = stored('announcements') || (DEMO_MODE ? clone(seedAnnounceme
 let vehicles = stored('vehicles') || (DEMO_MODE ? clone(seedVehicles) : []);
 let notifications = stored('notifications') || (DEMO_MODE ? clone(seedNotifications) : []);
 let dataRequests = stored('dataRequests') || [];
+let supportRequests = stored('supportRequests') || [];
 let adminAuditEvents = stored('adminAuditEvents') || [];
 let feedLikes = stored('feedLikes') || {};
 let appUpdateState = stored(UPDATE_CONFIG_KEY) || { lastCheckedAt: null, latest: null, required: null, lastError: null, dismissedVersionCode: null };
@@ -913,6 +937,7 @@ save('announcements', announcements);
 save('vehicles', vehicles);
 save('notifications', notifications);
 save('dataRequests', dataRequests);
+save('supportRequests', supportRequests);
 save('profile', profile);
 
 function icon(name, className = '') {
@@ -1178,12 +1203,16 @@ function openAppUpdateModal(info = appUpdateState.latest, options = {}) {
     </section>
     ${options.offline ? '<p class="update-warning">Appen kunne ikke hente ny versionsfil, men en tidligere kendt tvangsopdatering er stadig aktiv.</p>' : ''}
     ${rollback && info.rollbackReason ? `<p class="update-warning"><b>Årsag:</b> ${text(info.rollbackReason)}</p>` : ''}
+    <section class="update-quick-guide">
+      <span><b>Android</b><small>Tryk opdater, installer APK'en og åbn XpressIntra igen.</small></span>
+      <span><b>iPhone</b><small>Åbn webappen fra hjemmeskærmen. Safari henter automatisk den nyeste webversion.</small></span>
+    </section>
     <section class="update-changelog">
       <h4>Det får du med</h4>
       <ul>${changelog}</ul>
     </section>
     ${isPlaceholderUpdateConfig() ? '<p class="update-warning">Creator: GitHub-placeholderen skal skiftes til det rigtige repository, før medarbejdere bruger opdateringslinket.</p>' : ''}
-    <p class="update-helper"><b>Sådan virker det:</b> XpressIntra henter opdateringen og åbner Androids almindelige installationsvindue.</p>
+    <p class="update-helper"><b>Rolig opdatering:</b> Appen forklarer kun det vigtige. Android kan stadig vise Google Play Protect, fordi appen er intern og ikke fra Play Butik.</p>
     <details class="install-help">
       <summary>Hjælp til Google Play Protect og installation</summary>
       <div>
@@ -1251,6 +1280,12 @@ function isMissingSupabaseTableError(error, tableName) {
   );
 }
 
+function isMissingSupabaseColumnError(error, columnName) {
+  const message = String(error?.message || error?.details || error || '').toLowerCase();
+  const code = String(error?.code || '').toUpperCase();
+  return message.includes(String(columnName).toLowerCase()) && (message.includes('column') || code === '42703' || code === 'PGRST204');
+}
+
 function handleLocationShareSchemaError(error) {
   if (!isMissingSupabaseTableError(error, 'location_shares')) return false;
   supabaseSchemaState.missingLocationShares = true;
@@ -1269,11 +1304,10 @@ function inviteLink(employee, invitationId = '') {
 }
 
 async function shareEmployeeInvite(employee, invitationId = '') {
-  const link = inviteLink(employee, invitationId);
-  const subject = `Invitation til XpressIntra`;
-  const body = `Hej ${employee.name || ''}\n\nDu er inviteret til XpressIntra.\n\n1. Åbn appen/linket:\n${link}\n\n2. Brug mailen ${employee.email || 'din arbejdsmail'}.\n3. Tryk "Opret konto via invitation" og vælg en adgangskode.\n\nHilsen XpressBudet`;
+  const subject = `XpressIntra konto`;
+  const body = `Hej ${employee.name || ''}\n\nDin XpressIntra-konto er klar.\n\n1. Åbn XpressIntra.\n2. Brug arbejdsmailen ${employee.email || 'din arbejdsmail'}.\n3. Tryk "Opret konto med standardkode".\n4. Brug standardkoden ${TEMPORARY_EMPLOYEE_PASSWORD}.\n5. Lav din egen personlige kode ved første login.\n\nHilsen XpressBudet`;
   if (navigator.share) {
-    await navigator.share({ title: subject, text: body, url: link });
+    await navigator.share({ title: subject, text: body });
     return;
   }
   window.location.href = `mailto:${encodeURIComponent(employee.email || '')}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
@@ -1413,6 +1447,7 @@ function profileFromSupabase(row, user, privateDetails) {
     emergencyContact: privateDetails?.emergency_contact || profile.emergencyContact || '',
     languages: row?.languages || profile.languages || '',
     logbook: Boolean(row?.logbook_enabled ?? profile.logbook),
+    passwordResetRequired: Boolean(row?.password_reset_required),
   };
 }
 
@@ -1433,6 +1468,7 @@ function employeeFromSupabase(row, userId) {
     license: row.license_summary || '',
     languages: row.languages || '',
     employmentStatus: row.employment_status || 'active',
+    passwordResetRequired: Boolean(row.password_reset_required),
     online: row.id === userId,
     sharing: false,
   };
@@ -2212,6 +2248,7 @@ async function applySupabaseSession(authSession) {
   subscribeSupabaseLocations();
   subscribeSupabasePickupTasks();
   render();
+  if (profile.passwordResetRequired) openTemporaryPasswordModal();
 }
 
 async function restoreSupabaseSession() {
@@ -2242,22 +2279,35 @@ async function signInSupabase(email, password) {
   if (error) throw error;
   if (!data.session) throw new Error('Login lykkedes ikke. Tjek mail og adgangskode.');
   await applySupabaseSession(data.session);
+  if (String(password || '') === TEMPORARY_EMPLOYEE_PASSWORD || profile.passwordResetRequired) openTemporaryPasswordModal();
 }
 
-async function signUpSupabase(email, password) {
+async function signUpSupabase(email, password = TEMPORARY_EMPLOYEE_PASSWORD) {
   const client = getSupabaseClient();
   if (!client) throw new Error('Supabase er ikke konfigureret endnu');
   const { data, error } = await client.auth.signUp({
     email,
     password,
-    options: { data: { invited_to_xpressintra: true } },
+    options: { data: { invited_to_xpressintra: true, temporary_password_flow: true } },
   });
   if (error) throw error;
   if (data.session) {
     await applySupabaseSession(data.session);
-    return 'Kontoen er oprettet, og du er logget ind';
+    openTemporaryPasswordModal();
+    return 'Kontoen er oprettet med standardkode. Lav din personlige kode nu.';
   }
-  return 'Kontoen er oprettet. Tjek mailen og bekræft kontoen, hvis Supabase beder om det.';
+  return 'Kontoen er oprettet med standardkode. Log ind med koden xpress, hvis Supabase beder om bekræftelse først.';
+}
+
+async function updateSupabasePassword(newPassword) {
+  const client = getSupabaseClient();
+  if (!client || !session?.userId) throw new Error('Du skal være logget ind for at ændre kode');
+  const { error } = await client.auth.updateUser({ password: newPassword });
+  if (error) throw error;
+  const { error: profileError } = await client.from('profiles').update({ password_reset_required: false }).eq('id', session.userId);
+  if (profileError) throw profileError;
+  profile = { ...profile, passwordResetRequired: false };
+  save('profile', profile);
 }
 
 async function signOut() {
@@ -2512,7 +2562,7 @@ async function updateSupabaseEmployeeProfile(employee) {
 async function createSupabaseEmployeeInvitation(employee) {
   const client = getSupabaseClient();
   if (!client || !session?.userId || !canManageEmployees()) return;
-  const { data, error } = await client.from('employee_invitations').insert({
+  const payload = {
     created_by: session.userId,
     full_name: employee.name,
     email: employee.email,
@@ -2526,9 +2576,76 @@ async function createSupabaseEmployeeInvitation(employee) {
     languages: employee.languages || null,
     emergency_contact: employee.emergencyContact || null,
     logbook_enabled: Boolean(employee.logbook),
-  }).select('id').maybeSingle();
+    onboarding_method: 'standard_password',
+    password_reset_required: true,
+  };
+  let { data, error } = await client.from('employee_invitations').insert(payload).select('id').maybeSingle();
+  if (error && (isMissingSupabaseColumnError(error, 'onboarding_method') || isMissingSupabaseColumnError(error, 'password_reset_required'))) {
+    const legacyPayload = { ...payload };
+    delete legacyPayload.onboarding_method;
+    delete legacyPayload.password_reset_required;
+    ({ data, error } = await client.from('employee_invitations').insert(legacyPayload).select('id').maybeSingle());
+  }
   if (error) throw error;
   return data?.id || null;
+}
+
+function normalizeEmployeeEmail(value = '') {
+  return String(value || '').trim().toLowerCase();
+}
+
+function localInvitationId() {
+  return `local-${Date.now()}`;
+}
+
+function employeeFromProfileForm(data) {
+  const name = String(data.get('name') || '').trim();
+  const email = normalizeEmployeeEmail(data.get('email'));
+  return {
+    id: `employee-${Date.now()}`,
+    name,
+    initials: name.split(' ').filter(Boolean).map(part => part[0]).join('').slice(0, 2).toUpperCase() || '+',
+    role: data.get('role') || 'Chauffør',
+    accessRole: data.get('accessRole') || 'employee',
+    vehicleType: data.get('vehicleType') || 'truck',
+    truck: data.get('truck') || 'Ingen bil',
+    phone: data.get('phone') || '',
+    email,
+    department: data.get('department') || '',
+    license: data.get('license') || '',
+    emergencyContact: data.get('emergencyContact') || '',
+    languages: data.get('languages') || '',
+    employmentStatus: 'active',
+    status: 'Invitation klar',
+    location: 'Ikke delt',
+    online: false,
+    sharing: false,
+    logbook: data.has('logbook'),
+    invitationId: localInvitationId(),
+    invitationEmail: email,
+    invitationStatus: 'local',
+    onboardingMethod: 'standard_password',
+    passwordResetRequired: true,
+    invitationCreatedAt: new Date().toISOString(),
+  };
+}
+
+async function prepareEmployeeInvitation(employee) {
+  employee.email = normalizeEmployeeEmail(employee.email);
+  employee.invitationEmail = employee.email;
+  employee.invitationCreatedAt = employee.invitationCreatedAt || new Date().toISOString();
+  employee.invitationId = employee.invitationId || localInvitationId();
+  employee.invitationStatus = 'local';
+  if (!onlineBackendActive()) return { onlineCreated: false };
+  try {
+    const supabaseInvitationId = await createSupabaseEmployeeInvitation(employee);
+    if (supabaseInvitationId) employee.invitationId = supabaseInvitationId;
+    employee.invitationStatus = 'online';
+    employee.status = 'Invitation online';
+    return { onlineCreated: Boolean(supabaseInvitationId) };
+  } catch (error) {
+    return { onlineCreated: false, error };
+  }
 }
 
 async function syncSupabaseCoreSettings() {
@@ -3692,7 +3809,7 @@ function renderScreenGuide() {
 
 function appShell(content) {
   return `
-    <section class="phone-shell">
+    <section class="phone-shell desktop-view-${desktopViewMode()}">
       <header class="topbar">
         <div class="brand-row">
           <div>${brandLogo()}<p class="date">XpressIntra · kun medarbejdere</p></div>
@@ -3727,10 +3844,6 @@ function renderLogin() {
   const invitedEmail = (() => {
     try { return new URL(window.location.href).searchParams.get('email') || ''; } catch { return ''; }
   })();
-  const inviteToken = (() => {
-    try { return new URL(window.location.href).searchParams.get('invite') || ''; } catch { return ''; }
-  })();
-  const hasInviteLink = Boolean(inviteToken && invitedEmail);
   return `<section class="login-shell">
     <div class="login-brand">${brandLogo()}<small>XpressIntra · internt medarbejdersystem</small></div>
     <div class="login-copy"><h1>Godt at se dig.</h1><p>Log ind for at finde kollegaer, dele din position og skrive med holdet.</p></div>
@@ -3743,8 +3856,8 @@ function renderLogin() {
       <label>Arbejdsmail<input name="email" type="email" value="${text(invitedEmail || (demoCredentials ? 'demo@xpressintra.local' : ''))}" required /></label>
       <label>Adgangskode<input name="password" type="password" value="${demoCredentials ? 'demo1234' : ''}" minlength="6" required /></label>
       <button>Log ind</button>
-      ${backend.ready && hasInviteLink ? '<button class="login-secondary" data-action="signup-invite">Opret konto</button>' : ''}
-      <span>${text(hasInviteLink ? 'Du er inviteret. Brug mailen fra invitationen og vælg din adgangskode.' : 'Har du ikke adgang endnu, skal din chef eller creator invitere dig først.')}</span>
+      ${backend.ready ? '<button class="login-secondary" data-action="signup-standard-password">Opret konto med standardkode</button>' : ''}
+      <span>${text(backend.ready ? 'Ny medarbejder? Skriv din arbejdsmail og tryk "Opret konto med standardkode". Første kode er xpress, og du skal lave din egen kode med det samme.' : 'Har du ikke adgang endnu, skal din chef eller creator oprette dig først.')}</span>
     </form>
   </section>`;
 }
@@ -3764,6 +3877,15 @@ function renderHome() {
     : unreadNotifications
       ? { title: 'Tjek beskeder', body: `${unreadNotifications} ulæste ting venter`, action: 'open-notifications', icon: 'chat' }
       : { title: 'Åbn Arbejde', body: 'Mød ind, del tur og gem logbog samlet ét sted', action: 'open-work', icon: 'check' };
+  const todayActions = [
+    workday.active
+      ? { label: 'Arbejde aktiv', hint: 'Se status og deling', action: 'open-work', icon: 'check', primary: true }
+      : { label: 'Mød ind', hint: 'Start dagens værktøjer', action: 'open-work', icon: 'check', primary: true },
+    { label: 'Hent for kollega', hint: activePickup ? pickupStatusLabel(activePickup.status) : 'Start hurtig opgave', action: 'open-pickup', icon: 'pin' },
+    { label: location.sharing ? 'GPS aktiv' : 'Del tur', hint: location.sharing ? locationExpiryText() : 'Frivillig deling', action: 'toggle-location', icon: 'map' },
+    { label: 'Beskeder', hint: `${unreadNotifications} ulæst`, chat: 'all', icon: 'chat' },
+    { label: 'Meld fejl', hint: 'Send ønske eller problem', action: 'open-support-request', icon: 'alert' },
+  ];
   return `
     <section class="home-clean-hero surface-card">
       <div>
@@ -3780,6 +3902,14 @@ function renderHome() {
         <span><b>${workday.active ? 'Aktiv' : 'Ikke mødt ind'}</b><small>Arbejde</small></span>
         <span><b>${location.sharing ? 'Live' : 'Skjult'}</b><small>GPS</small></span>
         <span><b>${unreadNotifications}</b><small>Ulæst</small></span>
+      </div>
+    </section>
+    <section class="home-day-tools screen-section" aria-label="Dagens værktøjer">
+      <div class="screen-section-head"><span>Dagens værktøjer</span><small>De vigtigste knapper først</small></div>
+      <div>
+        ${todayActions.map(item => `<button class="${item.primary ? 'primary' : ''}" ${item.chat ? `data-chat="${text(item.chat)}"` : `data-action="${text(item.action)}"`}>
+          <span>${icon(item.icon)}</span><b>${text(item.label)}</b><small>${text(item.hint)}</small>
+        </button>`).join('')}
       </div>
     </section>
     <section class="home-office-board screen-section">
@@ -4169,6 +4299,7 @@ function renderMore() {
         <summary>Daglig brug</summary>
         <button class="utility-row" data-action="open-profile"><span class="utility-icon">${icon('edit')}</span><span><b>Rediger profil</b><small>Navn, telefon og tilknyttet lastbil</small></span>${icon('arrow', 'row-arrow')}</button>
         <button class="utility-row" data-action="open-notifications"><span class="utility-icon">${icon('alert')}</span><span><b>Notifikationer</b><small>${notifications.filter(item => item.unread).length} ulæste · direkte beskeder og regelnyt</small></span>${icon('arrow', 'row-arrow')}</button>
+        <button class="utility-row" data-action="open-support-request"><span class="utility-icon">${icon('comment')}</span><span><b>Meld fejl eller ønske</b><small>${supportRequests.length ? `${supportRequests.length} lokale meldinger` : 'Send hurtigt hvad der driller eller mangler'}</small></span>${icon('arrow', 'row-arrow')}</button>
         <button class="utility-row" data-action="open-vehicles"><span class="utility-icon">${icon('truck')}</span><span><b>Køretøjer</b><small>Register over biler, status og chaufførtilknytning</small></span>${icon('arrow', 'row-arrow')}</button>
         <button class="utility-row" data-tab="info"><span class="utility-icon">${icon('info')}</span><span><b>Information</b><small>Kontakter, guides og dokumenter</small></span>${icon('arrow', 'row-arrow')}</button>
         <button class="utility-row" data-action="${profile.logbook ? 'open-logbook' : 'open-profile'}"><span class="utility-icon">${icon('truck')}</span><span><b>Personlig logbog</b><small>${profile.logbook ? `${logEntries.length} private minder · kun synlige for dig` : 'Fravalgt · kan slås til på din profil'}</small></span>${icon('arrow', 'row-arrow')}</button>
@@ -4312,7 +4443,7 @@ function openProfileModal(employee = currentEmployee(), isNew = false) {
     ${avatar(employee, 'modal-avatar')}
     <p class="eyebrow">${isNew ? 'Registrér kollega' : 'Medarbejderprofil'}</p>
     <h3>${isNew ? 'Opret invitation' : text(employee.name)}</h3>
-    ${isNew ? '<section class="invite-help"><b>Sådan virker det</b><span>Chef/admin registrerer kollegaen her. Kollegaen får et link og opretter selv konto med samme mail.</span></section>' : ''}
+    ${isNew ? '<section class="invite-help"><b>Sådan virker det</b><span>Skriv kollegaens arbejdsmail. Appen opretter automatisk invitationen på den mail og viser linket, når profilen er gemt.</span></section>' : ''}
     ${!isNew ? `<section class="profile-completion"><span><b style="width:${profileCompletion(source)}%"></b></span><small>${profileCompletion(source)}% udfyldt · ${text(accessRoleLabel(source.accessRole))}</small></section>` : ''}
     ${!isNew ? `<section class="profile-summary-grid">
       <span><b>${text(source.role || 'Rolle mangler')}</b><small>Titel</small></span>
@@ -4324,7 +4455,7 @@ function openProfileModal(employee = currentEmployee(), isNew = false) {
       <section class="profile-form-section"><h4>Kontakt</h4>
         <label>Navn<input name="name" value="${text(source.name || '')}" required /></label>
         <label>Telefon<input name="phone" value="${text(source.phone || '')}" /></label>
-        <label>Arbejdsmail<input name="email" type="email" value="${text(source.email || '')}" /></label>
+        <label>Arbejdsmail<input name="email" type="email" value="${text(source.email || '')}" ${isNew ? 'required' : ''} /></label>
         <label class="profile-photo-field">Profilbillede
           <span class="profile-photo-preview ${source.photo ? '' : 'is-empty'}" data-profile-photo-preview>
             ${source.photo ? `<img src="${text(source.photo.src)}" alt="${text(source.name || 'Profilbillede')}" />` : '<b>+</b><small>Vælg billede</small>'}
@@ -4364,20 +4495,23 @@ function openProfileModal(employee = currentEmployee(), isNew = false) {
     event.preventDefault();
     if (isNew) {
       const data = new FormData(modal.querySelector('form'));
-      const name = data.get('name');
-      const newEmployee = { id: `employee-${Date.now()}`, name, initials: name.split(' ').map(part => part[0]).join('').slice(0, 2).toUpperCase(), role: data.get('role'), accessRole: data.get('accessRole'), vehicleType: data.get('vehicleType'), truck: data.get('truck') || 'Ingen bil', phone: data.get('phone'), email: data.get('email'), department: data.get('department'), license: data.get('license'), emergencyContact: data.get('emergencyContact'), languages: data.get('languages'), employmentStatus: 'active', status: onlineBackendActive() ? 'Invitation klargjort' : 'Ny medarbejder', location: 'Ikke delt', online: false, sharing: false, logbook: data.has('logbook') };
+      const newEmployee = employeeFromProfileForm(data);
+      if (!newEmployee.name) {
+        showToast('Skriv kollegaens navn først');
+        return;
+      }
+      if (!newEmployee.email) {
+        showToast('Skriv kollegaens arbejdsmail, så invitationen kan bindes til den rigtige bruger');
+        return;
+      }
+      const inviteResult = await prepareEmployeeInvitation(newEmployee);
       employees.push(newEmployee);
       save('employees', employees);
-      recordAdminAudit('Medarbejder oprettet', `${name} blev oprettet som ${accessRoleLabel(data.get('accessRole'))}`);
-      if (onlineBackendActive()) {
-        try {
-          newEmployee.invitationId = await createSupabaseEmployeeInvitation(newEmployee);
-          save('employees', employees);
-        } catch (error) {
-          showToast(`Profilen er oprettet lokalt, men invitationen kom ikke online: ${error.message}`);
-        }
+      recordAdminAudit('Medarbejder oprettet', `${newEmployee.name} blev oprettet som ${accessRoleLabel(newEmployee.accessRole)} med invitation til ${newEmployee.email}`);
+      if (inviteResult.error) {
+        showToast(`Invitationen er klar lokalt, men kom ikke online endnu: ${inviteResult.error.message}`);
       }
-      modal.remove(); render(); showToast('Medarbejderen er oprettet');
+      modal.remove(); render(); showToast(inviteResult.onlineCreated ? 'Medarbejderen er oprettet, og invitationen er online' : 'Medarbejderen er oprettet, og invitationen er klar');
       openEmployeeInviteResultModal(newEmployee, newEmployee.invitationId || '');
       return;
     }
@@ -4424,25 +4558,47 @@ function openProfileModal(employee = currentEmployee(), isNew = false) {
 }
 
 function openEmployeeInviteResultModal(employee, invitationId = '') {
-  const link = inviteLink(employee, invitationId);
+  const inviteState = employee.invitationStatus === 'online'
+    ? 'Online invitation gemt i Supabase'
+    : 'Medarbejderen er oprettet lokalt - synkroniser når Supabase er online';
   const modal = document.createElement('div');
   modal.className = 'modal-backdrop';
   modal.innerHTML = `<section class="profile-modal invite-result-modal">
     <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
-    <p class="eyebrow">Invitation klar</p>
+    <p class="eyebrow">Medarbejder oprettet</p>
     <h3>${text(employee.name)} kan registrere sig</h3>
     <section class="invite-help">
-      <b>Send dette til kollegaen</b>
-      <span>Kollegaen skal bruge mailen <strong>${text(employee.email || 'mangler mail')}</strong> og trykke "Opret konto via invitation" på login-siden.</span>
+      <b>${text(inviteState)}</b>
+      <span>Kollegaen bruger arbejdsmailen <strong>${text(employee.email || 'mangler mail')}</strong>, trykker "Opret konto med standardkode" og bruger koden <strong>${TEMPORARY_EMPLOYEE_PASSWORD}</strong>. Første gang skal de vælge deres egen kode.</span>
     </section>
-    <label>Invitationslink<input readonly value="${text(link)}" /></label>
+    <label>Besked til kollegaen<input readonly value="${text(`Din XpressIntra-konto er klar. Brug arbejdsmailen ${employee.email || ''} og standardkoden ${TEMPORARY_EMPLOYEE_PASSWORD}. Du skal lave din egen kode ved første login.`)}" /></label>
     <div class="invite-actions">
-      <button type="button" data-action="share-last-invite">Send/dele invitation</button>
+      <button type="button" data-action="share-last-invite">Send/dele besked</button>
       <button type="button" data-action="close-modal">Færdig</button>
     </div>
   </section>`;
   modal.dataset.inviteEmployee = employee.id;
   modal.dataset.inviteId = invitationId;
+  document.body.append(modal);
+}
+
+function openTemporaryPasswordModal() {
+  if (!session?.userId) return;
+  document.querySelector('.temporary-password-modal')?.closest('.modal-backdrop')?.remove();
+  const modal = document.createElement('div');
+  modal.className = 'modal-backdrop';
+  modal.innerHTML = `<form class="profile-modal temporary-password-modal temporary-password-form">
+    <p class="eyebrow">Første login</p>
+    <h3>Lav din personlige kode</h3>
+    <section class="invite-help">
+      <b>Standardkoden er kun til oprettelse</b>
+      <span>Du er logget ind med den midlertidige kode. Vælg nu din egen adgangskode, før du bruger appen videre.</span>
+    </section>
+    <label>Ny adgangskode<input name="newPassword" type="password" minlength="8" autocomplete="new-password" required /></label>
+    <label>Gentag ny adgangskode<input name="confirmPassword" type="password" minlength="8" autocomplete="new-password" required /></label>
+    <p class="security-inline-note">Brug mindst 8 tegn. Vælg ikke standardkoden igen, og del aldrig din personlige kode med andre.</p>
+    <button class="save-btn">Gem personlig kode</button>
+  </form>`;
   document.body.append(modal);
 }
 
@@ -4645,6 +4801,7 @@ function openSettingsModal() {
     ${renderUpdateSummary()}
     <div class="settings-switches">
       <h4>Når jeg møder ind</h4>
+      <label><span><b>Pc-visning</b><small>Vælg hvor meget appen skal fylde på en stor skærm</small></span><select name="desktopViewMode">${desktopViewModeOption('full', 'Fuld skærm')}${desktopViewModeOption('large', 'Stor')}${desktopViewModeOption('compact', 'Kompakt')}</select></label>
       <label><span><b>Start GPS</b><small>Del tur automatisk ved Mød ind</small></span><input type="checkbox" name="workGps" ${workdayPrivacy.gps ? 'checked' : ''} /></label>
       <label><span><b>Automatisk logbog</b><small>Lav private kladder fra dagens tur</small></span><input type="checkbox" name="workLogbook" ${workdayPrivacy.logbook ? 'checked' : ''} /></label>
       <label><span><b>Arbejdsnotifikationer</b><small>Beskeder og regelnyt under arbejdsdag</small></span><input type="checkbox" name="workNotifications" ${workdayPrivacy.notifications ? 'checked' : ''} /></label>
@@ -4742,6 +4899,83 @@ function openMyDataModal() {
     </div>
   </section>`;
   document.body.append(modal);
+}
+
+function tabLabel(tab) {
+  return {
+    home: 'Forside',
+    work: 'Arbejde',
+    team: 'Kollegaer',
+    map: 'Live-kort',
+    chat: 'Beskeder',
+    info: 'Information',
+    more: 'Kontrolcenter',
+  }[tab] || 'Appen';
+}
+
+function openSupportRequestModal() {
+  const recent = supportRequests.slice(0, 5);
+  const modal = document.createElement('div');
+  modal.className = 'modal-backdrop';
+  modal.innerHTML = `<section class="profile-modal support-request-modal">
+    <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
+    <p class="eyebrow">Hjælp appen frem</p><h3>Meld fejl eller ønske</h3>
+    <p class="info-intro">Skriv kort hvad der driller, eller hvad du mangler. Meldingen gemmes med side, appversion og tidspunkt, så creator kan følge op uden lange forklaringer.</p>
+    <form class="support-request-form">
+      <label>Hvad handler det om?<select name="type">
+        <option value="bug">Noget virker ikke</option>
+        <option value="idea">Ønske til forbedring</option>
+        <option value="design">Design/overskuelighed</option>
+        <option value="content">Information mangler</option>
+      </select></label>
+      <label>Hvor i appen?<select name="area">
+        <option value="${text(activeTab)}">${text(tabLabel(activeTab))}</option>
+        <option value="home">Forside</option>
+        <option value="work">Arbejde</option>
+        <option value="chat">Beskeder</option>
+        <option value="map">Live-kort</option>
+        <option value="info">Information</option>
+        <option value="more">Kontrolcenter</option>
+      </select></label>
+      <label>Beskrivelse<textarea name="message" rows="4" placeholder="Skriv fx: Jeg kan ikke finde lastbilchatten, eller knappen er svær at læse..." required></textarea></label>
+      <button class="save-btn">Gem melding</button>
+    </form>
+    <section class="support-request-list">
+      <h4>Seneste meldinger på denne enhed</h4>
+      ${recent.length ? recent.map(request => `<article><b>${text(supportRequestTypeLabel(request.type))}</b><small>${text(request.areaLabel)} · ${text(request.createdAt)} · ${text(request.version)}</small><span>${text(request.message)}</span></article>`).join('') : '<p class="empty-state">Ingen meldinger endnu.</p>'}
+    </section>
+  </section>`;
+  document.body.append(modal);
+}
+
+function supportRequestTypeLabel(type) {
+  return {
+    bug: 'Fejl',
+    idea: 'Ønske',
+    design: 'Design',
+    content: 'Information',
+  }[type] || 'Melding';
+}
+
+function saveSupportRequest(data) {
+  const request = {
+    id: `support-${Date.now()}`,
+    type: String(data.get('type') || 'bug'),
+    area: String(data.get('area') || activeTab),
+    areaLabel: tabLabel(String(data.get('area') || activeTab)),
+    message: String(data.get('message') || '').trim(),
+    userName: profile.name,
+    userEmail: profile.email,
+    version: `${APP_DISPLAY_VERSION} · build ${APP_VERSION_CODE}`,
+    createdAt: new Date().toLocaleString('da-DK', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }),
+    status: 'local',
+  };
+  if (!request.message) return false;
+  supportRequests.unshift(request);
+  supportRequests = supportRequests.slice(0, 50);
+  save('supportRequests', supportRequests);
+  addNotification({ type: 'App-feedback', title: 'Melding gemt', body: `${supportRequestTypeLabel(request.type)} er gemt lokalt til creator.`, level: 'message' });
+  return true;
 }
 
 function openVehiclesModal() {
@@ -5455,6 +5689,7 @@ document.addEventListener('click', async event => {
     'open-my-data',
     'open-vehicles',
     'open-notifications',
+    'open-support-request',
     'open-task-overview',
     'new-chat',
     'open-settings',
@@ -5483,6 +5718,7 @@ document.addEventListener('click', async event => {
   if (action === 'open-my-data') openMyDataModal();
   if (action === 'open-vehicles') openVehiclesModal();
   if (action === 'open-notifications') openNotificationsModal();
+  if (action === 'open-support-request') openSupportRequestModal();
   if (action === 'open-task-overview') openTaskOverviewModal();
   if (action === 'mark-notifications-read') {
     markAllNotificationsRead();
@@ -5609,13 +5845,40 @@ document.addEventListener('change', async event => {
 });
 
 document.addEventListener('submit', async event => {
+  if (event.target.matches('.temporary-password-form')) {
+    event.preventDefault();
+    const data = new FormData(event.target);
+    const nextPassword = String(data.get('newPassword') || '');
+    const confirmPassword = String(data.get('confirmPassword') || '');
+    if (nextPassword.length < 8) {
+      showToast('Din nye kode skal være mindst 8 tegn');
+      return;
+    }
+    if (nextPassword === TEMPORARY_EMPLOYEE_PASSWORD) {
+      showToast('Vælg en personlig kode - ikke standardkoden');
+      return;
+    }
+    if (nextPassword !== confirmPassword) {
+      showToast('De to koder er ikke ens');
+      return;
+    }
+    try {
+      await updateSupabasePassword(nextPassword);
+      event.target.closest('.modal-backdrop')?.remove();
+      render();
+      showToast('Din personlige kode er gemt');
+    } catch (error) {
+      showToast(`Koden kunne ikke ændres: ${error.message}`);
+    }
+    return;
+  }
   if (event.target.matches('.login-form')) {
     event.preventDefault();
     const data = new FormData(event.target);
     if (onlineBackendActive()) {
       try {
-        if (event.submitter?.dataset.action === 'signup-invite') {
-          const message = await signUpSupabase(data.get('email'), data.get('password'));
+        if (event.submitter?.dataset.action === 'signup-standard-password') {
+          const message = await signUpSupabase(data.get('email'), TEMPORARY_EMPLOYEE_PASSWORD);
           showToast(message);
         } else {
           await signInSupabase(data.get('email'), data.get('password'));
@@ -5750,6 +6013,18 @@ document.addEventListener('submit', async event => {
     showToast('Dataanmodningen er gemt i demoen');
     return;
   }
+  if (event.target.matches('.support-request-form')) {
+    event.preventDefault();
+    const saved = saveSupportRequest(new FormData(event.target));
+    if (!saved) {
+      showToast('Skriv kort hvad meldingen handler om');
+      return;
+    }
+    event.target.closest('.modal-backdrop').remove();
+    render();
+    showToast('Meldingen er gemt');
+    return;
+  }
   if (event.target.matches('.announcement-form')) {
     event.preventDefault();
     const data = new FormData(event.target);
@@ -5817,6 +6092,8 @@ document.addEventListener('submit', async event => {
     save('workdayPrivacy', workdayPrivacy);
     notificationPrefs = { office: data.has('office'), rules: data.has('rules'), chat: data.has('chat'), dailyBrief: data.has('dailyBrief'), quietHours: data.has('quietHours') };
     save('notificationPrefs', notificationPrefs);
+    const nextDesktopViewMode = String(data.get('desktopViewMode') || 'full');
+    save('desktopViewMode', DESKTOP_VIEW_MODES.has(nextDesktopViewMode) ? nextDesktopViewMode : 'full');
     save('workdayPrivacy', workdayPrivacy);
     if (onlineBackendActive()) {
       try {

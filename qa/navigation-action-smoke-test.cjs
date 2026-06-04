@@ -9,7 +9,7 @@ function assert(condition, message) {
 const renderedActions = [...source.matchAll(/data-action="([^"$`{}]+)"/g)].map(match => match[1]);
 const handledActions = [...source.matchAll(/action === '([^']+)'/g)].map(match => match[1]);
 const handled = new Set(handledActions);
-const allowedFormSubmitActions = new Set(['signup-invite']);
+const allowedFormSubmitActions = new Set(['signup-standard-password']);
 
 const missing = [...new Set(renderedActions)]
   .filter(action => !handled.has(action) && !allowedFormSubmitActions.has(action));

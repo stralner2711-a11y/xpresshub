@@ -26,7 +26,10 @@ assert(loginBlock.includes('type="password"'), 'Password field should use passwo
 assert(!loginBlock.includes('data-action="test-supabase"'), 'Employee login should not expose Supabase diagnostics');
 assert(!loginBlock.includes('backend-status'), 'Employee login should not expose backend status banner');
 assert(!loginBlock.includes('data-action="open-settings"'), 'Employee login should not expose setup/settings');
-assert(loginBlock.includes('backend.ready && hasInviteLink'), 'Signup should require a real invite link and working backend');
+assert(loginBlock.includes('backend.ready ?'), 'Signup should only show when backend is ready');
+assert(loginBlock.includes('data-action="signup-standard-password"'), 'Signup should use the standard-password onboarding flow');
+assert(schema.includes('Din arbejdsmail er ikke oprettet i XpressIntra endnu'), 'Database trigger should reject non-invited employee emails');
+assert(fullSetup.includes('Din arbejdsmail er ikke oprettet i XpressIntra endnu'), 'Full SQL should reject non-invited employee emails');
 
 assert(serviceWorker.includes("url.pathname.startsWith('/auth/')"), 'Service worker must bypass auth routes');
 assert(serviceWorker.includes("url.pathname.startsWith('/rest/')"), 'Service worker must bypass REST routes');

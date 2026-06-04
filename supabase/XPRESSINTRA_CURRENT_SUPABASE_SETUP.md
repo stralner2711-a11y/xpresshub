@@ -1,6 +1,6 @@
 # XpressIntra aktuel Supabase setup
 
-Senest opdateret: 2026-06-03
+Senest opdateret: 2026-06-04
 
 Denne note beskriver den Supabase-opsætning, der nu er kørt direkte på projektet:
 
@@ -21,6 +21,12 @@ mtfbdoajzmlgqbeiubxe
 - Din bruger `stralner2711@gmail.com` er oprettet i `profiles`.
 - Din bruger er sat til `access_role = owner`.
 - Realtime er aktiveret for beskeder, opslag, notifikationer, positionsdeling og afhentningsopgaver.
+- Standardkode-onboarding er aktiveret:
+  - `profiles.password_reset_required`
+  - `employee_invitations.onboarding_method`
+  - `employee_invitations.password_reset_required`
+- Auth-triggeren afviser nye brugere, hvis arbejdsmailen ikke foerst er oprettet af chef/creator.
+- Medarbejdere kan bruge standardkoden `xpress` ved oprettelse og tvinges derefter til at lave personlig kode.
 
 ## Tabeller
 
@@ -71,4 +77,3 @@ I Supabase Dashboard bør dette slås til:
 - Backup/restore-test før rigtig drift
 
 Supabase advisors viser stadig advarsler om security-definer helper-funktioner, fordi de bruges i RLS-regler. De er nødvendige for adgangsstyringen lige nu og bør først flyttes til et privat schema i en kontrolleret migration.
-

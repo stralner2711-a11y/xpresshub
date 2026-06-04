@@ -14,10 +14,11 @@ BRUG DEN HER
 
 1. KLIK HER - OPDATER ALT.cmd
    Den er den samlede opdateringspakke.
-   Den tjekker Supabase, bygger appen, kopierer til GitHub-repoet, committer/pusher og laver APK-release.
+   Den tjekker Supabase, koerer hele QA-pakken, rydder gamle build-assets, bygger appen,
+   kopierer til GitHub-repoet, committer/pusher og laver APK-release.
 
-2. Vent med at koere den, hvis mobiltraaden stadig arbejder paa login i src/app.js.
-   Naar login-fixet er faerdigt, er det denne ene fil der skal bruges.
+2. Hvis den stopper, skal den ikke sendes ud endnu.
+   Laes opdater-alt-log.txt og ret fejlen foerst.
 
 
 DET VIGTIGE I SYSTEMET
@@ -34,7 +35,8 @@ supabase
    Database, SQL, RLS, Storage og noter om den aktuelle Supabase-opsætning.
 
 tools/supabase-release-check.ps1
-   Ny release-kontrol der sikrer at Supabase-pakken er med, foer OPDATER ALT gaar videre.
+   Release-kontrol der sikrer at Supabase-pakken, standardkode-login og sikkerhed er med,
+   foer OPDATER ALT gaar videre.
 
 android
    Android/APK-delen.
@@ -71,8 +73,8 @@ Faelles filer skal behandles forsigtigt:
   service-worker.js
   supabase/*
 
-Naar login-fixet er faerdigt i mobiltraaden, skal vi koere:
+Naar en opdatering skal sendes ud, skal vi koere:
 
   KLIK HER - OPDATER ALT.cmd
 
-Derefter boer Vercel og APK bruge samme kode og samme Supabase.
+Derefter boer Vercel, APK, iPhone/PWA-assets og Supabase-pakken bruge samme kode.

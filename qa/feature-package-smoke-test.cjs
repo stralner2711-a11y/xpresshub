@@ -81,6 +81,7 @@ harness.run("activeTab = 'more'; render();");
 assert(harness.appElement.innerHTML.includes('Mine data'), 'More page should expose Mine data');
 assert(harness.appElement.innerHTML.includes('Køretøjer'), 'More page should expose vehicle registry');
 assert(harness.appElement.innerHTML.includes('Notifikationer'), 'More page should expose notifications');
+assert(harness.appElement.innerHTML.includes('Meld fejl eller ønske'), 'More page should expose feedback/support');
 
 harness.run('openMyDataModal();');
 const myDataModal = harness.modalNodes.find(node => node.innerHTML.includes('Mine data'));
@@ -103,6 +104,13 @@ harness.run('openNotificationsModal();');
 const notificationModal = harness.modalNodes.find(node => node.innerHTML.includes('Notifikationer'));
 assert(notificationModal, 'Notification modal should open');
 assert(notificationModal.innerHTML.includes('Direkte besked'), 'Notifications should include direct message');
+
+harness.run('openSupportRequestModal();');
+const supportModal = harness.modalNodes.find(node => node.innerHTML.includes('Meld fejl eller ønske'));
+assert(supportModal, 'Support request modal should open');
+assert(supportModal.innerHTML.includes('Noget virker ikke'), 'Support modal should support bug reports');
+harness.run("saveSupportRequest(new Map([['type', 'bug'], ['area', 'home'], ['message', 'Knappen er svær at finde']]))");
+assert(JSON.parse(harness.storage.get('roadlog:supportRequests')).length === 1, 'Support requests should be stored locally');
 
 console.log('Feature package smoke test passed');
 

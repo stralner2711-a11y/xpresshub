@@ -74,6 +74,16 @@ function Invoke-Git($arguments, $failureMessage) {
   Invoke-NativeToLog $git (@('-C', $repo) + $arguments) $project @(0)
 }
 
+function Invoke-AllQa {
+  Write-Log ''
+  Write-Log '[3/9] Korer hele kvalitetstjekket...'
+  $qaFiles = Get-ChildItem -LiteralPath (Join-Path $project 'qa') -Filter '*.cjs' | Sort-Object Name
+  foreach ($qaFile in $qaFiles) {
+    Write-Log "QA: $($qaFile.Name)"
+    Invoke-NativeToLog 'node.exe' @($qaFile.FullName) $project @(0)
+  }
+}
+
 function Invoke-Robocopy($source, $destination, [string[]]$extraArgs = @()) {
   if (!(Test-Path -LiteralPath $source)) {
     Write-Log "Springer over: $source"
@@ -129,13 +139,33 @@ if (!(Test-Path -LiteralPath $gh)) { Stop-Release "GitHub CLI blev ikke fundet: 
 
 Invoke-NativeToLog $git @('config', '--global', '--add', 'safe.directory', ($repo -replace '\\', '/')) $project @(0)
 
-Invoke-LoggedCommand '[1/8] Tjekker Supabase og faelles login-config...' $project 'powershell.exe' @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', (Join-Path $project 'tools\supabase-release-check.ps1'))
-Invoke-LoggedCommand '[2/8] Tjekker login- og privatlivssikkerhed...' $project 'node.exe' @('qa/credential-privacy-smoke-test.cjs')
-Invoke-LoggedCommand '[3/8] Tjekker GitHub login...' $project $gh @('auth', 'status')
-Invoke-LoggedCommand '[4/8] Bygger og synkroniserer Android- og iOS-filer...' $project 'npm.cmd' @('run', 'native:sync')
+Invoke-LoggedCommand '[1/9] Tjekker Supabase og faelles login-config...' $project 'powershell.exe' @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', (Join-Path $project 'tools\supabase-release-check.ps1'))
+Invoke-LoggedCommand '[2/9] Tjekker login- og privatlivssikkerhed...' $project 'node.exe' @('qa/credential-privacy-smoke-test.cjs')
+Invoke-AllQa
+Invoke-LoggedCommand '[4/9] Tjekker GitHub login...' $project $gh @('auth', 'status')
 
 Write-Log ''
-Write-Log '[5/8] Klargor GitHub-pakke...'
+Write-Log 'Rydder gamle byggede web-assets, saa gamle loginfiler ikke kommer med i pakken...'
+foreach ($cleanPath in @(
+  (Join-Path $project 'dist'),
+  (Join-Path $project 'android\app\src\main\assets\public'),
+  (Join-Path $project 'ios\App\App\public')
+)) {
+  $resolvedClean = $null
+  if (Test-Path -LiteralPath $cleanPath) {
+    $resolvedClean = (Resolve-Path -LiteralPath $cleanPath).Path
+    if (!$resolvedClean.StartsWith($project, [StringComparison]::OrdinalIgnoreCase)) {
+      Stop-Release "Sikkerhedsstop: vil ikke rydde udenfor projektmappen: $resolvedClean"
+    }
+    Remove-Item -LiteralPath $resolvedClean -Recurse -Force
+    Write-Log "Ryddet: $resolvedClean"
+  }
+}
+
+Invoke-LoggedCommand '[5/9] Bygger og synkroniserer Android- og iOS-filer...' $project 'npm.cmd' @('run', 'native:sync')
+
+Write-Log ''
+Write-Log '[6/9] Klargor GitHub-pakke...'
 if (!(Test-Path -LiteralPath $ready)) { New-Item -ItemType Directory -Path $ready -Force | Out-Null }
 foreach ($folder in @('assets', 'docs', 'public', 'qa', 'src', 'supabase', 'tools')) {
   Copy-Folder $folder
@@ -183,13 +213,13 @@ foreach ($file in @(
 }
 
 Write-Log ''
-Write-Log '[6/8] Kopierer pakken til GitHub-repo...'
+Write-Log '[7/9] Kopierer pakken til GitHub-repo...'
 & attrib -R (Join-Path $repo '*') /S /D *>> $log
 & icacls $repo /grant "$env:USERNAME`:(OI)(CI)F" /T /C *>> $log
 Invoke-Robocopy $ready $repo
 
 Write-Log ''
-Write-Log '[7/8] Committer og pusher til GitHub...'
+Write-Log '[8/9] Committer og pusher til GitHub...'
 $statusFile = Join-Path $env:TEMP 'xpressintra-status.txt'
 $statusCommand = ConvertTo-CmdLine $git @('-C', $repo, 'status', '--short')
 & cmd.exe /D /C "$statusCommand > `"$statusFile`" 2>&1"
@@ -205,7 +235,7 @@ if ([string]::IsNullOrWhiteSpace(($status -join "`n"))) {
   Invoke-Git -arguments @('push', 'origin', 'main') -failureMessage 'Git push fejlede'
 }
 
-Invoke-LoggedCommand '[8/8] Bygger APK og opretter/overskriver release...' $project 'powershell.exe' @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', (Join-Path $project 'Udgiv APK til GitHub.ps1'))
+Invoke-LoggedCommand '[9/9] Bygger APK og opretter/overskriver release...' $project 'powershell.exe' @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', (Join-Path $project 'Udgiv APK til GitHub.ps1'))
 
 Write-Log ''
 Write-Log '============================================================'

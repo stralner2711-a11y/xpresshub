@@ -1,4 +1,4 @@
-﻿const CACHE_NAME = 'xpressintra-v65-info-rebuild';
+﻿const CACHE_NAME = 'xpressintra-v68-standard-password';
 const APP_FILES = [
   './',
   './indep.html',
@@ -67,3 +67,4 @@ self.addEventListener('fetch', event => {
       })
   );
 });
+

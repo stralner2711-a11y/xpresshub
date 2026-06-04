@@ -83,6 +83,8 @@ assert(harness.appElement.innerHTML.includes('home-clean-hero'), 'Home should sh
 assert(harness.appElement.innerHTML.includes('home-next-action'), 'Home should show one clear next action');
 assert(!harness.appElement.innerHTML.includes('home-profile'), 'Home should not duplicate the profile initials button');
 assert(harness.appElement.innerHTML.includes('Vigtigt fra kontoret'), 'Home should prioritize office posts');
+assert(harness.appElement.innerHTML.includes('Dagens værktøjer'), 'Home should show daily driver tools');
+assert(harness.appElement.innerHTML.includes('Meld fejl'), 'Home should let drivers report bugs or wishes quickly');
 assert(harness.appElement.innerHTML.includes('home-simple-actions'), 'Home should show a simple primary action area');
 assert(harness.appElement.innerHTML.includes('Fællesskab'), 'Home should still show community preview');
 assert(!harness.appElement.innerHTML.includes('Mine opgaver'), 'Home should not duplicate work/task details from the Work screen');
