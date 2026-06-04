@@ -10,7 +10,7 @@ const rootWorker = fs.readFileSync('service-worker.js', 'utf8');
 const manifest = fs.readFileSync('android/app/src/main/AndroidManifest.xml', 'utf8');
 
 for (const source of [worker, rootWorker]) {
-assert(source.includes("CACHE_NAME = 'xpressintra-v75-invite-generator'"), 'Service worker cache version should be bumped');
+assert(source.includes("CACHE_NAME = 'xpressintra-v76-resend-email-confirmation'"), 'Service worker cache version should be bumped');
   assert(source.includes('shouldBypassCache'), 'Service worker should have an explicit cache bypass');
   assert(source.includes("url.hostname === 'supabase.co' || url.hostname.endsWith('.supabase.co')"), 'Service worker must not cache Supabase API traffic');
   assert(source.includes("url.pathname.endsWith('/app-config.js')"), 'Service worker must not cache runtime backend config');
@@ -27,12 +27,13 @@ assert(manifest.includes('android.hardware.camera" android:required="false"'), '
 assert(!manifest.includes('READ_EXTERNAL_STORAGE'), 'Legacy broad external storage permission should not be requested');
 assert(!manifest.includes('WRITE_EXTERNAL_STORAGE'), 'Legacy write storage permission should not be requested');
 
-assert(app.includes("const APP_VERSION = '1.3.14-release-v75'"), 'App version should be visible in code');
-assert(app.includes("const APP_DISPLAY_VERSION = '1.3.14'"), 'APK display version should be visible in code');
-assert(app.includes('const APP_VERSION_CODE = 27'), 'APK version code should be visible in code');
+assert(app.includes("const APP_VERSION = '1.3.15-release-v76'"), 'App version should be visible in code');
+assert(app.includes("const APP_DISPLAY_VERSION = '1.3.15'"), 'APK display version should be visible in code');
+assert(app.includes('const APP_VERSION_CODE = 28'), 'APK version code should be visible in code');
 assert(app.includes('!hasSupabaseConfigForMode && storedSessionForMode'), 'Demo mode should not override a configured production backend');
 
 console.log('Professional readiness smoke test passed');
+
 
 
 

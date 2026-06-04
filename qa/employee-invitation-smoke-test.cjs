@@ -22,6 +22,9 @@ assert(source.includes("appUrl: 'https://xpresshub-seven.vercel.app/'"), 'Invite
 assert(source.includes('function inviteMessage'), 'Invite flow should generate one reusable invite message');
 assert(source.includes('copy-last-invite-link'), 'Invite generator should let admins copy the invite link');
 assert(source.includes('copy-last-invite-message'), 'Invite generator should let admins copy the full invite message');
+assert(source.includes('resend-last-confirmation'), 'Invite generator should let admins resend email confirmation');
+assert(source.includes('Gensend bekræftelsesmail'), 'Admin UI should expose resend confirmation wording');
+assert(source.includes("type: 'signup'"), 'Resent confirmations should use Supabase signup confirmation type');
 assert(source.includes('Åbn dit invitationslink her'), 'Shared invite message should include the private invitation link');
 assert(source.includes('Invitationslink:'), 'Invite result should show the private invitation link before sending');
 assert(source.includes("onboarding_method: 'standard_password'"), 'Supabase invitations should store the onboarding method');

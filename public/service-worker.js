@@ -1,4 +1,4 @@
-﻿const CACHE_NAME = 'xpressintra-v75-invite-generator';
+﻿const CACHE_NAME = 'xpressintra-v76-resend-email-confirmation';
 const APP_FILES = [
   './',
   './indep.html',
@@ -67,6 +67,7 @@ self.addEventListener('fetch', event => {
       })
   );
 });
+
 
 
 

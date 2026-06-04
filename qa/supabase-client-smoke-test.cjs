@@ -34,6 +34,7 @@ function createHarness() {
   const upserts = [];
   const deletes = [];
   const updates = [];
+  const resendCalls = [];
   const fakeClient = {
     auth: {
       getSession() { return Promise.resolve({ data: { session: null }, error: null }); },
@@ -43,6 +44,10 @@ function createHarness() {
           data: { session: { user: { id: 'user-1', email: 'driver@example.com' } } },
           error: null,
         });
+      },
+      resend(payload) {
+        resendCalls.push(payload);
+        return Promise.resolve({ data: {}, error: null });
       },
     },
     channel() {
@@ -160,13 +165,14 @@ function createHarness() {
     clearInterval() {},
     FormData: class {},
     FileReader: class {},
+    URL,
   };
 
   context.window.document = document;
   context.window.localStorage = context.localStorage;
   vm.createContext(context);
   vm.runInContext(code, context, { filename: 'app.js' });
-  return { appElement, document, insertedRows, rpcCalls, subscriptions, uploads, upserts, deletes, updates, createClientWasCalled: () => createClientCalled, run: script => vm.runInContext(script, context) };
+  return { appElement, document, insertedRows, rpcCalls, subscriptions, uploads, upserts, deletes, updates, resendCalls, createClientWasCalled: () => createClientCalled, run: script => vm.runInContext(script, context) };
 }
 
 function assert(condition, message) {
@@ -254,6 +260,8 @@ function assert(condition, message) {
   assert(harness.upserts.some(item => item.table === 'core_settings' && Array.isArray(item.row) && item.row.some(row => row.key === 'gps' && row.enabled === false && row.updated_by === 'user-1')), 'Core settings should sync online with admin actor');
   await harness.run("createSupabaseEmployeeInvitation({ name: 'Ny Medarbejder', email: 'ny@example.com', phone: '+45 10 10 10 10', role: 'Chauffør', accessRole: 'employee', vehicleType: 'truck', truck: 'TR 99', department: 'Lastbil', license: 'C/E', languages: 'Dansk', emergencyContact: 'Kontakt', logbook: true })");
   assert(harness.insertedRows.some(item => item.table === 'employee_invitations' && item.row.created_by === 'user-1' && item.row.email === 'ny@example.com'), 'New online employees should be created as safe admin invitations');
+  await harness.run("resendSupabaseSignupConfirmation(' NY@example.com ')");
+  assert(harness.resendCalls.some(call => call.type === 'signup' && call.email === 'ny@example.com' && call.options.emailRedirectTo === 'https://xpresshub-seven.vercel.app/'), 'Admin should be able to resend signup confirmation email with XpressIntra redirect');
   await harness.run("syncSupabaseAdminAudit('Kernefunktioner opdateret', 'GPS fra')");
   assert(harness.insertedRows.some(item => item.table === 'admin_audit_log' && item.row.actor_id === 'user-1' && item.row.details.title === 'Kernefunktioner opdateret'), 'Admin actions should create online audit log entries');
 

@@ -26,9 +26,9 @@
   search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>',
 };
 
-const APP_VERSION = '1.3.14-release-v75';
-const APP_DISPLAY_VERSION = '1.3.14';
-const APP_VERSION_CODE = 27;
+const APP_VERSION = '1.3.15-release-v76';
+const APP_DISPLAY_VERSION = '1.3.15';
+const APP_VERSION_CODE = 28;
 const TEMPORARY_EMPLOYEE_PASSWORD = 'xpress';
 const IMAGE_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
 const PROFILE_PHOTO_MAX_DIMENSION = 512;
@@ -643,6 +643,18 @@ function createRestSupabaseClient(config) {
         const authSession = normalizeAuthSession(result.data);
         if (authSession) saveSession(authSession);
         return { data: { session: authSession, user: result.data?.user || authSession?.user }, error: null };
+      },
+      async resend({ type, email, options }) {
+        const response = await fetch(`${config.url}/auth/v1/resend`, {
+          method: 'POST',
+          headers: jsonHeaders(null),
+          body: JSON.stringify({
+            type,
+            email,
+            options: options?.emailRedirectTo ? { email_redirect_to: options.emailRedirectTo } : undefined,
+          }),
+        });
+        return parseJsonResponse(response);
       },
       async updateUser(attributes) {
         const sessionValue = readSession();
@@ -1270,7 +1282,7 @@ function markCurrentVersionSuspect() {
   const fallbackInfo = {
     activeVersion: APP_DISPLAY_VERSION,
     activeVersionCode: APP_VERSION_CODE,
-    apkDownloadUrl: 'https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.14/xpressintra.apk',
+    apkDownloadUrl: 'https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.15/xpressintra.apk',
   };
   const info = appUpdateState.latest || normalizeVersionInfo(fallbackInfo);
   const defective = new Set([...(info.defectiveVersions || []).map(String), APP_DISPLAY_VERSION, String(APP_VERSION_CODE)]);
@@ -2516,6 +2528,21 @@ async function signUpSupabase(email, password, options = {}) {
   return options.personalPasswordReady
     ? 'Kontoen er oprettet. Hvis Supabase beder om bekræftelse, så tjek mailen og log ind med din personlige kode.'
     : 'Kontoen er oprettet. Lav derefter din personlige kode ved første login.';
+}
+
+async function resendSupabaseSignupConfirmation(email) {
+  const client = getSupabaseClient();
+  const normalizedEmail = normalizeEmployeeEmail(email);
+  if (!client) throw new Error('Supabase er ikke konfigureret endnu');
+  if (!normalizedEmail) throw new Error('Der mangler en arbejdsmail');
+  if (!client.auth?.resend) throw new Error('Denne Supabase-klient kan ikke gensende bekræftelsesmail endnu');
+  const { error } = await client.auth.resend({
+    type: 'signup',
+    email: normalizedEmail,
+    options: { emailRedirectTo: officialAppUrl() },
+  });
+  if (error) throw error;
+  return normalizedEmail;
 }
 
 async function updateSupabasePassword(newPassword) {
@@ -4710,6 +4737,7 @@ function openProfileModal(employee = currentEmployee(), isNew = false) {
         <label class="check-row"><input type="checkbox" name="logbook" ${!isNew && profile.logbook ? 'checked' : ''} /><span>Aktivér personlig logbog <small>Private minder og noter fra vejen</small></span></label>
       </section>
       ${canEditAdminFields ? '<p class="security-inline-note">Chef/admin kan ændre titel, rettighed, afdeling, beviser og køretøj. Almindelige medarbejdere kan kun ændre egne kontakt- og profiloplysninger.</p>' : '<p class="security-inline-note">Titel, rettighed, afdeling, beviser og køretøj er låst og skal ændres af chef/admin.</p>'}
+      ${canEditAdminFields && !isNew && source.email ? `<section class="invite-help"><b>Mailbekræftelse</b><span>Hvis kollegaen har trykket opret konto, men ikke har fået bekræftelsesmailen, kan admin gensende den her.</span><button type="button" data-resend-confirmation="${text(source.email)}">Gensend bekræftelsesmail</button></section>` : ''}
       <button class="save-btn">${isNew ? 'Registrér og lav invitation' : 'Gem profil'}</button>` : `
       <div class="profile-details">${employee.photo ? `<img class="profile-photo-preview" src="${text(employee.photo.src)}" alt="${text(employee.name)}" />` : ''}<span><b>Rolle</b>${text(employee.role)} · ${text(accessRoleLabel(employee.accessRole))}</span><span><b>Bil</b>${text(employee.truck)}</span><span><b>Status</b>${text(employee.status)}</span><span><b>Telefon</b>${text(employee.phone || 'Telefon mangler')}</span><span><b>Mail</b>${text(employee.email || 'Mail mangler')}</span><span><b>Beviser</b>${text(employee.license || 'Beviser ikke udfyldt')}</span><span><b>GPS</b>${employee.sharing ? `${text(employee.location)} · deler position` : 'Deler ikke position'}</span></div>
       <button type="button" class="save-btn" data-direct-chat="${text(employee.id)}">Skriv en besked</button>`}
@@ -4804,6 +4832,7 @@ function openEmployeeInviteResultModal(employee, invitationId = '') {
       <button type="button" data-action="copy-last-invite-link">Kopiér link</button>
       <button type="button" data-action="copy-last-invite-message">Kopiér besked</button>
       <button type="button" data-action="share-last-invite">Send/dele besked</button>
+      <button type="button" data-action="resend-last-confirmation">Gensend bekræftelsesmail</button>
       <button type="button" data-action="close-modal">Færdig</button>
     </div>
   </section>`;
@@ -4811,6 +4840,7 @@ function openEmployeeInviteResultModal(employee, invitationId = '') {
   modal.dataset.inviteId = invitationId;
   modal.dataset.inviteUrl = invite.invitationUrl;
   modal.dataset.inviteMessage = invite.body;
+  modal.dataset.inviteEmail = employee.email || employee.invitationEmail || '';
   document.body.append(modal);
 }
 
@@ -5837,6 +5867,7 @@ document.addEventListener('click', async event => {
   const creatorRole = event.target.closest('[data-creator-role]')?.dataset.creatorRole;
   const quickPickupDuration = event.target.closest('[data-quick-pickup]')?.dataset.quickPickup;
   const completeDataRequestId = event.target.closest('[data-complete-data-request]')?.dataset.completeDataRequest;
+  const resendConfirmationEmail = event.target.closest('[data-resend-confirmation]')?.dataset.resendConfirmation;
   const searchResult = event.target.closest('[data-search-target]');
   if (blockInternalAction(action)) return;
   if (searchResult) {
@@ -5856,6 +5887,20 @@ document.addEventListener('click', async event => {
   }
   if (reactivateEmployeeId) {
     reactivateEmployee(reactivateEmployeeId);
+    return;
+  }
+  if (resendConfirmationEmail) {
+    if (!canManageEmployees()) {
+      showToast('Kun chef/admin kan gensende bekræftelsesmail');
+      return;
+    }
+    try {
+      const email = await resendSupabaseSignupConfirmation(resendConfirmationEmail);
+      recordAdminAudit('Bekræftelsesmail gensendt', email);
+      showToast(`Bekræftelsesmail er sendt til ${email}`);
+    } catch (error) {
+      showToast(`Kunne ikke gensende bekræftelsesmail: ${error.message}`);
+    }
     return;
   }
   if (completeDataRequestId) {
@@ -6053,6 +6098,20 @@ document.addEventListener('click', async event => {
   if (action === 'copy-last-invite-message') {
     const modal = event.target.closest('.modal-backdrop');
     await copyTextToClipboard(modal?.dataset.inviteMessage, 'Invitationsbesked kopieret');
+  }
+  if (action === 'resend-last-confirmation') {
+    if (!canManageEmployees()) {
+      showToast('Kun chef/admin kan gensende bekræftelsesmail');
+      return;
+    }
+    const modal = event.target.closest('.modal-backdrop');
+    try {
+      const email = await resendSupabaseSignupConfirmation(modal?.dataset.inviteEmail);
+      recordAdminAudit('Bekræftelsesmail gensendt', email);
+      showToast(`Bekræftelsesmail er sendt til ${email}`);
+    } catch (error) {
+      showToast(`Kunne ikke gensende bekræftelsesmail: ${error.message}`);
+    }
   }
   if (action === 'open-info') openInfoModal(event.target.closest('[data-info]')?.dataset.info);
   if (action === 'open-work') { activeTab = 'work'; activeChat = null; render(); }
@@ -6553,6 +6612,7 @@ setTimeout(() => {
 }, 900);
 
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js').catch(() => {});
+
 
 
 
