@@ -25,6 +25,9 @@ assert(source.includes('copy-last-invite-message'), 'Invite generator should let
 assert(source.includes('resend-last-confirmation'), 'Invite generator should let admins resend email confirmation');
 assert(source.includes('Gensend bekræftelsesmail'), 'Admin UI should expose resend confirmation wording');
 assert(source.includes("type: 'signup'"), 'Resent confirmations should use Supabase signup confirmation type');
+assert(source.includes('emailRedirectTo: officialAppUrl()'), 'Signup should ask Supabase to generate confirmation email back to XpressIntra');
+assert(source.includes('openEmailConfirmationModal(normalizedEmail)'), 'Signup without session should show a confirmation email helper');
+assert(source.includes('resend-pending-confirmation'), 'Pending users should be able to resend their own confirmation email');
 assert(source.includes('Åbn dit invitationslink her'), 'Shared invite message should include the private invitation link');
 assert(source.includes('Invitationslink:'), 'Invite result should show the private invitation link before sending');
 assert(source.includes("onboarding_method: 'standard_password'"), 'Supabase invitations should store the onboarding method');

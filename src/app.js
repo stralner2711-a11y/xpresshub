@@ -26,9 +26,9 @@
   search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>',
 };
 
-const APP_VERSION = '1.3.15-release-v76';
-const APP_DISPLAY_VERSION = '1.3.15';
-const APP_VERSION_CODE = 28;
+const APP_VERSION = '1.3.16-release-v77';
+const APP_DISPLAY_VERSION = '1.3.16';
+const APP_VERSION_CODE = 29;
 const TEMPORARY_EMPLOYEE_PASSWORD = 'xpress';
 const IMAGE_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
 const PROFILE_PHOTO_MAX_DIMENSION = 512;
@@ -636,7 +636,12 @@ function createRestSupabaseClient(config) {
         const response = await fetch(`${config.url}/auth/v1/signup`, {
           method: 'POST',
           headers: jsonHeaders(null),
-          body: JSON.stringify({ email, password, data: options?.data || {} }),
+          body: JSON.stringify({
+            email,
+            password,
+            data: options?.data || {},
+            redirect_to: options?.emailRedirectTo || officialAppUrl(),
+          }),
         });
         const result = await parseJsonResponse(response);
         if (result.error) return result;
@@ -1282,7 +1287,7 @@ function markCurrentVersionSuspect() {
   const fallbackInfo = {
     activeVersion: APP_DISPLAY_VERSION,
     activeVersionCode: APP_VERSION_CODE,
-    apkDownloadUrl: 'https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.15/xpressintra.apk',
+    apkDownloadUrl: 'https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.16/xpressintra.apk',
   };
   const info = appUpdateState.latest || normalizeVersionInfo(fallbackInfo);
   const defective = new Set([...(info.defectiveVersions || []).map(String), APP_DISPLAY_VERSION, String(APP_VERSION_CODE)]);
@@ -2504,10 +2509,12 @@ async function markSupabasePasswordReady() {
 async function signUpSupabase(email, password, options = {}) {
   const client = getSupabaseClient();
   if (!client) throw new Error('Supabase er ikke konfigureret endnu');
+  const normalizedEmail = normalizeEmployeeEmail(email);
   const { data, error } = await client.auth.signUp({
-    email,
+    email: normalizedEmail,
     password,
     options: {
+      emailRedirectTo: officialAppUrl(),
       data: {
         invited_to_xpressintra: true,
         temporary_password_flow: !options.personalPasswordReady,
@@ -2525,9 +2532,10 @@ async function signUpSupabase(email, password, options = {}) {
     openTemporaryPasswordModal();
     return 'Kontoen er oprettet. Lav din personlige kode nu.';
   }
+  openEmailConfirmationModal(normalizedEmail);
   return options.personalPasswordReady
-    ? 'Kontoen er oprettet. Hvis Supabase beder om bekræftelse, så tjek mailen og log ind med din personlige kode.'
-    : 'Kontoen er oprettet. Lav derefter din personlige kode ved første login.';
+    ? 'Bekræftelsesmail er sendt. Tjek mailen og log derefter ind med din personlige kode.'
+    : 'Bekræftelsesmail er sendt. Tjek mailen og log derefter ind.';
 }
 
 async function resendSupabaseSignupConfirmation(email) {
@@ -2543,6 +2551,38 @@ async function resendSupabaseSignupConfirmation(email) {
   });
   if (error) throw error;
   return normalizedEmail;
+}
+
+function isEmailConfirmationError(error) {
+  const message = String(error?.message || error || '').toLowerCase();
+  return message.includes('email not confirmed')
+    || message.includes('not confirmed')
+    || message.includes('confirm')
+    || message.includes('bekræft');
+}
+
+function openEmailConfirmationModal(email) {
+  const normalizedEmail = normalizeEmployeeEmail(email);
+  if (!normalizedEmail) return;
+  document.querySelector('.modal-backdrop')?.remove();
+  const modal = document.createElement('div');
+  modal.className = 'modal-backdrop';
+  modal.innerHTML = `<section class="profile-modal invite-result-modal">
+    <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
+    <p class="eyebrow">Mailbekræftelse</p>
+    <h3>Tjek din mail</h3>
+    <section class="invite-help">
+      <b>Bekræftelsesmail er sendt</b>
+      <span>Åbn mailen fra XpressIntra/Supabase og tryk bekræft. Derefter kan du logge ind med din personlige kode.</span>
+      <span>Mail: <strong>${text(normalizedEmail)}</strong></span>
+    </section>
+    <div class="invite-actions">
+      <button type="button" data-action="resend-pending-confirmation">Gensend bekræftelsesmail</button>
+      <button type="button" data-action="close-modal">OK</button>
+    </div>
+  </section>`;
+  modal.dataset.confirmationEmail = normalizedEmail;
+  document.body.append(modal);
 }
 
 async function updateSupabasePassword(newPassword) {
@@ -6113,6 +6153,15 @@ document.addEventListener('click', async event => {
       showToast(`Kunne ikke gensende bekræftelsesmail: ${error.message}`);
     }
   }
+  if (action === 'resend-pending-confirmation') {
+    const modal = event.target.closest('.modal-backdrop');
+    try {
+      const email = await resendSupabaseSignupConfirmation(modal?.dataset.confirmationEmail);
+      showToast(`Bekræftelsesmail er sendt til ${email}`);
+    } catch (error) {
+      showToast(`Kunne ikke gensende bekræftelsesmail: ${error.message}`);
+    }
+  }
   if (action === 'open-info') openInfoModal(event.target.closest('[data-info]')?.dataset.info);
   if (action === 'open-work') { activeTab = 'work'; activeChat = null; render(); }
   if (quickGuideIndex) {
@@ -6285,6 +6334,11 @@ document.addEventListener('submit', async event => {
           showToast('Du er logget ind på XpressIntra');
         }
       } catch (error) {
+        if (isEmailConfirmationError(error)) {
+          openEmailConfirmationModal(data.get('email'));
+          showToast('Bekræft mailen før du logger ind');
+          return;
+        }
         showToast(`Login fejlede: ${error.message}`);
       }
       return;
@@ -6612,6 +6666,7 @@ setTimeout(() => {
 }, 900);
 
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js').catch(() => {});
+
 
 
 

@@ -7,11 +7,12 @@ function createHarness() {
     ['roadlog:supabaseConfig', JSON.stringify({ url: 'https://demo.supabase.co', anonKey: 'public-anon-key' })],
   ]);
   const appElement = { innerHTML: '', classList: { add() {}, remove() {} } };
+  const modalNodes = [];
 
   const document = {
-    createElement() { return { className: '', innerHTML: '', classList: { add() {}, remove() {} }, append() {}, remove() {}, addEventListener() {} }; },
+    createElement() { return { className: '', innerHTML: '', dataset: {}, classList: { add() {}, remove() {} }, append() {}, remove() {}, addEventListener() {} }; },
     head: { append() {} },
-    body: { append() {}, insertAdjacentHTML() {} },
+    body: { append(node) { modalNodes.push(node); }, insertAdjacentHTML() {} },
     querySelector(selector) {
       if (selector === '#app') return appElement;
       if (selector === '.toast') return { textContent: '', classList: { add() {}, remove() {} } };
@@ -35,6 +36,7 @@ function createHarness() {
   const deletes = [];
   const updates = [];
   const resendCalls = [];
+  const signUpCalls = [];
   const fakeClient = {
     auth: {
       getSession() { return Promise.resolve({ data: { session: null }, error: null }); },
@@ -44,6 +46,10 @@ function createHarness() {
           data: { session: { user: { id: 'user-1', email: 'driver@example.com' } } },
           error: null,
         });
+      },
+      signUp(payload) {
+        signUpCalls.push(payload);
+        return Promise.resolve({ data: { session: null, user: { email: payload.email } }, error: null });
       },
       resend(payload) {
         resendCalls.push(payload);
@@ -172,7 +178,7 @@ function createHarness() {
   context.window.localStorage = context.localStorage;
   vm.createContext(context);
   vm.runInContext(code, context, { filename: 'app.js' });
-  return { appElement, document, insertedRows, rpcCalls, subscriptions, uploads, upserts, deletes, updates, resendCalls, createClientWasCalled: () => createClientCalled, run: script => vm.runInContext(script, context) };
+  return { appElement, document, modalNodes, insertedRows, rpcCalls, subscriptions, uploads, upserts, deletes, updates, resendCalls, signUpCalls, createClientWasCalled: () => createClientCalled, run: script => vm.runInContext(script, context) };
 }
 
 function assert(condition, message) {
@@ -260,6 +266,10 @@ function assert(condition, message) {
   assert(harness.upserts.some(item => item.table === 'core_settings' && Array.isArray(item.row) && item.row.some(row => row.key === 'gps' && row.enabled === false && row.updated_by === 'user-1')), 'Core settings should sync online with admin actor');
   await harness.run("createSupabaseEmployeeInvitation({ name: 'Ny Medarbejder', email: 'ny@example.com', phone: '+45 10 10 10 10', role: 'Chauffør', accessRole: 'employee', vehicleType: 'truck', truck: 'TR 99', department: 'Lastbil', license: 'C/E', languages: 'Dansk', emergencyContact: 'Kontakt', logbook: true })");
   assert(harness.insertedRows.some(item => item.table === 'employee_invitations' && item.row.created_by === 'user-1' && item.row.email === 'ny@example.com'), 'New online employees should be created as safe admin invitations');
+  const signupMessage = await harness.run("signUpSupabase(' NY@example.com ', 'Person123', { personalPasswordReady: true })");
+  assert(harness.signUpCalls.some(call => call.email === 'ny@example.com' && call.options.emailRedirectTo === 'https://xpresshub-seven.vercel.app/'), 'Signup should ask Supabase to generate confirmation email with XpressIntra redirect');
+  assert(signupMessage.includes('Bekræftelsesmail er sendt'), 'Signup without session should explain that confirmation email was generated');
+  assert(harness.modalNodes.some(node => node.innerHTML.includes('Mailbekræftelse') && node.dataset.confirmationEmail === 'ny@example.com'), 'Signup without session should open the email confirmation helper');
   await harness.run("resendSupabaseSignupConfirmation(' NY@example.com ')");
   assert(harness.resendCalls.some(call => call.type === 'signup' && call.email === 'ny@example.com' && call.options.emailRedirectTo === 'https://xpresshub-seven.vercel.app/'), 'Admin should be able to resend signup confirmation email with XpressIntra redirect');
   await harness.run("syncSupabaseAdminAudit('Kernefunktioner opdateret', 'GPS fra')");
