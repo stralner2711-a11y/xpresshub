@@ -76,7 +76,8 @@ const creatorSettings = harness.modalNodes.at(-1).innerHTML;
 assert(creatorSettings.includes('Supabase URL'), 'Creator settings should show Supabase URL field');
 assert(creatorSettings.includes('Offentlig anon key'), 'Creator settings should show public key field');
 assert(creatorSettings.includes('Test Supabase-forbindelse'), 'Creator settings should show Supabase diagnostics');
-assert(fs.readFileSync('src/app.js', 'utf8').includes('if (isCreatorOwner()) {\n      if (nextConfig.url || nextConfig.anonKey)'), 'Only creator should be able to change stored Supabase config from settings');
+const appSource = fs.readFileSync('src/app.js', 'utf8').replace(/\r\n/g, '\n');
+assert(appSource.includes('if (isCreatorOwner()) {\n      if (nextConfig.url || nextConfig.anonKey)'), 'Only creator should be able to change stored Supabase config from settings');
 
 console.log('Settings visibility smoke test passed');
 

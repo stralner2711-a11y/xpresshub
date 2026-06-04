@@ -1,21 +1,23 @@
 {
-  "latestVersion": "1.2.8",
-  "stableVersion": "1.2.8",
-  "activeVersion": "1.2.8",
-  "previousStableVersion": "1.2.7",
-  "latestVersionCode": 11,
-  "stableVersionCode": 11,
-  "activeVersionCode": 11,
-  "apkDownloadUrl": "https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.2.8/xpressintra.apk",
-  "releasePageUrl": "https://github.com/stralner2711-a11y/xpresshub/releases/tag/v1.2.8",
-  "downloadPageUrl": "https://stralner2711-a11y.github.io/xpresshub/download.html",
-  "changelog": [
-    "Kontrolcenter er ryddet op ved at fjerne den nederste ekstra tekstboks",
-    "Sikkerhedstjek for login og privatliv kører nu med i release-flowet",
-    "Service worker cache er bumpet, så den nye visning hentes rent"
-  ],
-  "forceUpdate": true,
-  "rollbackReason": "",
-  "defectiveVersions": [],
-  "updatedAt": "2026-06-04"
+    "latestVersion":  "1.2.9",
+    "stableVersion":  "1.2.9",
+    "activeVersion":  "1.2.9",
+    "previousStableVersion":  "1.2.8",
+    "latestVersionCode":  12,
+    "stableVersionCode":  12,
+    "activeVersionCode":  12,
+    "apkDownloadUrl":  "https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.2.9/xpressintra.apk",
+    "releasePageUrl":  "https://github.com/stralner2711-a11y/xpresshub/releases/tag/v1.2.9",
+    "downloadPageUrl":  "https://stralner2711-a11y.github.io/xpresshub/download.html",
+    "changelog":  [
+                      "Opdateringsboksen er gjort mere rolig, pæn og tydelig for medarbejdere",
+                      "Boksen forklarer nu trygt hvad der sker, og at beskeder/profil bliver liggende",
+                      "Privatlivs- og GPS-dokumentation er præciseret: XpressIntra GPS er kollega-hjælp, ikke kontrol"
+                  ],
+    "forceUpdate":  true,
+    "rollbackReason":  "",
+    "defectiveVersions":  [
+
+                          ],
+    "updatedAt":  "2026-06-04"
 }

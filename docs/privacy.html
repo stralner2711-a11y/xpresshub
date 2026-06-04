@@ -1,0 +1,95 @@
+﻿<!doctype html>
+<html lang="da">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>XpressIntra privatlivspolitik</title>
+  <style>
+    body { margin: 0; font-family: Arial, sans-serif; line-height: 1.6; background: #071727; color: #f7efe2; }
+    main { max-width: 900px; margin: 0 auto; padding: 28px 18px 60px; }
+    h1, h2 { line-height: 1.15; }
+    h1 { margin: 0 0 8px; font-size: 32px; }
+    h2 { margin-top: 30px; color: #f4a641; font-size: 21px; }
+    p, li { color: #d5dfdc; }
+    a { color: #f4a641; }
+    .card { margin: 18px 0; padding: 16px; border: 1px solid rgba(244,166,65,.35); border-radius: 16px; background: #102a3e; }
+    table { width: 100%; border-collapse: collapse; margin: 14px 0; overflow: hidden; border-radius: 12px; }
+    th, td { padding: 10px; border: 1px solid rgba(255,255,255,.12); text-align: left; vertical-align: top; }
+    th { background: #143b55; color: #fff; }
+    small { color: #9db0ad; }
+  </style>
+</head>
+<body>
+<main>
+  <h1>XpressIntra privatlivspolitik</h1>
+  <p><small>Senest opdateret: 4. juni 2026</small></p>
+
+  <div class="card">
+    <strong>Kort fortalt</strong>
+    <p>XpressIntra er en intern medarbejder-app til XpressBudet A/S. Appen bruges til intern kommunikation, opgaver, frivillig lokationsdeling, profiloplysninger, billeder og personlig logbog. GPS i XpressIntra er til hjælp mellem medarbejdere, ikke til kontrol. XpressBudets flådesystem er det separate system til køretøj/drift. Appen må ikke bruges som skjult overvågning.</p>
+  </div>
+
+  <h2>1. Hvem er ansvarlig?</h2>
+  <p>Dataansvarlig: XpressBudet A/S.</p>
+  <p>Ledelsen skal udpege en intern kontaktperson for spørgsmål om persondata, app-adgang og sletning.</p>
+
+  <h2>2. Hvilke oplysninger behandles?</h2>
+  <table>
+    <tr><th>Data</th><th>Eksempler</th><th>Formål</th></tr>
+    <tr><td>Profil</td><td>Navn, email, telefon, rolle, afdeling og køretøjstype</td><td>Login, kontakt og intern drift</td></tr>
+    <tr><td>Chat og beskeder</td><td>Fælleschat, rollechat, direkte beskeder, billeder og tidspunkt</td><td>Intern kommunikation og samarbejde</td></tr>
+    <tr><td>Lokation</td><td>Live-position, synlighed, delingstid og eventuelt fart hvis funktionen er slået til</td><td>Frivillig hjælp og koordinering mellem kollegaer, ikke ledelseskontrol</td></tr>
+    <tr><td>Billeder</td><td>Profilbilleder, chatbilleder og opgavebilleder</td><td>Identifikation, dokumentation og samarbejde</td></tr>
+    <tr><td>Logbog</td><td>Private noter, automatiske kladder, steder og oplevelser</td><td>Personlig arbejdslog og hukommelse</td></tr>
+    <tr><td>Drift/admin</td><td>Invitationer, rolleændringer og dataanmodninger</td><td>Sikkerhed, adgangsstyring og ansvarlighed</td></tr>
+  </table>
+
+  <h2>3. Lokation og GPS</h2>
+  <p>Lokationsdeling er som udgangspunkt frivillig og skal være synlig i appen. Formålet er kollega-hjælp, for eksempel når man henter noget for hinanden, skal finde hinanden eller løse en konkret opgave sammen. Medarbejderen skal kunne se, når position deles, og kunne stoppe delingen igen.</p>
+  <p>Deling bør være tidsbegrænset og kun bruges til relevante driftsformål som afhentning, hjælp og koordinering. Appen bør ikke gemme GPS-historik længere end nødvendigt.</p>
+  <p>Fart bør kun gemmes eller deles, hvis ledelsen har besluttet et klart og sagligt formål. Hvis der ikke er truffet en beslutning, bør fart kun vises lokalt for chaufføren eller slet ikke deles.</p>
+
+  <h2>4. Privat logbog</h2>
+  <p>Den personlige logbog er medarbejderens egen. Chef/admin skal ikke have almindelig adgang til private logbogsnoter. Automatiske logbogskladder skal kunne slås til og fra.</p>
+
+  <h2>5. Hvem kan se oplysninger?</h2>
+  <ul>
+    <li>Medarbejdere kan se relevante kollega-profiler og de chats, de har adgang til.</li>
+    <li>Chef/admin kan administrere medarbejdere og kernefunktioner.</li>
+    <li>Chef/admin skal ikke have fri adgang til private chats eller private logbøger.</li>
+    <li>Creator/appansvarlig kan styre appens drift, men skal ikke automatisk kunne læse private chats.</li>
+    <li>En rollechat kan kun ses af personer, der har den relevante arbejdsrolle eller er medlem af samtalen.</li>
+  </ul>
+
+  <h2>6. Hvor længe gemmes oplysninger?</h2>
+  <p>Slettefrister skal godkendes af ledelsen. De foreløbige anbefalinger er:</p>
+  <ul>
+    <li>Live GPS: 1 døgn eller kortere.</li>
+    <li>Hurtig deling/opgaveposition: 24-72 timer.</li>
+    <li>Chat og direkte beskeder: ca. 180 dage, medmindre virksomheden beslutter andet.</li>
+    <li>Billeder: 90-180 dage afhængigt af formål.</li>
+    <li>Adminlog: 12-24 måneder.</li>
+    <li>Privat logbog: styres som udgangspunkt af medarbejderen.</li>
+  </ul>
+
+  <h2>7. Sikkerhed</h2>
+  <p>Appen bruger Supabase til login og database. Adgangskoder håndteres af Supabase Auth og må ikke gemmes i appens egne tabeller, logs eller lokale filer.</p>
+  <p>Supabase Row Level Security og privat Storage skal være slået til før bred brug. Service-role keys, database passwords og andre hemmelige nøgler må aldrig ligge i appen, APK-filen, GitHub eller offentlige mapper.</p>
+
+  <h2>8. Dine rettigheder</h2>
+  <p>Som medarbejder kan du bede om indsigt, rettelse, sletning, begrænsning eller eksport af dine oplysninger. Du kan også gøre indsigelse mod frivillige funktioner som lokationsdeling og automatiske logbogskladder.</p>
+
+  <h2>9. Databehandlere</h2>
+  <p>Appen kan bruge Supabase, hosting, GitHub/release-distribution og eventuelle kort-/billedleverandører. Ledelsen skal sikre relevante aftaler/vilkår før fuld drift.</p>
+  <p>Google Play er ikke en del af den nuværende interne APK-test, men kan blive relevant senere hvis appen flyttes til Google Play Internal Testing.</p>
+
+  <h2>10. Kontakt</h2>
+  <p>Kontakt XpressBudet A/S eller den interne appansvarlige, hvis du har spørgsmål til appens behandling af persondata.</p>
+
+  <div class="card">
+    <strong>Status</strong>
+    <p>Denne privatlivspolitik er klar som arbejdsudgave til intern godkendelse. Den skal godkendes af ledelsen, før appen bruges bredt af medarbejdere.</p>
+  </div>
+</main>
+</body>
+</html>

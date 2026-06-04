@@ -32,6 +32,8 @@ This is the practical security baseline for running XpressIntra as an internal e
 - Keep Storage bucket `xpressintra-media` private.
 - Confirm employee removal also signs the user out or revokes sessions where needed.
 - Keep backups enabled and test restore once before production use.
+- Keep `docs/GDPR_DOKUMENTATIONSPAKKE.md` and `docs/DRIFT_STABILITETSPLAN.md` approved before inviting more employees.
+- Treat GPS/location as employee personal data and keep purpose, retention and access rules documented.
 
 ## Operational Rules
 
@@ -41,6 +43,7 @@ This is the practical security baseline for running XpressIntra as an internal e
 - Have a short incident plan: who is contacted, what is disabled, what is logged, and when employees are informed.
 - Review GDPR retention cleanup monthly until automatic cleanup is proven stable.
 - Treat direct chats and role chats as private employee communication. Creator/admin can manage employees and settings, but should not get extra chat access unless they are a member or match the work role, for example truck driver.
+- Incident handling must not expose private chat content unless leadership has a specific lawful reason and documents it.
 
 ## Password Safety Verdict
 

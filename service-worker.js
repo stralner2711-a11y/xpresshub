@@ -1,8 +1,9 @@
-const CACHE_NAME = 'xpressintra-v59-control-cleanup';
+﻿const CACHE_NAME = 'xpressintra-v60-update-modal';
 const APP_FILES = [
   './',
   './index.html',
   './download.html',
+  './manifest.webmanifest',
   './xpressbudet-logo-transparent.png',
 ];
 

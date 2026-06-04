@@ -1,4 +1,4 @@
-const icons = {
+﻿const icons = {
   home: '<svg viewBox="0 0 24 24"><path d="m4 11 8-7 8 7v8a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z"/></svg>',
   users: '<svg viewBox="0 0 24 24"><path d="M16 20a4 4 0 0 0-8 0"/><circle cx="12" cy="9" r="3"/><path d="M19 20a3 3 0 0 0-2-2.83M17 6.13a3 3 0 0 1 0 5.74M5 20a3 3 0 0 1 2-2.83M7 6.13a3 3 0 0 0 0 5.74"/></svg>',
   map: '<svg viewBox="0 0 24 24"><path d="m9 18-6 3V6l6-3 6 3 6-3v15l-6 3z"/><path d="M9 3v15m6-12v15"/></svg>',
@@ -26,9 +26,9 @@ const icons = {
   search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>',
 };
 
-const APP_VERSION = '1.2.8-release-v59';
-const APP_DISPLAY_VERSION = '1.2.8';
-const APP_VERSION_CODE = 11;
+const APP_VERSION = '1.2.9-release-v60';
+const APP_DISPLAY_VERSION = '1.2.9';
+const APP_VERSION_CODE = 12;
 const IMAGE_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
 const PROFILE_PHOTO_MAX_DIMENSION = 512;
 const PROFILE_PHOTO_QUALITY = 0.84;
@@ -378,7 +378,7 @@ async function installPwaApp() {
     return;
   }
   if (!deferredPwaInstallPrompt) {
-    showToast('Brug browserens installer-knap i adresselinjen, og godkend IntraBudet.');
+    openPwaInstallHelpModal();
     return;
   }
   deferredPwaInstallPrompt.prompt();
@@ -392,6 +392,23 @@ async function installPwaApp() {
     showToast('Installationen blev ikke gennemført endnu');
   }
   render();
+}
+
+function openPwaInstallHelpModal() {
+  document.querySelector('.modal-backdrop')?.remove();
+  const modal = document.createElement('div');
+  modal.className = 'modal-backdrop';
+  modal.innerHTML = `<section class="profile-modal install-help-modal">
+    <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
+    <h3>Installer IntraBudet</h3>
+    <p>Browseren er ikke helt klar med installationsboksen endnu. Prøv først at genindlæse siden. Kommer boksen ikke, kan appen installeres direkte fra browserens menu.</p>
+    <div class="install-help-steps">
+      <span><b>Chrome eller Edge</b><small>Klik på installer-ikonet i adresselinjen, eller brug menuen med tre prikker og vælg Installer app.</small></span>
+      <span><b>Windows</b><small>Når installationen er godkendt, ligger IntraBudet i Start-menuen som en almindelig app.</small></span>
+    </div>
+    <button type="button" data-action="reload-for-install">Genindlæs og prøv igen</button>
+  </section>`;
+  document.body.append(modal);
 }
 
 function supabaseConfig() {
@@ -1123,12 +1140,30 @@ function openAppUpdateModal(info = appUpdateState.latest, options = {}) {
   document.querySelector('.modal-backdrop')?.remove();
   const force = Boolean(options.force || info.forceUpdate || appUpdateState.required);
   const rollback = info.activeVersionCode < APP_VERSION_CODE || Boolean(info.rollbackReason);
+  const title = rollback ? 'Skift til stabil version' : force ? 'Vigtig opdatering klar' : 'Ny version klar';
+  const subtitle = rollback
+    ? 'Vi anbefaler den stabile version, så appen kører roligt igen.'
+    : force
+      ? 'Den nye version retter vigtige ting og holder alle på samme app.'
+      : 'Der er en forbedret version af XpressIntra klar til dig.';
+  const actionLabel = rollback ? 'Installer stabil version' : force ? 'Opdater XpressIntra' : 'Opdater nu';
+  const badge = rollback ? 'Stabil version' : force ? 'Anbefalet nu' : 'Ny opdatering';
+  const changelog = info.changelog.length
+    ? info.changelog.map(item => `<li>${text(item)}</li>`).join('')
+    : '<li>Små forbedringer og opdateret stabilitet.</li>';
   const modal = document.createElement('div');
   modal.className = `modal-backdrop ${force ? 'force-update' : ''}`;
-  modal.innerHTML = `<section class="profile-modal update-modal">
+  modal.innerHTML = `<section class="profile-modal update-modal update-modal-pro">
     ${force ? '' : `<button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>`}
-    <p class="eyebrow">${rollback ? 'Stabil version' : force ? 'Kritisk opdatering' : 'Ny opdatering'}</p>
-    <h3>${rollback ? 'Stabil version kræves' : force ? 'Kritisk opdatering kræves' : 'Ny opdatering tilgængelig'}</h3>
+    <section class="update-hero">
+      <span class="update-hero-icon">${icon('download')}</span>
+      <div>
+        <p class="eyebrow">${badge}</p>
+        <h3>${title}</h3>
+        <small>${subtitle}</small>
+      </div>
+    </section>
+    <p class="update-reassurance">Det tager normalt kun et øjeblik. Dine beskeder, profil og indstillinger bliver liggende.</p>
     <section class="update-version-card">
       <span><b>Installeret</b><strong>${text(APP_DISPLAY_VERSION)}</strong><small>Build ${APP_VERSION_CODE}</small></span>
       <span><b>Aktiv</b><strong>${text(info.activeVersion)}</strong><small>Build ${info.activeVersionCode}</small></span>
@@ -1136,13 +1171,13 @@ function openAppUpdateModal(info = appUpdateState.latest, options = {}) {
     ${options.offline ? '<p class="update-warning">Appen kunne ikke hente ny versionsfil, men en tidligere kendt tvangsopdatering er stadig aktiv.</p>' : ''}
     ${rollback && info.rollbackReason ? `<p class="update-warning"><b>Årsag:</b> ${text(info.rollbackReason)}</p>` : ''}
     <section class="update-changelog">
-      <h4>Nyt</h4>
-      ${info.changelog.length ? info.changelog.map(item => `<span>${text(item)}</span>`).join('') : '<span>Ingen changelog er skrevet endnu.</span>'}
+      <h4>Det får du med</h4>
+      <ul>${changelog}</ul>
     </section>
     ${isPlaceholderUpdateConfig() ? '<p class="update-warning">Creator: GitHub-placeholderen skal skiftes til det rigtige repository, før medarbejdere bruger opdateringslinket.</p>' : ''}
-    <p class="update-helper">På Android hentes opdateringen direkte i XpressIntra. Første gang skal du muligvis tillade installation fra XpressIntra. Det husker telefonen normalt bagefter.</p>
+    <p class="update-helper"><b>Sådan virker det:</b> XpressIntra henter opdateringen og åbner Androids almindelige installationsvindue. Første gang skal du muligvis tillade installation fra XpressIntra.</p>
     <div class="update-actions">
-      <button type="button" data-action="install-update">${rollback ? 'Installer stabil version' : 'Opdater nu'}</button>
+      <button type="button" data-action="install-update">${actionLabel}</button>
       ${force ? '' : '<button type="button" class="secondary" data-action="dismiss-update">Senere</button>'}
     </div>
   </section>`;
@@ -3645,7 +3680,7 @@ function renderLogin() {
     <div class="login-copy"><h1>Godt at se dig.</h1><p>Log ind for at finde kollegaer, dele din position og skrive med holdet.</p></div>
     <div class="pwa-install-card">
       <b>Brug den som pc-app</b>
-      <span>Chefen kan klikke her, godkende installationen og åbne IntraBudet fra Windows som en almindelig app.</span>
+      <span>Klik her, godkend installationen og åbn derefter IntraBudet fra Windows som en almindelig app.</span>
       <button type="button" data-action="install-pwa">${text(pwaInstallLabel())}</button>
     </div>
     <form class="login-form">
@@ -5355,6 +5390,7 @@ document.addEventListener('click', async event => {
   if (action === 'check-update') await checkForAppUpdate({ manual: true });
   if (action === 'show-update-status') openUpdateStatusModal();
   if (action === 'install-pwa') await installPwaApp();
+  if (action === 'reload-for-install') window.location.reload();
   if (action === 'install-update') await installAppUpdate(appUpdateState.required?.apkDownloadUrl || appUpdateState.latest?.apkDownloadUrl);
   if (action === 'dismiss-update') {
     if (appUpdateState.latest) appUpdateState.dismissedVersionCode = appUpdateState.latest.activeVersionCode;
