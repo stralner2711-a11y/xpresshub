@@ -132,7 +132,7 @@ Invoke-NativeToLog $git @('config', '--global', '--add', 'safe.directory', ($rep
 Invoke-LoggedCommand '[1/8] Tjekker Supabase og faelles login-config...' $project 'powershell.exe' @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', (Join-Path $project 'tools\supabase-release-check.ps1'))
 Invoke-LoggedCommand '[2/8] Tjekker login- og privatlivssikkerhed...' $project 'node.exe' @('qa/credential-privacy-smoke-test.cjs')
 Invoke-LoggedCommand '[3/8] Tjekker GitHub login...' $project $gh @('auth', 'status')
-Invoke-LoggedCommand '[4/8] Bygger og synkroniserer Android-filer...' $project 'npm.cmd' @('run', 'android:sync')
+Invoke-LoggedCommand '[4/8] Bygger og synkroniserer Android- og iOS-filer...' $project 'npm.cmd' @('run', 'native:sync')
 
 Write-Log ''
 Write-Log '[5/8] Klargor GitHub-pakke...'
@@ -148,6 +148,14 @@ Invoke-Robocopy (Join-Path $project 'android') (Join-Path $ready 'android') @(
   (Join-Path $project 'android\build'),
   (Join-Path $project 'android\app\build'),
   (Join-Path $project 'android\capacitor-cordova-android-plugins\build')
+)
+
+Write-Log 'Kopierer iOS til pakken...'
+Invoke-Robocopy (Join-Path $project 'ios') (Join-Path $ready 'ios') @(
+  '/XD',
+  (Join-Path $project 'ios\App\Pods'),
+  (Join-Path $project 'ios\App\build'),
+  (Join-Path $project 'ios\App\DerivedData')
 )
 
 foreach ($file in @(

@@ -126,3 +126,15 @@ Projektet er forberedt til Android via Capacitor:
 APK-build kræver Android Studio/SDK på computeren. Den færdige debug APK ligger normalt i `android/app/build/outputs/apk/debug/app-debug.apk`.
 
 Vigtigt: service-role eller secret keys må aldrig sættes ind i webappen.
+
+## Apple/iPhone app
+
+Projektet er også forberedt til iOS via Capacitor:
+
+- `ios/` indeholder Apple/Xcode-projektet.
+- `npm run ios:sync` bygger webappen og synkroniserer den til iOS.
+- `npm run ios:open` åbner iOS-projektet på en Mac med Xcode.
+- `Build Apple iOS paa Mac.command` kan bruges på en Mac til at teste iOS-build og åbne Xcode.
+- `docs/APPLE_IOS_APP.md` beskriver Apple-krav, App Store/TestFlight og resterende tjek.
+
+iOS-build, TestFlight og App Store-upload kræver Mac med Xcode og Apple Developer-konto.

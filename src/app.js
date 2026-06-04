@@ -375,8 +375,8 @@ function isPwaStandalone() {
 
 function pwaInstallLabel() {
   if (pwaInstalled || isPwaStandalone()) return 'IntraBudet er installeret på denne enhed';
-  if (pwaInstallAvailable) return 'Installer IntraBudet på pc';
-  return 'Klargør IntraBudet som pc-app';
+  if (pwaInstallAvailable) return 'Installer IntraBudet som app';
+  return 'Klargør IntraBudet som app';
 }
 
 async function installPwaApp() {
@@ -411,6 +411,7 @@ function openPwaInstallHelpModal() {
     <p>Browseren er ikke helt klar med installationsboksen endnu. Prøv først at genindlæse siden. Kommer boksen ikke, kan appen installeres direkte fra browserens menu.</p>
     <div class="install-help-steps">
       <span><b>Chrome eller Edge</b><small>Klik på installer-ikonet i adresselinjen, eller brug menuen med tre prikker og vælg Installer app.</small></span>
+      <span><b>iPhone</b><small>Åbn appen i Safari, tryk Del, vælg Føj til hjemmeskærm og åbn derefter IntraBudet fra hjemmeskærmen.</small></span>
       <span><b>Windows</b><small>Når installationen er godkendt, ligger IntraBudet i Start-menuen som en almindelig app.</small></span>
     </div>
     <button type="button" data-action="reload-for-install">Genindlæs og prøv igen</button>
@@ -3734,8 +3735,8 @@ function renderLogin() {
     <div class="login-brand">${brandLogo()}<small>XpressIntra · internt medarbejdersystem</small></div>
     <div class="login-copy"><h1>Godt at se dig.</h1><p>Log ind for at finde kollegaer, dele din position og skrive med holdet.</p></div>
     <div class="pwa-install-card">
-      <b>Brug den som pc-app</b>
-      <span>Klik her, godkend installationen og åbn derefter IntraBudet fra Windows som en almindelig app.</span>
+      <b>Brug den som app</b>
+      <span>På pc kan browseren installere appen direkte. På iPhone åbner du siden i Safari og vælger Føj til hjemmeskærm.</span>
       <button type="button" data-action="install-pwa">${text(pwaInstallLabel())}</button>
     </div>
     <form class="login-form">

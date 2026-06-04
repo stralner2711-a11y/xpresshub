@@ -40,7 +40,9 @@ assert(version.activeVersionCode === 17, 'version.json should expose activeVersi
 assert(version.forceUpdate === true, 'Test release should force update visibility');
 assert(version.apkDownloadUrl.includes('github.com/stralner2711-a11y/xpresshub'), 'version.json should point to the official GitHub repo');
 
-assert(download.includes('Download XpressIntra'), 'Download page should have a clear download button');
+assert(download.includes('Åbn appen på iPhone eller pc'), 'Download page should guide iPhone and PC users to the web app');
+assert(download.includes('Download Android APK'), 'Download page should still have a clear Android APK button');
+assert(download.includes('Føj til hjemmeskærm'), 'Download page should guide iPhone home screen installation');
 assert(download.includes('Tillad installation fra ukendte kilder'), 'Download page should guide APK installation');
 assert(download.includes('github.com/stralner2711-a11y/xpresshub'), 'Download page should point to the official release page');
 

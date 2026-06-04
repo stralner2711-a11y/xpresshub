@@ -1050,8 +1050,9 @@ h3 { margin-bottom: 0; font-family: Manrope, sans-serif; font-size: 15px; }
 .profile-photo-preview.is-empty b { display: grid; width: 42px; height: 42px; place-items: center; border-radius: 50%; background: var(--amber); color: #3b280e; font-size: 24px; }
 .profile-photo-preview.is-empty small { margin-top: 6px; color: #6f797b; font-size: 11px; }
 @media (min-width: 900px) {
-  #app { grid-template-columns: minmax(430px, 560px); gap: 0; padding: 24px; }
-  .phone-shell { width: min(560px, calc(100vw - 48px)); height: min(920px, calc(100vh - 48px)); border: 1px solid rgba(255,255,255,.15); border-radius: 26px; box-shadow: 0 24px 80px rgba(0,0,0,.35); }
+  #app { grid-template-columns: minmax(560px, 760px); gap: 0; padding: 18px; }
+  .phone-shell { width: min(760px, calc(100vw - 36px)); height: min(960px, calc(100vh - 36px)); border: 1px solid rgba(255,255,255,.15); border-radius: 26px; box-shadow: 0 24px 80px rgba(0,0,0,.35); }
+  .content { padding-inline: 28px; }
   .desktop-note { display: none !important; }
   .desktop-note .brand-lockup { margin-bottom: 28px; }
   .desktop-note .brand-logo { width: 205px; max-height: 44px; }

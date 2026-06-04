@@ -2,6 +2,7 @@ qa/.edge-qa-profile/
 .tmp-preview-*/
 arkiv/
 node_modules/
+.npm-cache/
 dist/
 .env
 .env.*
