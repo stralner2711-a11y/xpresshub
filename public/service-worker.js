@@ -1,4 +1,4 @@
-﻿const CACHE_NAME = 'xpressintra-v68-standard-password';
+﻿const CACHE_NAME = 'xpressintra-v69-creator-rollback';
 const APP_FILES = [
   './',
   './indep.html',

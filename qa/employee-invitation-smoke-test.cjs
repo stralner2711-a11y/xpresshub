@@ -16,6 +16,9 @@ assert(source.includes('createSupabaseEmployeeInvitation(employee)'), 'App shoul
 assert(source.includes('Arbejdsmail<input name="email" type="email"'), 'Employee profile modal should include work email');
 assert(source.includes("${isNew ? 'required' : ''}"), 'Work email should be required for new employee invitations');
 assert(source.includes('Opret konto med standardkode'), 'Invite result should explain the standard-password flow');
+assert(source.includes('employeeDownloadPageUrl'), 'Invite flow should include the official app download page');
+assert(source.includes('Download eller åbn appen her'), 'Shared invite message should include the download/open link');
+assert(source.includes('Download/åbn appen her'), 'Invite result should show the download/open link before sending');
 assert(source.includes("onboarding_method: 'standard_password'"), 'Supabase invitations should store the onboarding method');
 assert(source.includes('password_reset_required: true'), 'New employees should be forced to change the temporary password');
 

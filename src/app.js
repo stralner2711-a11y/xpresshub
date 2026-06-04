@@ -26,9 +26,9 @@
   search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>',
 };
 
-const APP_VERSION = '1.3.7-release-v68';
-const APP_DISPLAY_VERSION = '1.3.7';
-const APP_VERSION_CODE = 20;
+const APP_VERSION = '1.3.8-release-v69';
+const APP_DISPLAY_VERSION = '1.3.8';
+const APP_VERSION_CODE = 21;
 const TEMPORARY_EMPLOYEE_PASSWORD = 'xpress';
 const IMAGE_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
 const PROFILE_PHOTO_MAX_DIMENSION = 512;
@@ -1067,13 +1067,44 @@ function normalizeVersionInfo(raw) {
     stableVersionCode: Number(raw.stableVersionCode || activeVersionCode),
     activeVersionCode,
     apkDownloadUrl,
+    stableApkDownloadUrl: String(raw.stableApkDownloadUrl || raw.rollbackApkDownloadUrl || '').trim(),
+    previousStableApkDownloadUrl: String(raw.previousStableApkDownloadUrl || '').trim(),
     releasePageUrl,
+    stableReleasePageUrl: String(raw.stableReleasePageUrl || '').trim(),
     downloadPageUrl: String(raw.downloadPageUrl || ''),
     changelog: Array.isArray(raw.changelog) ? raw.changelog.map(String).slice(0, 8) : [],
     forceUpdate: Boolean(raw.forceUpdate),
     rollbackReason: String(raw.rollbackReason || ''),
     defectiveVersions: Array.isArray(raw.defectiveVersions) ? raw.defectiveVersions : [],
     updatedAt: String(raw.updatedAt || ''),
+  };
+}
+
+function stableRollbackUrl(info = appUpdateState.latest) {
+  if (!info) return '';
+  const candidates = [
+    info.stableApkDownloadUrl,
+    info.previousStableApkDownloadUrl,
+    info.activeVersionCode < APP_VERSION_CODE ? info.apkDownloadUrl : '',
+  ].filter(Boolean);
+  return candidates.find(url => isAllowedUpdateUrl(url)) || '';
+}
+
+function rollbackReadiness(info = appUpdateState.latest) {
+  const stableUrl = stableRollbackUrl(info);
+  const hasPrevious = Boolean(info?.previousStableVersion || info?.stableVersion);
+  const currentMarked = Array.isArray(info?.defectiveVersions)
+    && info.defectiveVersions.some(version => String(version) === APP_DISPLAY_VERSION || Number(version) === APP_VERSION_CODE);
+  const recommended = Boolean(info?.rollbackReason || info?.activeVersionCode < APP_VERSION_CODE || currentMarked);
+  return {
+    available: Boolean(info && hasPrevious),
+    stableUrl,
+    recommended,
+    currentMarked,
+    label: recommended ? 'Rollback anbefalet' : stableUrl ? 'Backup klar' : 'Klargør backup',
+    detail: stableUrl
+      ? 'Creator kan åbne eller installere sidste stabile appversion uden at slette Supabase-data.'
+      : 'Tilføj stableApkDownloadUrl eller previousStableApkDownloadUrl i version.json for én-tryk rollback.',
   };
 }
 
@@ -1229,8 +1260,93 @@ function openAppUpdateModal(info = appUpdateState.latest, options = {}) {
   document.body.append(modal);
 }
 
+function markCurrentVersionSuspect() {
+  if (!isCreatorOwner()) {
+    showToast('Kun creator kan markere en version som mistænkt');
+    return;
+  }
+  const fallbackInfo = {
+    activeVersion: APP_DISPLAY_VERSION,
+    activeVersionCode: APP_VERSION_CODE,
+    apkDownloadUrl: 'https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.8/xpressintra.apk',
+  };
+  const info = appUpdateState.latest || normalizeVersionInfo(fallbackInfo);
+  const defective = new Set([...(info.defectiveVersions || []).map(String), APP_DISPLAY_VERSION, String(APP_VERSION_CODE)]);
+  appUpdateState.latest = {
+    ...info,
+    defectiveVersions: [...defective],
+    rollbackReason: info.rollbackReason || 'Creator har markeret den installerede version til ekstra kontrol.',
+  };
+  saveAppUpdateState();
+  recordAdminAudit('Version markeret til kontrol', `${APP_DISPLAY_VERSION} · build ${APP_VERSION_CODE}`);
+  document.querySelector('.modal-backdrop')?.remove();
+  openRollbackCenterModal();
+  showToast('Versionen er markeret til kontrol lokalt');
+}
+
+async function installStableRollbackVersion() {
+  if (!isCreatorOwner()) {
+    showToast('Kun creator kan starte rollback');
+    return;
+  }
+  const checkbox = document.querySelector('.rollback-confirm input[name="rollbackConfirm"]');
+  if (checkbox && !checkbox.checked) {
+    showToast('Bekræft først at du forstår rollback');
+    return;
+  }
+  const info = appUpdateState.latest;
+  const stableUrl = stableRollbackUrl(info);
+  if (!stableUrl) {
+    showToast('Der mangler et godkendt link til stabil APK i version.json');
+    return;
+  }
+  recordAdminAudit('Rollback startet', `${APP_DISPLAY_VERSION} -> ${info?.stableVersion || info?.previousStableVersion || 'stabil version'}`);
+  await installAppUpdate(stableUrl);
+}
+
+function openRollbackCenterModal() {
+  if (!isCreatorOwner()) {
+    showToast('Kun creator kan åbne rollback-center');
+    return;
+  }
+  const info = appUpdateState.latest;
+  const rollback = rollbackReadiness(info);
+  const stableLabel = info ? `${info.stableVersion || info.previousStableVersion || 'Ukendt'} · build ${info.stableVersionCode || 'ukendt'}` : 'Ikke hentet endnu';
+  const previousLabel = info?.previousStableVersion || 'Ikke angivet';
+  const modal = document.createElement('div');
+  modal.className = 'modal-backdrop';
+  modal.innerHTML = `<section class="profile-modal rollback-modal">
+    <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
+    <p class="eyebrow">Creator / backup</p><h3>Gå tilbage til stabil version</h3>
+    <section class="rollback-hero ${rollback.recommended ? 'risk' : 'ready'}">
+      <span>${icon('download')}</span>
+      <div><b>${text(rollback.label)}</b><small>${text(rollback.detail)}</small></div>
+    </section>
+    <section class="rollback-grid">
+      <span><b>Installeret nu</b><strong>${text(APP_DISPLAY_VERSION)}</strong><small>Build ${APP_VERSION_CODE}</small></span>
+      <span><b>Stabil version</b><strong>${text(stableLabel)}</strong><small>Sidste stabile: ${text(previousLabel)}</small></span>
+      <span><b>Seneste tjek</b><strong>${appUpdateState.lastCheckedAt ? text(new Date(appUpdateState.lastCheckedAt).toLocaleString('da-DK')) : 'Ikke tjekket'}</strong><small>${text(appUpdateState.lastError || 'Ingen kendt fejl')}</small></span>
+      <span><b>Data</b><strong>Beholdes</strong><small>Rollback sletter ikke profiler, chats, GPS, billeder eller logbog i Supabase.</small></span>
+    </section>
+    ${info?.rollbackReason ? `<p class="rollback-warning"><b>Årsag:</b> ${text(info.rollbackReason)}</p>` : ''}
+    <section class="rollback-note">
+      <b>Vigtigt før rollback</b>
+      <span>Brug rollback når en appversion driller. Hvis fejlen skyldes manglende Supabase-tabeller eller forkert SQL, skal databasen repareres i stedet for kun at installere en ældre APK.</span>
+    </section>
+    <label class="rollback-confirm"><input type="checkbox" name="rollbackConfirm" /> <span>Jeg forstår at appen går tilbage til stabil version, men medarbejderdata beholdes.</span></label>
+    <div class="rollback-actions">
+      <button type="button" data-action="check-update">Tjek version</button>
+      <button type="button" data-action="mark-current-version-suspect">Marker nuværende</button>
+      <button type="button" data-action="install-stable-rollback" ${rollback.stableUrl ? '' : 'disabled'}>Installer stabil</button>
+      <button type="button" data-action="open-download-page">Downloadside</button>
+    </div>
+  </section>`;
+  document.body.append(modal);
+}
+
 function renderUpdateSummary() {
   const info = appUpdateState.latest;
+  const rollback = rollbackReadiness(info);
   return `<section class="update-summary-card">
     <div>
       <b>App-opdateringer</b>
@@ -1240,7 +1356,9 @@ function renderUpdateSummary() {
     <div class="update-summary-actions">
       <button type="button" data-action="check-update">Tjek</button>
       ${info ? '<button type="button" data-action="show-update-status">Detaljer</button>' : ''}
+      ${isCreatorOwner() ? '<button type="button" data-action="open-rollback-center">Backup</button>' : ''}
     </div>
+    ${isCreatorOwner() ? `<em class="${rollback.recommended ? 'warn' : ''}">${text(rollback.label)} · ${text(rollback.detail)}</em>` : ''}
     ${isPlaceholderUpdateConfig() ? '<em>Husk: GitHub-placeholder skal skiftes.</em>' : ''}
     ${appUpdateState.lastError ? `<em class="warn">${text(appUpdateState.lastError)}</em>` : ''}
   </section>`;
@@ -1303,9 +1421,16 @@ function inviteLink(employee, invitationId = '') {
   return url.toString();
 }
 
+function employeeDownloadPageUrl() {
+  const url = appUpdateState.latest?.downloadPageUrl
+    || 'https://stralner2711-a11y.github.io/xpresshub/download.html';
+  return isAllowedUpdateUrl(url) ? url : 'https://stralner2711-a11y.github.io/xpresshub/download.html';
+}
+
 async function shareEmployeeInvite(employee, invitationId = '') {
   const subject = `XpressIntra konto`;
-  const body = `Hej ${employee.name || ''}\n\nDin XpressIntra-konto er klar.\n\n1. Åbn XpressIntra.\n2. Brug arbejdsmailen ${employee.email || 'din arbejdsmail'}.\n3. Tryk "Opret konto med standardkode".\n4. Brug standardkoden ${TEMPORARY_EMPLOYEE_PASSWORD}.\n5. Lav din egen personlige kode ved første login.\n\nHilsen XpressBudet`;
+  const downloadUrl = employeeDownloadPageUrl();
+  const body = `Hej ${employee.name || ''}\n\nDin XpressIntra-konto er klar.\n\nDownload eller åbn appen her:\n${downloadUrl}\n\n1. Åbn XpressIntra.\n2. Brug arbejdsmailen ${employee.email || 'din arbejdsmail'}.\n3. Tryk "Opret konto med standardkode".\n4. Brug standardkoden ${TEMPORARY_EMPLOYEE_PASSWORD}.\n5. Lav din egen personlige kode ved første login.\n\nHilsen XpressBudet`;
   if (navigator.share) {
     await navigator.share({ title: subject, text: body });
     return;
@@ -2901,6 +3026,7 @@ function renderCreatorOperationsDashboard() {
     <div class="creator-ops-actions">
       <button type="button" data-action="test-supabase">Test Supabase</button>
       <button type="button" data-action="check-update">Tjek update</button>
+      <button type="button" data-action="open-rollback-center">Backup</button>
       <button type="button" data-action="open-launch-checklist">Go-live tjek</button>
       <button type="button" data-action="open-security-center">Sikkerhed</button>
       <button type="button" data-action="open-settings">Backend</button>
@@ -4561,6 +4687,7 @@ function openEmployeeInviteResultModal(employee, invitationId = '') {
   const inviteState = employee.invitationStatus === 'online'
     ? 'Online invitation gemt i Supabase'
     : 'Medarbejderen er oprettet lokalt - synkroniser når Supabase er online';
+  const downloadUrl = employeeDownloadPageUrl();
   const modal = document.createElement('div');
   modal.className = 'modal-backdrop';
   modal.innerHTML = `<section class="profile-modal invite-result-modal">
@@ -4570,8 +4697,9 @@ function openEmployeeInviteResultModal(employee, invitationId = '') {
     <section class="invite-help">
       <b>${text(inviteState)}</b>
       <span>Kollegaen bruger arbejdsmailen <strong>${text(employee.email || 'mangler mail')}</strong>, trykker "Opret konto med standardkode" og bruger koden <strong>${TEMPORARY_EMPLOYEE_PASSWORD}</strong>. Første gang skal de vælge deres egen kode.</span>
+      <span>Download/åbn appen her: <strong>${text(downloadUrl)}</strong></span>
     </section>
-    <label>Besked til kollegaen<input readonly value="${text(`Din XpressIntra-konto er klar. Brug arbejdsmailen ${employee.email || ''} og standardkoden ${TEMPORARY_EMPLOYEE_PASSWORD}. Du skal lave din egen kode ved første login.`)}" /></label>
+    <label>Besked til kollegaen<input readonly value="${text(`Din XpressIntra-konto er klar. Download/åbn appen her: ${downloadUrl} Brug arbejdsmailen ${employee.email || ''} og standardkoden ${TEMPORARY_EMPLOYEE_PASSWORD}. Du skal lave din egen kode ved første login.`)}" /></label>
     <div class="invite-actions">
       <button type="button" data-action="share-last-invite">Send/dele besked</button>
       <button type="button" data-action="close-modal">Færdig</button>
@@ -5695,6 +5823,7 @@ document.addEventListener('click', async event => {
     'open-settings',
     'test-supabase',
     'show-update-status',
+    'open-rollback-center',
     'open-admin',
     'open-launch-checklist',
     'open-gdpr-go-live',
@@ -5731,9 +5860,12 @@ document.addEventListener('click', async event => {
   if (action === 'test-supabase') openSupabaseDiagnosticsModal();
   if (action === 'check-update') await checkForAppUpdate({ manual: true });
   if (action === 'show-update-status') openUpdateStatusModal();
+  if (action === 'open-rollback-center') openRollbackCenterModal();
   if (action === 'install-pwa') await installPwaApp();
   if (action === 'reload-for-install') window.location.reload();
   if (action === 'install-update') await installAppUpdate(appUpdateState.required?.apkDownloadUrl || appUpdateState.latest?.apkDownloadUrl);
+  if (action === 'install-stable-rollback') await installStableRollbackVersion();
+  if (action === 'mark-current-version-suspect') markCurrentVersionSuspect();
   if (action === 'dismiss-update') {
     if (appUpdateState.latest) appUpdateState.dismissedVersionCode = appUpdateState.latest.activeVersionCode;
     saveAppUpdateState();

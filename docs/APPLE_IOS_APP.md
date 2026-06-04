@@ -15,7 +15,7 @@ Apple/iOS-platformen er nu tilfÃ¸jet i projektet:
   - `npm run native:sync`
   - `npm run ios:sync`
   - `npm run ios:open`
-- Xcode-projektets native version matcher Android/web: `1.3.7` / build `20`.
+- Xcode-projektets native version matcher Android/web: `1.3.8` / build `21`.
 - `KLIK HER - OPDATER ALT.cmd` synkroniserer nu bÃ¥de Android- og iOS-filer, fÃ¸r pakken kopieres til GitHub-klargÃ¸ring.
 - `Build Apple iOS paa Mac.command` kan kÃ¸res pÃ¥ en Mac for at installere pakker, synkronisere iOS, teste Xcode-build og Ã¥bne workspace.
 - `docs/APPLE_REVIEW_INFO.md` indeholder en kladde til Apple review notes, privacy-beskrivelse og testbrugerfelt.

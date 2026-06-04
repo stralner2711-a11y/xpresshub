@@ -40,6 +40,7 @@ function createHarness() {
     console,
     document,
     window: {
+      location: { href: 'https://xpresshub-seven.vercel.app/', origin: 'https://xpresshub-seven.vercel.app' },
       addEventListener() {},
       scrollTo() {},
       matchMedia() { return { matches: false, addEventListener() {}, removeEventListener() {} }; },
@@ -59,6 +60,7 @@ function createHarness() {
     clearInterval() {},
     FormData: class {},
     FileReader: class {},
+    URL,
   };
 
   context.window.document = document;
@@ -95,6 +97,7 @@ const creatorModal = harness.modalNodes.at(-1);
 assert(creatorModal.innerHTML.includes('Creator drift'), 'Creator should see the operations overview');
 assert(creatorModal.innerHTML.includes('Appens drift'), 'Creator operations panel should be clearly named');
 assert(creatorModal.innerHTML.includes('Test Supabase') && creatorModal.innerHTML.includes('Go-live tjek'), 'Creator should get important operations actions');
+assert(creatorModal.innerHTML.includes('Backup'), 'Creator should get a rollback/backup shortcut');
 assert(creatorModal.innerHTML.includes('Sikkerhedscenter'), 'Creator should get the security center shortcut');
 assert(creatorModal.innerHTML.includes('Dataanmodninger'), 'Creator should see privacy/data operations status');
 assert(!creatorModal.innerHTML.includes('Godmorgen Tommy. Din næste aflæsning'), 'Creator operations panel should not expose private/direct chat message content');
@@ -104,6 +107,12 @@ assert(creatorModal.innerHTML.includes('Creator genveje'), 'Creator should see o
 assert(creatorModal.innerHTML.includes('Test appen som'), 'Creator should be able to switch role perspectives from operations');
 assert(creatorModal.innerHTML.includes('Mangler og kvalitet'), 'Creator should see quality gaps');
 assert(creatorModal.innerHTML.includes('Privatlivsvagt'), 'Creator should see the privacy guard');
+
+harness.run("appUpdateState.latest = normalizeVersionInfo({ activeVersion: '1.3.8', stableVersion: '1.3.8', previousStableVersion: '1.3.7', activeVersionCode: 21, stableVersionCode: 21, apkDownloadUrl: 'https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.8/xpressintra.apk', previousStableApkDownloadUrl: 'https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.7/xpressintra.apk', releasePageUrl: 'https://github.com/stralner2711-a11y/xpresshub/releases/tag/v1.3.8' }); openRollbackCenterModal();");
+const rollbackModal = harness.modalNodes.at(-1);
+assert(rollbackModal.innerHTML.includes('Gå tilbage til stabil version'), 'Creator rollback center should open');
+assert(rollbackModal.innerHTML.includes('medarbejderdata beholdes'), 'Rollback center should explain that employee data is preserved');
+assert(rollbackModal.innerHTML.includes('Installer stabil'), 'Rollback center should include stable install action');
 
 harness.run("openSecurityCenterModal();");
 const securityModal = harness.modalNodes.at(-1);
