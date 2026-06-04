@@ -1,4 +1,4 @@
--- XpressIntra GPS repair
+﻿-- XpressIntra GPS repair
 -- Run this in Supabase SQL Editor if the app says:
 -- "Could not find the table 'public.location_shares' in the schema cache"
 --
@@ -89,7 +89,7 @@ create policy "employees can update own location"
 on public.location_shares for update to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
 
 create policy "employees can stop sharing own location"
-on public.location_shares for delete to authenticated using (user_id = auth.uid() or public.is_admin());
+on public.location_shares for delete to authenticated using (user_id = auth.uid() or private.is_admin());
 
 do $$
 begin

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'xpressintra-v62-info-simple';
+﻿const CACHE_NAME = 'xpressintra-v64-security-update';
 const APP_FILES = [
   './',
   './indep.html',

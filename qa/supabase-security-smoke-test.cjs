@@ -42,8 +42,8 @@ assert(firstAdmin.includes('license_summary'), 'First admin helper should preser
 assert(fullBootstrap.includes('GDPR/dataanmodninger') && fullBootstrap.includes('retention/slettefrister') && fullBootstrap.includes('audit-log'), 'Full bootstrap should document the latest GDPR and security package');
 assert(fullBootstrap.includes('first-admin.sql'), 'Full bootstrap should include the first-admin helper block');
 assert(fullBootstrap.includes('drop table if exists public.location_shares cascade;'), 'Full bootstrap should reset old location shares before a clean install');
-assert(fullBootstrap.includes('drop function if exists public.can_read_conversation(uuid) cascade;'), 'Full bootstrap should cascade-drop chat access functions that old policies depend on');
-assert(fullBootstrap.includes('drop function if exists public.is_conversation_member(uuid) cascade;'), 'Full bootstrap should cascade-drop conversation membership functions that old policies depend on');
+assert(fullBootstrap.includes('drop function if exists public.can_read_conversation(uuid) cascade;'), 'Full bootstrap should cascade-drop old public chat access functions');
+assert(fullBootstrap.includes('drop schema if exists private cascade;'), 'Full bootstrap should reset private helper schema cleanly');
 assert(fullBootstrap.includes('Denne fil nulstiller XpressIntra-tabellerne'), 'Full bootstrap should warn that it resets XpressIntra data');
 assert(!fullBootstrap.includes('delete from storage.objects'), 'Full bootstrap must not directly delete from protected Supabase storage.objects');
 assert(!fullBootstrap.includes('delete from storage.buckets'), 'Full bootstrap must not directly delete from protected Supabase storage.buckets');
@@ -63,11 +63,11 @@ assert(schema.includes('create or replace function public.start_direct_conversat
 assert(schema.includes('grant execute on function public.start_direct_conversation(uuid) to authenticated;'), 'Authenticated users should be able to call the direct chat RPC');
 assert(schema.includes('cannot_start_direct_conversation_with_self'), 'Direct chat RPC should reject self conversations');
 assert(schema.includes('create table if not exists public.employee_invitations'), 'Schema should support safe employee invitations without exposing service-role keys');
-assert(schema.includes('on public.employee_invitations for all to authenticated using (public.is_admin())'), 'Only admins should manage employee invitations');
-assert(schema.includes('on public.admin_audit_log for insert to authenticated with check (actor_id = auth.uid() and public.is_admin())'), 'Admins should be able to write explicit audit entries as themselves');
+assert(schema.includes('on public.employee_invitations for all to authenticated using (private.is_admin())'), 'Only admins should manage employee invitations');
+assert(schema.includes('on public.admin_audit_log for insert to authenticated with check (actor_id = auth.uid() and private.is_admin())'), 'Admins should be able to write explicit audit entries as themselves');
 assert(schema.includes("insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)"), 'Schema should create a private Storage bucket for media');
 assert(schema.includes("public = false"), 'Media bucket should be private');
-assert(schema.includes('public.can_read_conversation(messages.conversation_id)'), 'Conversation media should only be readable by users who can read the conversation');
+assert(schema.includes('private.can_read_conversation(messages.conversation_id)'), 'Conversation media should only be readable by users who can read the conversation');
 assert(schema.includes("split_part(name, '/', 1) = auth.uid()::text"), 'Users should only upload media under their own storage prefix');
 assert(schema.includes('create policy "employees can read shared media objects"'), 'Storage should allow recipients to read shared media through metadata checks');
 assert(schema.includes("media_attachments.visibility = 'announcement'"), 'Announcement images should be readable as shared internal media');
@@ -78,7 +78,7 @@ assert(schema.includes('speed_kmh numeric(6, 2) check (speed_kmh is null or spee
 assert(schema.includes("and audience = 'truck'"), 'Location RLS should support truck-only sharing');
 assert(schema.includes("and audience = 'van'"), 'Location RLS should support van-only sharing');
 assert(schema.includes("or (visibility = 'pickup' and visible_to_user_id = auth.uid())"), 'Pickup location sharing should only be visible to the selected colleague');
-assert(schema.includes('on public.location_shares for delete to authenticated using (user_id = auth.uid() or public.is_admin())'), 'Employees should stop own location sharing while admins can run retention cleanup');
+assert(schema.includes('on public.location_shares for delete to authenticated using (user_id = auth.uid() or private.is_admin())'), 'Employees should stop own location sharing while admins can run retention cleanup');
 assert(locationRepair.includes('create table if not exists public.location_shares'), 'Location repair SQL should recreate the missing GPS table');
 assert(locationRepair.includes("to_regclass('public.profiles') is null"), 'Location repair SQL should clearly stop if the base profiles table has not been installed');
 assert(locationRepair.includes('RUN_THIS_FROM_SCRATCH_IN_SUPABASE.sql'), 'Location repair SQL should point users to the full base install when profiles is missing');

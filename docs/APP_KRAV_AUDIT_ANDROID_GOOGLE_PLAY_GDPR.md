@@ -1,4 +1,4 @@
-# XpressIntra app-krav audit
+﻿# XpressIntra app-krav audit
 
 Dato: 2026-06-04  
 Omfang: Android APK, Google Play/Internal Testing, GDPR/Datatilsynet og intern firmadrift.  

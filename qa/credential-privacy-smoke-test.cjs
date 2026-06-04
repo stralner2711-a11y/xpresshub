@@ -1,4 +1,4 @@
-const fs = require('fs');
+﻿const fs = require('fs');
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -37,7 +37,7 @@ assert(!/auth\.jwt\(\).*raw_user_meta_data/is.test(schema), 'RLS must not trust 
 assert(!/user_metadata/i.test(schema), 'RLS/schema should not authorize from user_metadata');
 assert(schema.includes("coalesce(invite.access_role, 'employee')"), 'New users should get access role from admin invitation, not self-claimed metadata');
 assert(schema.includes("coalesce(invite.vehicle_type, 'van')"), 'New users should get vehicle type from admin invitation, not self-claimed metadata');
-assert(schema.includes('on public.employee_invitations for all to authenticated using (public.is_admin())'), 'Only admins should manage employee invitations');
-assert(fullSetup.includes('on public.employee_invitations for all to authenticated using (public.is_admin())'), 'Full setup should keep invitations admin-only');
+assert(schema.includes('on public.employee_invitations for all to authenticated using (private.is_admin())'), 'Only admins should manage employee invitations');
+assert(fullSetup.includes('on public.employee_invitations for all to authenticated using (private.is_admin())'), 'Full setup should keep invitations admin-only');
 
 console.log('Credential and privacy smoke test passed');

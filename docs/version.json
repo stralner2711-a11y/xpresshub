@@ -1,23 +1,22 @@
 {
-    "latestVersion":  "1.3.1",
-    "stableVersion":  "1.3.1",
-    "activeVersion":  "1.3.1",
-    "previousStableVersion":  "1.3.0",
-    "latestVersionCode":  14,
-    "stableVersionCode":  14,
-    "activeVersionCode":  14,
-    "apkDownloadUrl":  "https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.1/xpressintra.apk",
-    "releasePageUrl":  "https://github.com/stralner2711-a11y/xpresshub/releases/tag/v1.3.1",
-    "downloadPageUrl":  "https://stralner2711-a11y.github.io/xpresshub/download.html",
-    "changelog":  [
-                      "Information er gjort mere enkel for chauffører der ikke bruger smartphone til daglig",
-                      "Store hurtigknapper til drift, kontaktliste, dokumenter og regler er lagt øverst",
-                      "Søgning og resultater i Information er gjort mere læsbare og nemmere at ramme"
-                  ],
-    "forceUpdate":  true,
-    "rollbackReason":  "",
-    "defectiveVersions":  [
-
-                          ],
-    "updatedAt":  "2026-06-04"
+  "latestVersion": "1.3.3",
+  "stableVersion": "1.3.3",
+  "activeVersion": "1.3.3",
+  "previousStableVersion": "1.3.2",
+  "latestVersionCode": 16,
+  "stableVersionCode": 16,
+  "activeVersionCode": 16,
+  "apkDownloadUrl": "https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.3/xpressintra.apk",
+  "releasePageUrl": "https://github.com/stralner2711-a11y/xpresshub/releases/tag/v1.3.3",
+  "downloadPageUrl": "https://stralner2711-a11y.github.io/xpresshub/download.html",
+  "changelog": [
+    "Sikkerhedspakken er opdateret med private Supabase RLS-funktioner",
+    "Release-checket stopper nu hvis databasepakken mangler den nye sikkerhedsmodel",
+    "GDPR- og sikkerhedsdokumenter er opdateret med live Supabase-status",
+    "Information-oprydningen fra seneste version er fortsat med i appen"
+  ],
+  "forceUpdate": true,
+  "rollbackReason": "",
+  "defectiveVersions": [],
+  "updatedAt": "2026-06-04"
 }

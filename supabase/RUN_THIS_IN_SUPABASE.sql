@@ -84,12 +84,12 @@ drop policy if exists "admins can manage private profile details" on public.prof
 
 create policy "admins can manage employee invitations"
 on public.employee_invitations for all to authenticated
-using (public.is_admin())
-with check (created_by = auth.uid() and public.is_admin());
+using (private.is_admin())
+with check (created_by = auth.uid() and private.is_admin());
 
 create policy "employees can read own private profile details"
 on public.profile_private_details for select to authenticated
-using (user_id = auth.uid() or public.is_dispatcher_or_admin());
+using (user_id = auth.uid() or private.is_dispatcher_or_admin());
 
 create policy "employees can manage own private profile details"
 on public.profile_private_details for all to authenticated
@@ -98,8 +98,8 @@ with check (user_id = auth.uid());
 
 create policy "admins can manage private profile details"
 on public.profile_private_details for all to authenticated
-using (public.is_admin())
-with check (public.is_admin());
+using (private.is_admin())
+with check (private.is_admin());
 
 create or replace function public.handle_new_user()
 returns trigger

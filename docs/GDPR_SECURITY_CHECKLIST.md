@@ -31,6 +31,8 @@ Dette er en praktisk intern tjekliste til go-live. Den erstatter ikke juridisk r
 - Fart, bil og status skal kun gemmes/deles hvis medarbejderen har valgt det.
 - Billeder skal gemmes i privat Storage med adgang via samtale/opslag.
 - Adminhandlinger skal logges uden at logge privat chatindhold.
+- Creator/admin-konti skal bruge to-faktor login, hvor det er muligt.
+- Der skal være en kendt proces ved mistet telefon og fratrådt medarbejder.
 
 ## Medarbejderrettigheder
 
@@ -48,3 +50,12 @@ Dette er en praktisk intern tjekliste til go-live. Den erstatter ikke juridisk r
 - Test GPS-synlighed for alle, lastbil, varebil og ingen.
 - Test upload af profilbillede og chatbillede.
 - Test dataanmodning, adminrolle, invitation og deaktivering af medarbejder.
+- Test at medarbejdere ikke kan se creator-knapper eller tekniske testknapper.
+
+## Før bred udrulning
+
+- Supabase Security Advisor er gennemgået.
+- Supabase backup er aktiv, og gendannelse er testet mindst én gang.
+- Ledelsen har godkendt privatlivstekst, formål, adgangsregler og slettefrister.
+- Der findes en ansvarlig person for support, adgang, databrud og opdateringer.
+- Appen er testet på mindst to rigtige telefoner, når det er praktisk muligt.

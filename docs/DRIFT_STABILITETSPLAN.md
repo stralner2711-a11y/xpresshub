@@ -1,4 +1,4 @@
-# XpressIntra drifts- og stabilitetsplan
+﻿# XpressIntra drifts- og stabilitetsplan
 
 Dato: 2026-06-04  
 Status: Arbejdsplan til stabil intern drift

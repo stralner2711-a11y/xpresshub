@@ -1,4 +1,4 @@
--- XpressIntra fuld Supabase-opsaetning
+﻿-- XpressIntra fuld Supabase-opsaetning
 -- Brug denne i ET Supabase SQL-vindue.
 --
 -- Saadan bruges den:
@@ -58,12 +58,14 @@ $$;
 
 drop function if exists public.handle_new_user() cascade;
 drop function if exists public.start_direct_conversation(uuid) cascade;
+drop function if exists public.can_access_conversation(uuid) cascade;
 drop function if exists public.can_read_conversation(uuid) cascade;
 drop function if exists public.is_conversation_member(uuid) cascade;
 drop function if exists public.protect_profile_security_fields() cascade;
 drop function if exists public.purge_expired_operational_data() cascade;
 drop function if exists public.is_dispatcher_or_admin() cascade;
 drop function if exists public.is_admin() cascade;
+drop schema if exists private cascade;
 
 drop table if exists public.notification_preferences cascade;
 drop table if exists public.notifications cascade;
@@ -100,6 +102,9 @@ drop table if exists public.profiles cascade;
 -- Run this in the Supabase SQL editor after creating a project.
 
 create extension if not exists "pgcrypto";
+
+create schema if not exists private;
+grant usage on schema private to authenticated, service_role;
 
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values ('xpressintra-media', 'xpressintra-media', false, 10485760, array['image/jpeg', 'image/png', 'image/webp', 'image/gif'])
@@ -490,7 +495,7 @@ alter table public.vehicles enable row level security;
 alter table public.notifications enable row level security;
 alter table public.notification_preferences enable row level security;
 
-create or replace function public.is_admin()
+create or replace function private.is_admin()
 returns boolean
 language sql
 security definer
@@ -503,7 +508,7 @@ as $$
   );
 $$;
 
-create or replace function public.is_dispatcher_or_admin()
+create or replace function private.is_dispatcher_or_admin()
 returns boolean
 language sql
 security definer
@@ -523,7 +528,7 @@ security definer
 set search_path = public
 as $$
 begin
-  if auth.uid() = old.id and not public.is_admin() then
+  if auth.uid() = old.id and not private.is_admin() then
     new.department := old.department;
     new.license_summary := old.license_summary;
     new.role := old.role;
@@ -578,7 +583,7 @@ create trigger protect_profile_security_fields
   before update on public.profiles
   for each row execute procedure public.protect_profile_security_fields();
 
-create or replace function public.is_conversation_member(target_conversation uuid)
+create or replace function private.is_conversation_member(target_conversation uuid)
 returns boolean
 language sql
 security definer
@@ -591,7 +596,7 @@ as $$
   );
 $$;
 
-create or replace function public.can_read_conversation(target_conversation uuid)
+create or replace function private.can_read_conversation(target_conversation uuid)
 returns boolean
 language sql
 security definer
@@ -607,7 +612,7 @@ as $$
         c.channel_type = 'all'
         or (c.channel_type = 'van' and (p.vehicle_type = 'van' or p.role ilike '%varebil%'))
         or (c.channel_type = 'truck' and (p.vehicle_type = 'truck' or p.role ilike '%lastbil%' or p.license_summary ilike '%C/E%'))
-        or (c.channel_type = 'direct' and public.is_conversation_member(c.id))
+        or (c.channel_type = 'direct' and private.is_conversation_member(c.id))
       )
   );
 $$;
@@ -735,49 +740,49 @@ on public.profiles for select to authenticated using (true);
 create policy "employees can update own profile"
 on public.profiles for update to authenticated using (id = auth.uid()) with check (id = auth.uid());
 create policy "admins can update employee profiles"
-on public.profiles for update to authenticated using (public.is_admin()) with check (public.is_admin());
+on public.profiles for update to authenticated using (private.is_admin()) with check (private.is_admin());
 create policy "employees can read own private profile details"
 on public.profile_private_details for select to authenticated using (
-  user_id = auth.uid() or public.is_dispatcher_or_admin()
+  user_id = auth.uid() or private.is_dispatcher_or_admin()
 );
 create policy "employees can manage own private profile details"
 on public.profile_private_details for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
 create policy "admins can manage private profile details"
-on public.profile_private_details for all to authenticated using (public.is_admin()) with check (public.is_admin());
+on public.profile_private_details for all to authenticated using (private.is_admin()) with check (private.is_admin());
 create policy "admins can read audit log"
-on public.admin_audit_log for select to authenticated using (public.is_admin());
+on public.admin_audit_log for select to authenticated using (private.is_admin());
 create policy "admins can create audit log"
-on public.admin_audit_log for insert to authenticated with check (actor_id = auth.uid() and public.is_admin());
+on public.admin_audit_log for insert to authenticated with check (actor_id = auth.uid() and private.is_admin());
 create policy "admins can manage employee invitations"
-on public.employee_invitations for all to authenticated using (public.is_admin()) with check (created_by = auth.uid() and public.is_admin());
+on public.employee_invitations for all to authenticated using (private.is_admin()) with check (created_by = auth.uid() and private.is_admin());
 create policy "employees can read core settings"
 on public.core_settings for select to authenticated using (true);
 create policy "admins can manage core settings"
-on public.core_settings for all to authenticated using (public.is_admin()) with check (public.is_admin());
+on public.core_settings for all to authenticated using (private.is_admin()) with check (private.is_admin());
 create policy "employees can read own legal acceptances"
-on public.legal_acceptances for select to authenticated using (user_id = auth.uid() or public.is_admin());
+on public.legal_acceptances for select to authenticated using (user_id = auth.uid() or private.is_admin());
 create policy "employees can accept legal policies"
 on public.legal_acceptances for insert to authenticated with check (user_id = auth.uid());
 create policy "employees can read retention policies"
 on public.retention_policies for select to authenticated using (true);
 create policy "admins can manage retention policies"
-on public.retention_policies for all to authenticated using (public.is_admin()) with check (public.is_admin());
+on public.retention_policies for all to authenticated using (private.is_admin()) with check (private.is_admin());
 create policy "employees can read own data requests"
-on public.data_subject_requests for select to authenticated using (user_id = auth.uid() or public.is_admin());
+on public.data_subject_requests for select to authenticated using (user_id = auth.uid() or private.is_admin());
 create policy "employees can create own data requests"
 on public.data_subject_requests for insert to authenticated with check (user_id = auth.uid());
 create policy "admins can handle data requests"
-on public.data_subject_requests for update to authenticated using (public.is_admin()) with check (public.is_admin());
+on public.data_subject_requests for update to authenticated using (private.is_admin()) with check (private.is_admin());
 create policy "employees can read vehicles"
 on public.vehicles for select to authenticated using (true);
 create policy "admins can manage vehicles"
-on public.vehicles for all to authenticated using (public.is_admin()) with check (public.is_admin());
+on public.vehicles for all to authenticated using (private.is_admin()) with check (private.is_admin());
 create policy "employees can read own notifications"
 on public.notifications for select to authenticated using (user_id = auth.uid());
 create policy "employees can update own notifications"
 on public.notifications for update to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
 create policy "system roles can create notifications"
-on public.notifications for insert to authenticated with check (user_id = auth.uid() or public.is_dispatcher_or_admin());
+on public.notifications for insert to authenticated with check (user_id = auth.uid() or private.is_dispatcher_or_admin());
 
 create policy "employees can read own notification preferences"
 on public.notification_preferences for select to authenticated using (user_id = auth.uid());
@@ -793,7 +798,7 @@ declare
   deleted_locations integer := 0;
   deleted_pickups integer := 0;
 begin
-  if not public.is_admin() then
+  if not private.is_admin() then
     raise exception 'not_allowed';
   end if;
 
@@ -848,17 +853,17 @@ on public.location_shares for insert to authenticated with check (user_id = auth
 create policy "employees can update own location"
 on public.location_shares for update to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
 create policy "employees can stop sharing own location"
-on public.location_shares for delete to authenticated using (user_id = auth.uid() or public.is_admin());
+on public.location_shares for delete to authenticated using (user_id = auth.uid() or private.is_admin());
 
 create policy "employees can read own workday sessions"
-on public.workday_sessions for select to authenticated using (user_id = auth.uid() or public.is_dispatcher_or_admin());
+on public.workday_sessions for select to authenticated using (user_id = auth.uid() or private.is_dispatcher_or_admin());
 create policy "employees can start own workday sessions"
 on public.workday_sessions for insert to authenticated with check (user_id = auth.uid());
 create policy "employees can end own workday sessions"
 on public.workday_sessions for update to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
 
 create policy "admins can deactivate employee profiles"
-on public.profiles for update to authenticated using (public.is_admin()) with check (public.is_admin());
+on public.profiles for update to authenticated using (private.is_admin()) with check (private.is_admin());
 
 create policy "pickup participants can read tasks"
 on public.pickup_tasks for select to authenticated using (driver_id = auth.uid() or colleague_id = auth.uid());
@@ -870,17 +875,17 @@ using (driver_id = auth.uid() or colleague_id = auth.uid())
 with check (driver_id = auth.uid() or colleague_id = auth.uid());
 create policy "admins can delete expired pickup tasks"
 on public.pickup_tasks for delete to authenticated
-using (public.is_admin() and expires_at is not null and expires_at < now());
+using (private.is_admin() and expires_at is not null and expires_at < now());
 
 create policy "members can read conversations"
-on public.conversations for select to authenticated using (public.can_read_conversation(id));
+on public.conversations for select to authenticated using (private.can_read_conversation(id));
 create policy "members can read conversation membership"
-on public.conversation_members for select to authenticated using (public.is_conversation_member(conversation_id));
+on public.conversation_members for select to authenticated using (private.is_conversation_member(conversation_id));
 create policy "members can read messages"
-on public.messages for select to authenticated using (public.can_read_conversation(conversation_id));
+on public.messages for select to authenticated using (private.can_read_conversation(conversation_id));
 create policy "members can send messages"
 on public.messages for insert to authenticated with check (
-  sender_id = auth.uid() and public.can_read_conversation(conversation_id)
+  sender_id = auth.uid() and private.can_read_conversation(conversation_id)
 );
 
 create policy "employees can read visible media"
@@ -891,7 +896,7 @@ on public.media_attachments for select to authenticated using (
     and exists (
       select 1 from public.messages
       where messages.id = media_attachments.message_id
-        and public.can_read_conversation(messages.conversation_id)
+        and private.can_read_conversation(messages.conversation_id)
     )
   )
   or (
@@ -929,7 +934,7 @@ on storage.objects for select to authenticated using (
           and exists (
             select 1 from public.messages
             where messages.id = media_attachments.message_id
-              and public.can_read_conversation(messages.conversation_id)
+              and private.can_read_conversation(messages.conversation_id)
           )
         )
       )
@@ -1013,6 +1018,8 @@ grant select, insert, update, delete on all tables in schema public to authentic
 grant usage, select on all sequences in schema public to authenticated;
 alter default privileges in schema public grant select, insert, update, delete on tables to authenticated;
 alter default privileges in schema public grant usage, select on sequences to authenticated;
+revoke execute on all functions in schema private from public, anon;
+grant execute on all functions in schema private to authenticated, service_role;
 grant execute on function public.start_direct_conversation(uuid) to authenticated;
 grant execute on function public.purge_expired_operational_data() to authenticated;
 

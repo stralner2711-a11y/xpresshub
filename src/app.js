@@ -1,4 +1,4 @@
-const icons = {
+﻿const icons = {
   home: '<svg viewBox="0 0 24 24"><path d="m4 11 8-7 8 7v8a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z"/></svg>',
   users: '<svg viewBox="0 0 24 24"><path d="M16 20a4 4 0 0 0-8 0"/><circle cx="12" cy="9" r="3"/><path d="M19 20a3 3 0 0 0-2-2.83M17 6.13a3 3 0 0 1 0 5.74M5 20a3 3 0 0 1 2-2.83M7 6.13a3 3 0 0 0 0 5.74"/></svg>',
   map: '<svg viewBox="0 0 24 24"><path d="m9 18-6 3V6l6-3 6 3 6-3v15l-6 3z"/><path d="M9 3v15m6-12v15"/></svg>',
@@ -26,9 +26,9 @@ const icons = {
   search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>',
 };
 
-const APP_VERSION = '1.3.1-release-v62';
-const APP_DISPLAY_VERSION = '1.3.1';
-const APP_VERSION_CODE = 14;
+const APP_VERSION = '1.3.3-release-v64';
+const APP_DISPLAY_VERSION = '1.3.3';
+const APP_VERSION_CODE = 16;
 const IMAGE_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
 const PROFILE_PHOTO_MAX_DIMENSION = 512;
 const PROFILE_PHOTO_QUALITY = 0.84;
@@ -196,7 +196,7 @@ const infoChecklists = [
   { title: 'Ved levering', items: ['Parker sikkert', 'Tjek gods', 'Tag billede ved afvigelse', 'Meld status'] },
 ];
 
-const emojiChoices = ['👍', '😂', '🚚', '📦', '☕', '✅', '🙏', '⚠️'];
+const emojiChoices = ['ðŸ‘', 'ðŸ˜‚', 'ðŸšš', 'ðŸ“¦', 'â˜•', 'âœ…', 'ðŸ™', 'âš ï¸'];
 
 const infoSections = [
   { id: 'operations', icon: 'alert', title: 'Akut & drift', subtitle: 'Kontakter, terminal og hjælp til alle' },
@@ -2568,7 +2568,7 @@ function adminDashboardAlerts(stats = adminDashboardStats()) {
     alerts.push({
       tone: activePickup.status === 'blocked' ? 'urgent' : 'task',
       title: `Afhentning: ${pickupStatusLabel(activePickup.status)}`,
-      body: `${helper?.name || 'Kollega'} · ${activePickup.pickupPlace || 'sted mangler'} → ${activePickup.dropoffPlace || 'aflevering mangler'}`,
+      body: `${helper?.name || 'Kollega'} · ${activePickup.pickupPlace || 'sted mangler'} â†’ ${activePickup.dropoffPlace || 'aflevering mangler'}`,
       action: 'open-pickup',
     });
   }
@@ -2734,7 +2734,7 @@ function renderGdprGoLivePanel({ compact = false } = {}) {
       <p>${readiness.done}/${readiness.total} punkter markeret klar. Juridisk godkendelse skal stadig ske i virksomheden.</p>
     </div>
     <div class="gdpr-check-grid">
-      ${readiness.items.map(item => `<span class="${item.done ? 'done' : 'todo'}"><b>${item.done ? '✓' : '○'} ${text(item.title)}</b><small>${text(item.body)}</small></span>`).join('')}
+      ${readiness.items.map(item => `<span class="${item.done ? 'done' : 'todo'}"><b>${item.done ? 'âœ“' : 'â—‹'} ${text(item.title)}</b><small>${text(item.body)}</small></span>`).join('')}
     </div>
   </section>`;
 }
@@ -3854,7 +3854,7 @@ function renderPickupCard() {
       <span><b>Reference</b><small>${text(activePickup.reference || 'Ingen reference')}</small></span>
       <span><b>Prioritet</b><small>${text(activePickup.priority || 'Normal')}</small></span>
     </div>
-    <div class="pickup-checklist"><b>Tjekliste</b>${checklist.map(item => `<button class="${item.done ? 'done' : ''}" data-pickup-check="${text(item.id)}">${item.done ? '✓' : '○'} ${text(item.label)}</button>`).join('')}</div>
+    <div class="pickup-checklist"><b>Tjekliste</b>${checklist.map(item => `<button class="${item.done ? 'done' : ''}" data-pickup-check="${text(item.id)}">${item.done ? 'âœ“' : 'â—‹'} ${text(item.label)}</button>`).join('')}</div>
     <div class="pickup-live-notes"><b>Live noter</b>
       ${liveNotes.length ? liveNotes.slice(-5).map(step => `<span><strong>${text(step.authorName || 'Kollega')}</strong><small>${new Date(step.at).toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' })}</small>${text(step.note)}</span>`).join('') : '<span>Ingen noter endnu. Begge parter kan skrive korte opdateringer her.</span>'}
       <form class="pickup-note-form"><input name="note" placeholder="Skriv live note..." autocomplete="off" /><button>Send</button></form>
@@ -4198,52 +4198,41 @@ function renderInfo() {
     && searchable(`${item.title} ${item.description} ${item.source} ${item.category}`).includes(query)
   );
   const favoriteLinks = infoLinks.filter(item => infoFavorites.includes(item.id));
+  const isDefaultInfo = !query && activeInfoCategory === 'all';
+  const visibleLinks = isDefaultInfo ? [] : filteredLinks;
+  const resultTitle = activeInfoCategory === 'favorites' ? 'Dine favoritter'
+    : activeInfoCategory === 'all' ? 'Søgeresultater'
+      : infoSections.find(section => section.id === activeInfoCategory)?.title || 'Resultater';
   return `
     <div class="page-heading"><div><p class="eyebrow">Værktøjskasse</p><h2>Information</h2></div><button class="round-btn" data-action="open-info" data-info="operations" aria-label="Åbn kontakter">${icon('phone')}</button></div>
-    <section class="screen-guide info-screen-guide"><b>Start her</b><span>Vælg en stor knap, ring direkte til drift eller søg med få ord. De lange regler ligger længere nede.</span></section>
     <section class="info-hero surface-card">
-      <p class="section-kicker">Nød og drift</p>
-      <h3>Hvad har du brug for?</h3>
-      <p>De vigtigste ting ligger først. Tryk på en stor knap, og brug søgning hvis du leder efter noget bestemt.</p>
+      <p class="section-kicker">Hurtig hjælp</p>
+      <h3>Ring eller find svar</h3>
+      <p>Hold det enkelt: ring til drift, find en kollega eller søg efter det du mangler.</p>
       <div><a href="tel:+4540553131">Budkørsel <b>40 55 31 31</b></a><a href="tel:+4540873131">Lastbil <b>40 87 31 31</b></a></div>
     </section>
-    <section class="info-simple-actions screen-section" aria-label="Hurtige informationsvalg">
+    <section class="info-simple-actions calm screen-section" aria-label="Hurtige informationsvalg">
       <a class="primary" href="tel:+4540553131">${icon('phone')}<span><b>Ring til drift</b><small>Akut hjælp, forsinkelse eller tvivl</small></span></a>
       <button type="button" data-action="open-contact-list">${icon('users')}<span><b>Kontaktliste</b><small>Kollegaer, kontor og telefonnumre</small></span></button>
-      <button type="button" data-info-category="documents">${icon('document')}<span><b>Dokumenter</b><small>CMR, vilkår og links</small></span></button>
-      <button type="button" data-info-category="rules">${icon('info')}<span><b>Regler</b><small>Køre/hviletid, afgift og miljøzoner</small></span></button>
-    </section>
-    <section class="contact-quick-card screen-section">
-      <div class="screen-section-head"><span>Vigtige kontakter</span><small>Tryk Ring for direkte opkald</small><button type="button" data-action="open-contact-list">Se alle</button></div>
-      ${renderContactDirectory({ limit: 3, compact: true })}
     </section>
     <label class="search-box info-search simple"><input data-info-search placeholder="Søg efter fx CMR, miljøzone eller hviletid..." value="${text(infoQuery)}" /><span>${filteredLinks.length} fundet</span></label>
-    <section class="info-focus-grid screen-section" aria-label="Information genveje">
+    <section class="info-topic-list screen-section" aria-label="Vælg informationsemne">
+      <div class="screen-section-head"><span>Vælg emne</span><small>Store knapper, et valg ad gangen</small></div>
       ${infoSections.map(section => `<button class="${activeInfoCategory === section.id ? 'active' : ''}" data-info-category="${section.id}">
-        <span>${icon(section.icon)}</span><b>${text(section.title)}</b><small>${text(section.subtitle)}</small>
+        <span>${icon(section.icon)}</span><b>${text(section.title)}</b><small>${text(section.subtitle)}</small>${icon('arrow', 'row-arrow')}
       </button>`).join('')}
     </section>
-    <section class="info-tabs">
-      <button class="${activeInfoCategory === 'all' ? 'active' : ''}" data-info-category="all">Alle</button>
-      <button class="${activeInfoCategory === 'favorites' ? 'active' : ''}" data-info-category="favorites">Favoritter</button>
-      ${infoSections.map(section => `<button class="${activeInfoCategory === section.id ? 'active' : ''}" data-info-category="${section.id}">${text(section.title)}</button>`).join('')}
-    </section>
-    <section class="info-alert">
-      <b>Varebil: ny regel fra 1. juli 2026</b>
-      <span>International godskørsel med varebiler over 2,5 ton får krav om takograf samt køre- og hviletid i relevante tilfælde.</span>
-      <a href="https://www.fstyr.dk/nyheder/2026/mar/varebiler-bliver-en-del-af-koere-og-hviletidskontrollen" target="_blank" rel="noreferrer">Åbn officiel kilde</a>
-    </section>
-    <div class="screen-section-head info-results-head"><span>${activeInfoCategory === 'all' ? 'Alle opslag' : activeInfoCategory === 'favorites' ? 'Dine favoritter' : infoSections.find(section => section.id === activeInfoCategory)?.title || 'Opslag'}</span><small>${filteredLinks.length} resultater</small></div>
-    <section class="info-card-list">${filteredLinks.length ? filteredLinks.map(item => `
+    ${isDefaultInfo ? '' : `<div class="screen-section-head info-results-head"><span>${text(resultTitle)}</span><small>${visibleLinks.length} resultater</small><button type="button" data-info-category="all">Ryd</button></div>
+    <section class="info-card-list">${visibleLinks.length ? visibleLinks.map(item => `
       <article class="info-card-link ${item.href ? '' : 'no-link'}">
         <span class="utility-icon">${icon(item.icon)}</span>
         <span><em>${text(item.source)}</em><b>${text(item.title)}</b><small>${text(item.description)}</small></span>
-        <button type="button" class="favorite-info-btn ${infoFavorites.includes(item.id) ? 'active' : ''}" data-info-favorite="${text(item.id)}">${infoFavorites.includes(item.id) ? '★' : '☆'}</button>
+        <button type="button" class="favorite-info-btn ${infoFavorites.includes(item.id) ? 'active' : ''}" data-info-favorite="${text(item.id)}">${infoFavorites.includes(item.id) ? 'â˜…' : 'â˜†'}</button>
         ${item.href ? `<a class="open-info-link" href="${text(item.href)}" target="${item.href.startsWith('http') ? '_blank' : '_self'}" rel="noreferrer">Åbn</a>` : '<strong>Info</strong>'}
       </article>` ).join('') : '<p class="empty-state">Ingen information matcher din søgning.</p>'}
-    </section>
+    </section>`}
     <details class="info-more-section">
-      <summary>Flere værktøjer og guides</summary>
+      <summary>Flere guides og favoritter</summary>
       <section class="fast-answer-panel screen-section">
         <div><span>Hurtige svar</span><small>20 sekunder</small><button data-action="open-rule-updates">Regelnyt</button></div>
         ${fastAnswers.map(answer => `<article><b>${text(answer.title)}</b><small>${text(answer.audience)}</small><p>${text(answer.body)}</p></article>`).join('')}
@@ -4408,7 +4397,7 @@ function openEmployeeInviteResultModal(employee, invitationId = '') {
     <h3>${text(employee.name)} kan registrere sig</h3>
     <section class="invite-help">
       <b>Send dette til kollegaen</b>
-      <span>Kollegaen skal bruge mailen <strong>${text(employee.email || 'mangler mail')}</strong> og trykke “Opret konto via invitation” på login-siden.</span>
+      <span>Kollegaen skal bruge mailen <strong>${text(employee.email || 'mangler mail')}</strong> og trykke "Opret konto via invitation" på login-siden.</span>
     </section>
     <label>Invitationslink<input readonly value="${text(link)}" /></label>
     <div class="invite-actions">
@@ -4685,7 +4674,7 @@ async function openSupabaseDiagnosticsModal() {
   const list = modal.querySelector('.diagnostic-list');
   try {
     const checks = await runSupabaseDiagnostics();
-    list.innerHTML = checks.map(check => `<article class="${check.ok ? 'ok' : 'fail'}"><b>${check.ok ? '✓' : '!' } ${text(check.name)}</b><small>${text(check.detail)}</small></article>`).join('');
+    list.innerHTML = checks.map(check => `<article class="${check.ok ? 'ok' : 'fail'}"><b>${check.ok ? 'âœ“' : '!' } ${text(check.name)}</b><small>${text(check.detail)}</small></article>`).join('');
   } catch (error) {
     list.innerHTML = `<article class="fail"><b>! Test fejlede</b><small>${text(error.message)}</small></article>`;
   }
@@ -4976,7 +4965,7 @@ function openLaunchChecklistModal() {
     </section>
     <div class="launch-checklist">
       ${readiness.items.map(item => `<article class="${item.done ? 'done' : ''}">
-        <b>${item.done ? '✓' : '○'} ${text(item.title)}</b>
+        <b>${item.done ? 'âœ“' : 'â—‹'} ${text(item.title)}</b>
         <small>${text(item.body)}</small>
       </article>`).join('')}
     </div>
@@ -5060,7 +5049,7 @@ function openSecurityCenterModal() {
     </section>
     <section class="security-check-list">
       ${readiness.items.map(item => `<article class="${item.done ? 'done' : 'todo'}">
-        <b>${item.done ? '✓' : '•'} ${text(item.title)}</b>
+        <b>${item.done ? 'âœ“' : 'â€¢'} ${text(item.title)}</b>
         <small>${text(item.body)}</small>
       </article>`).join('')}
     </section>

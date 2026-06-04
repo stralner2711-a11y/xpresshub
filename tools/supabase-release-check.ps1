@@ -98,10 +98,21 @@ if ($schema -notmatch 'create policy') { Fail "schema.sql mangler RLS policies" 
 if ($schema -notmatch 'xpressintra-media') { Fail "schema.sql mangler Storage bucket/policies for xpressintra-media" }
 if ($fullSetup -notmatch 'xpressintra-media') { Fail "RUN_THIS_FROM_SCRATCH_IN_SUPABASE.sql mangler xpressintra-media" }
 if ($fullSetup -notmatch '00000000-0000-4000-8000-000000000001') { Fail "Supabase full setup mangler standard faelleschat" }
+if ($schema -notmatch 'create schema if not exists private') { Fail "schema.sql mangler private schema til interne RLS-hjaelpefunktioner" }
+if ($schema -notmatch 'function private\.is_admin\(\)' -or $schema -notmatch 'function private\.can_read_conversation') {
+  Fail "schema.sql skal bruge private RLS-hjaelpefunktioner"
+}
+if ($schema -match 'function public\.(is_admin|is_dispatcher_or_admin|is_conversation_member|can_read_conversation|can_access_conversation)') {
+  Fail "schema.sql maa ikke oprette offentlige RLS-hjaelpefunktioner"
+}
+if ($fullSetup -notmatch 'drop schema if exists private cascade' -or $fullSetup -notmatch 'function private\.is_admin\(\)') {
+  Fail "Fuld Supabase SQL mangler reset/oprettelse af private RLS-hjaelpefunktioner"
+}
 
 Pass "Supabase config peger paa $supabaseUrl"
 Pass "Kun offentlig publishable/anon key bruges i app-config.js"
 Pass "Supabase SQL, RLS, Storage og standardchat er med i pakken"
+Pass "Interne RLS-hjaelpefunktioner ligger i private schema, ikke som public RPC"
 Pass "Login-sikkerhed tjekket: ingen gemte adgangskoder og ingen hemmelige noegler i appen"
 
 if ($env:XPRESSINTRA_SUPABASE_ONLINE_CHECK -eq '1') {
