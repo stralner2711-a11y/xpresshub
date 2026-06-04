@@ -12,7 +12,7 @@ XpressIntra
 
 ## Version
 
-`1.3.12` / build `25`
+`1.3.14` / build `27`
 
 ## Review notes
 
@@ -42,6 +42,8 @@ Udfyld fÃ¸r upload:
 - Identifiers: Supabase Auth-bruger og interne profil-id'er.
 - Usage Data: kun det der faktisk gemmes om opgaver, arbejdsdag og appbrug.
 - Diagnostics: kun hvis der senere tilfÃ¸jes egentlig crash/diagnostiksporing.
+
+
 
 
 

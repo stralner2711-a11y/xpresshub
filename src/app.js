@@ -26,9 +26,9 @@
   search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>',
 };
 
-const APP_VERSION = '1.3.12-release-v73';
-const APP_DISPLAY_VERSION = '1.3.12';
-const APP_VERSION_CODE = 25;
+const APP_VERSION = '1.3.14-release-v75';
+const APP_DISPLAY_VERSION = '1.3.14';
+const APP_VERSION_CODE = 27;
 const TEMPORARY_EMPLOYEE_PASSWORD = 'xpress';
 const IMAGE_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
 const PROFILE_PHOTO_MAX_DIMENSION = 512;
@@ -38,6 +38,7 @@ const UPDATE_CONFIG_KEY = 'appUpdateState';
 const defaultUpdateConfig = {
   versionUrl: 'https://stralner2711-a11y.github.io/xpresshub/version.json',
   officialRepo: 'https://github.com/stralner2711-a11y/xpresshub',
+  appUrl: 'https://xpresshub-seven.vercel.app/',
   allowLocalVersionFallback: false,
 };
 const appUpdateConfig = { ...defaultUpdateConfig, ...(window.XPRESSINTRA_UPDATE || {}) };
@@ -1269,7 +1270,7 @@ function markCurrentVersionSuspect() {
   const fallbackInfo = {
     activeVersion: APP_DISPLAY_VERSION,
     activeVersionCode: APP_VERSION_CODE,
-    apkDownloadUrl: 'https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.12/xpressintra.apk',
+    apkDownloadUrl: 'https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.14/xpressintra.apk',
   };
   const info = appUpdateState.latest || normalizeVersionInfo(fallbackInfo);
   const defective = new Set([...(info.defectiveVersions || []).map(String), APP_DISPLAY_VERSION, String(APP_VERSION_CODE)]);
@@ -1415,11 +1416,35 @@ function handleLocationShareSchemaError(error) {
   return true;
 }
 
+function officialAppUrl() {
+  const configured = String(appUpdateConfig.appUrl || '').trim();
+  try {
+    const url = new URL(configured || defaultUpdateConfig.appUrl);
+    url.search = '';
+    url.hash = '';
+    return url.toString();
+  } catch {
+    return defaultUpdateConfig.appUrl;
+  }
+}
+
 function inviteLink(employee, invitationId = '') {
-  const url = new URL('https://stralner2711-a11y.github.io/xpresshub/');
-  url.searchParams.set('invite', invitationId || 'lokal');
-  if (employee?.email) url.searchParams.set('email', employee.email);
+  const url = new URL(officialAppUrl());
+  const email = normalizeEmployeeEmail(employee?.email || employee?.invitationEmail || '');
+  url.searchParams.set('invite', String(invitationId || employee?.invitationId || localInvitationId()).trim());
+  if (email) url.searchParams.set('email', email);
   return url.toString();
+}
+
+function inviteMessage(employee, invitationId = '') {
+  const invitationUrl = inviteLink(employee, invitationId || employee?.invitationId || '');
+  const downloadUrl = employeeDownloadPageUrl();
+  return {
+    subject: 'XpressIntra konto',
+    invitationUrl,
+    downloadUrl,
+    body: `Hej ${employee?.name || ''}\n\nDin XpressIntra-konto er klar.\n\nÅbn dit invitationslink her:\n${invitationUrl}\n\nDownloadside ved behov:\n${downloadUrl}\n\n1. Åbn invitationslinket.\n2. Brug standardkoden ${TEMPORARY_EMPLOYEE_PASSWORD}.\n3. Lav din egen personlige kode med det samme.\n\nHilsen XpressBudet`,
+  };
 }
 
 function loginInviteContext() {
@@ -1440,15 +1465,41 @@ function employeeDownloadPageUrl() {
 }
 
 async function shareEmployeeInvite(employee, invitationId = '') {
-  const subject = `XpressIntra konto`;
-  const downloadUrl = employeeDownloadPageUrl();
-  const invitationUrl = inviteLink(employee, invitationId || employee.invitationId || '');
-  const body = `Hej ${employee.name || ''}\n\nDin XpressIntra-konto er klar.\n\nÅbn dit invitationslink her:\n${invitationUrl}\n\nDownloadside ved behov:\n${downloadUrl}\n\n1. Åbn invitationslinket.\n2. Brug standardkoden ${TEMPORARY_EMPLOYEE_PASSWORD}.\n3. Lav din egen personlige kode med det samme.\n\nHilsen XpressBudet`;
+  const { subject, body } = inviteMessage(employee, invitationId || employee.invitationId || '');
   if (navigator.share) {
     await navigator.share({ title: subject, text: body });
     return;
   }
   window.location.href = `mailto:${encodeURIComponent(employee.email || '')}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+
+async function copyTextToClipboard(value, successMessage = 'Kopieret') {
+  const textValue = String(value || '').trim();
+  if (!textValue) {
+    showToast('Der er ikke noget at kopiere');
+    return false;
+  }
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(textValue);
+      showToast(successMessage);
+      return true;
+    }
+  } catch {}
+  const input = document.createElement('textarea');
+  input.value = textValue;
+  input.setAttribute('readonly', '');
+  input.style.position = 'fixed';
+  input.style.left = '-9999px';
+  document.body.append(input);
+  input.select();
+  let copied = false;
+  try {
+    copied = document.execCommand?.('copy') || false;
+  } catch {}
+  input.remove();
+  showToast(copied ? successMessage : 'Markér teksten og kopiér den manuelt');
+  return copied;
 }
 
 function canAccessChat(chat) {
@@ -4734,28 +4785,32 @@ function openEmployeeInviteResultModal(employee, invitationId = '') {
   const inviteState = employee.invitationStatus === 'online'
     ? 'Online invitation gemt i Supabase'
     : 'Medarbejderen er oprettet lokalt - synkroniser når Supabase er online';
-  const downloadUrl = employeeDownloadPageUrl();
-  const invitationUrl = inviteLink(employee, invitationId || employee.invitationId || '');
+  const invite = inviteMessage(employee, invitationId || employee.invitationId || '');
   const modal = document.createElement('div');
   modal.className = 'modal-backdrop';
   modal.innerHTML = `<section class="profile-modal invite-result-modal">
     <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
-    <p class="eyebrow">Medarbejder oprettet</p>
-    <h3>${text(employee.name)} kan registrere sig</h3>
+    <p class="eyebrow">Invitationsgenerator</p>
+    <h3>${text(employee.name)} kan oprette sig</h3>
     <section class="invite-help">
       <b>${text(inviteState)}</b>
       <span>Kollegaen skal åbne invitationslinket. Standardkode-knappen vises ikke på den almindelige login-side.</span>
-      <span>Invitationslink: <strong>${text(invitationUrl)}</strong></span>
-      <span>Downloadside ved behov: <strong>${text(downloadUrl)}</strong></span>
+      <span>Invitationslink: <strong>${text(invite.invitationUrl)}</strong></span>
+      <span>Downloadside ved behov: <strong>${text(invite.downloadUrl)}</strong></span>
     </section>
-    <label>Besked til kollegaen<input readonly value="${text(`Din XpressIntra-konto er klar. Åbn invitationslinket: ${invitationUrl} Brug standardkoden ${TEMPORARY_EMPLOYEE_PASSWORD}, og lav derefter din egen personlige kode. Downloadside ved behov: ${downloadUrl}`)}" /></label>
+    <label>Link der virker<input readonly value="${text(invite.invitationUrl)}" /></label>
+    <label>Besked til kollegaen<textarea readonly rows="7">${text(invite.body)}</textarea></label>
     <div class="invite-actions">
+      <button type="button" data-action="copy-last-invite-link">Kopiér link</button>
+      <button type="button" data-action="copy-last-invite-message">Kopiér besked</button>
       <button type="button" data-action="share-last-invite">Send/dele besked</button>
       <button type="button" data-action="close-modal">Færdig</button>
     </div>
   </section>`;
   modal.dataset.inviteEmployee = employee.id;
   modal.dataset.inviteId = invitationId;
+  modal.dataset.inviteUrl = invite.invitationUrl;
+  modal.dataset.inviteMessage = invite.body;
   document.body.append(modal);
 }
 
@@ -5991,6 +6046,14 @@ document.addEventListener('click', async event => {
       shareEmployeeInvite(employee, modal?.dataset.inviteId || employee.invitationId || '').catch(error => showToast(`Invitationen kunne ikke deles: ${error.message}`));
     }
   }
+  if (action === 'copy-last-invite-link') {
+    const modal = event.target.closest('.modal-backdrop');
+    await copyTextToClipboard(modal?.dataset.inviteUrl, 'Invitationslink kopieret');
+  }
+  if (action === 'copy-last-invite-message') {
+    const modal = event.target.closest('.modal-backdrop');
+    await copyTextToClipboard(modal?.dataset.inviteMessage, 'Invitationsbesked kopieret');
+  }
   if (action === 'open-info') openInfoModal(event.target.closest('[data-info]')?.dataset.info);
   if (action === 'open-work') { activeTab = 'work'; activeChat = null; render(); }
   if (quickGuideIndex) {
@@ -6160,7 +6223,7 @@ document.addEventListener('submit', async event => {
             return;
           }
           await signInSupabase(data.get('email'), data.get('password'));
-          showToast('Du er logget ind med Supabase');
+          showToast('Du er logget ind på XpressIntra');
         }
       } catch (error) {
         showToast(`Login fejlede: ${error.message}`);
@@ -6490,6 +6553,8 @@ setTimeout(() => {
 }, 900);
 
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js').catch(() => {});
+
+
 
 
 

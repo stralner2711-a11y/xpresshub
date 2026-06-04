@@ -17,6 +17,8 @@ assert(loginBlock.includes('const canUseStandardSignup = Boolean(backend.ready &
 assert(loginBlock.includes('data-action="signup-standard-password"'), 'Login should support standard-password employee signup');
 assert(loginBlock.includes('Standardkode-oprettelse vises kun via link'), 'Public login should explain that standard signup requires an invite link');
 assert(app.includes('openTemporaryPasswordModal'), 'First login should force a personal password modal');
+assert(app.includes("showToast('Du er logget ind på XpressIntra')"), 'Online login toast should use XpressIntra wording');
+assert(!app.includes("showToast('Du er logget ind med Supabase')"), 'Online login toast should not expose Supabase wording to employees');
 assert(app.includes('openStandardSignupPasswordModal'), 'Standard-code signup should open a personal password step before Supabase signup');
 assert(!app.includes("signUpSupabase(data.get('email'), TEMPORARY_EMPLOYEE_PASSWORD)"), 'App must not send xpress to Supabase Auth as a real password');
 assert(app.includes('first_personal_password'), 'Supabase signup metadata should mark when the user already chose a personal password');

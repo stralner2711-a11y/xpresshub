@@ -1,4 +1,4 @@
-﻿const CACHE_NAME = 'xpressintra-v73-employee-delete-restore';
+﻿const CACHE_NAME = 'xpressintra-v75-invite-generator';
 const APP_FILES = [
   './',
   './indep.html',
@@ -67,6 +67,8 @@ self.addEventListener('fetch', event => {
       })
   );
 });
+
+
 
 
 
