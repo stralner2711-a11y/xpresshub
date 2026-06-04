@@ -13,11 +13,23 @@
       img { width: 220px; max-width: 80%; display: block; margin-bottom: 20px; }
       h1 { margin: 0 0 8px; font-size: 34px; letter-spacing: -1px; }
       p { color: var(--muted); line-height: 1.55; }
-      a.button { display: block; margin: 20px 0 14px; padding: 15px 18px; border-radius: 14px; background: var(--amber); color: #35250e; font-weight: 800; text-align: center; text-decoration: none; }
-      section { display: grid; gap: 9px; margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--line); }
-      span { display: block; padding: 11px; border-radius: 10px; background: rgba(255,255,255,.06); color: var(--muted); font-size: 14px; line-height: 1.4; }
+      a.button { display: block; margin: 20px 0 14px; padding: 16px 18px; border-radius: 14px; background: var(--amber); color: #35250e; font-weight: 800; text-align: center; text-decoration: none; }
+      section, details { margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--line); }
+      .steps { display: grid; gap: 9px; }
+      .steps span, .help-card { display: block; padding: 12px; border-radius: 12px; background: rgba(255,255,255,.06); color: var(--muted); font-size: 14px; line-height: 1.45; }
       b { color: var(--cream); }
-      small { display: block; margin-top: 18px; color: var(--green); line-height: 1.4; }
+      details { border-radius: 16px; }
+      summary { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 13px 14px; border-radius: 14px; background: rgba(244,166,65,.14); color: var(--cream); font-weight: 800; cursor: pointer; list-style: none; }
+      summary::-webkit-details-marker { display: none; }
+      summary::after { content: "+"; display: grid; width: 28px; height: 28px; place-items: center; border-radius: 50%; background: var(--amber); color: #35250e; font-size: 20px; }
+      details[open] summary::after { content: "-"; }
+      .help-grid { display: grid; gap: 10px; margin-top: 12px; }
+      .help-card { display: grid; grid-template-columns: 38px 1fr; gap: 4px 12px; background: rgba(255,255,255,.08); }
+      .help-card b { grid-row: span 2; display: grid; width: 38px; height: 38px; place-items: center; border-radius: 50%; background: var(--amber); color: #35250e; font-size: 16px; }
+      .help-card strong { color: var(--cream); font-size: 16px; line-height: 1.2; }
+      .help-card small { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.45; }
+      .safe-note { margin-top: 14px; padding: 12px; border-left: 3px solid var(--green); border-radius: 12px; background: rgba(117,182,154,.12); color: var(--muted); font-size: 13px; line-height: 1.45; }
+      small.footer { display: block; margin-top: 18px; color: var(--green); line-height: 1.4; }
     </style>
   </head>
   <body>
@@ -26,13 +38,21 @@
       <h1>XpressIntra</h1>
       <p>Intern medarbejderapp til XpressBudet. Download kun appen fra firmaets officielle link.</p>
       <a class="button" href="https://github.com/stralner2711-a11y/xpresshub/releases">Download XpressIntra</a>
-      <section>
+      <section class="steps" aria-label="Kort installationsguide">
         <span><b>1.</b> Åbn linket på din Android-telefon.</span>
         <span><b>2.</b> Download APK-filen.</span>
-        <span><b>3.</b> Tillad installation fra ukendte kilder, hvis Android spørger.</span>
-        <span><b>4.</b> Installer appen og log ind med dine oplysninger.</span>
+        <span><b>3.</b> Installer appen og log ind med dine oplysninger.</span>
       </section>
-      <small>Officiel download styres via GitHub Releases for XpressIntra.</small>
+      <details>
+        <summary>Google Play Protect eller ukendte kilder?</summary>
+        <div class="help-grid">
+          <span class="help-card"><b>1</b><strong>Det er normalt</strong><small>Android viser ekstra sikkerhedsbokse, fordi XpressIntra installeres internt og ikke via Play Butik.</small></span>
+          <span class="help-card"><b>2</b><strong>Tillad installation fra ukendte kilder</strong><small>Hvis telefonen spørger, vælg indstillinger og tillad installation fra XpressIntra eller den browser du bruger.</small></span>
+          <span class="help-card"><b>3</b><strong>Tryk installer</strong><small>Når tilladelsen er givet, går du tilbage og trykker installer. Appen husker normalt tilladelsen til næste gang på samme telefon.</small></span>
+        </div>
+        <p class="safe-note">Er du i tvivl, så brug kun firmaets officielle downloadlink og spørg en kollega eller Tommy før du installerer.</p>
+      </details>
+      <small class="footer">Officiel download styres via GitHub Releases for XpressIntra.</small>
     </main>
   </body>
 </html>

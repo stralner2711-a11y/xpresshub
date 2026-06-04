@@ -1175,7 +1175,15 @@ function openAppUpdateModal(info = appUpdateState.latest, options = {}) {
       <ul>${changelog}</ul>
     </section>
     ${isPlaceholderUpdateConfig() ? '<p class="update-warning">Creator: GitHub-placeholderen skal skiftes til det rigtige repository, før medarbejdere bruger opdateringslinket.</p>' : ''}
-    <p class="update-helper"><b>Sådan virker det:</b> XpressIntra henter opdateringen og åbner Androids almindelige installationsvindue. Første gang skal du muligvis tillade installation fra XpressIntra.</p>
+    <p class="update-helper"><b>Sådan virker det:</b> XpressIntra henter opdateringen og åbner Androids almindelige installationsvindue.</p>
+    <details class="install-help">
+      <summary>Hjælp til Google Play Protect og installation</summary>
+      <div>
+        <span><b>1</b><strong>Tryk fortsæt eller installer</strong><small>Android kan vise en sikkerhedsboks, fordi appen er en intern APK og ikke fra Play Butik.</small></span>
+        <span><b>2</b><strong>Tillad XpressIntra første gang</strong><small>Hvis telefonen spørger om ukendte apps, vælg indstillinger og tillad installation fra XpressIntra.</small></span>
+        <span><b>3</b><strong>Åbn appen igen</strong><small>Når installationen er færdig, åbner du XpressIntra og logger ind som normalt.</small></span>
+      </div>
+    </details>
     <div class="update-actions">
       <button type="button" data-action="install-update">${actionLabel}</button>
       ${force ? '' : '<button type="button" class="secondary" data-action="dismiss-update">Senere</button>'}
