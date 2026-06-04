@@ -112,26 +112,31 @@ assert(harness.appElement.innerHTML.includes('Rigtigt kort'), 'Map should explai
 assert(harness.appElement.innerHTML.includes('Synlige kollegaer'), 'Map should label visible colleagues');
 
 harness.run("activeTab = 'info'; render();");
-assert(harness.appElement.innerHTML.includes('Ring eller find svar'), 'Info should start with a simple calm choice');
-assert(harness.appElement.innerHTML.includes('info-simple-actions'), 'Info should have large simple action buttons');
-assert(harness.appElement.innerHTML.includes('Ring til drift'), 'Info should make the primary phone action obvious');
-assert(harness.appElement.innerHTML.includes('Vælg emne'), 'Info should show a simple topic menu');
+assert(harness.appElement.innerHTML.includes('Hjælpecentral'), 'Info should feel like a dedicated help center');
+assert(harness.appElement.innerHTML.includes('info-command-card'), 'Info should start with a clear command card');
+assert(harness.appElement.innerHTML.includes('info-emergency-strip'), 'Info should put urgent phone actions first');
+assert(harness.appElement.innerHTML.includes('info-choice-grid'), 'Info should use large choice cards');
+assert(harness.appElement.innerHTML.includes('Akut og drift'), 'Info should make operations help obvious');
 assert(harness.appElement.innerHTML.includes('Kontaktliste'), 'Info should include a practical contact list');
 assert(harness.appElement.innerHTML.includes('open-contact-list'), 'Info should include a button to open the full contact list');
 assert(harness.appElement.innerHTML.includes('tel:+4540553131'), 'Info contact list should include direct call links');
-assert(harness.appElement.innerHTML.includes('Hurtige svar'), 'Info should label fast answers clearly');
+assert(harness.appElement.innerHTML.includes('info-contact-preview'), 'Info should preview important contacts');
+assert(harness.appElement.innerHTML.includes('info-search-panel'), 'Info should keep search in a dedicated panel');
+assert(harness.appElement.innerHTML.includes('Vælg et kort eller søg efter noget'), 'Info should not show heavy content before users ask');
 assert(!harness.appElement.innerHTML.includes('contact-quick-card'), 'Info should not duplicate contact cards on the main view');
 assert(!harness.appElement.innerHTML.includes('info-tabs'), 'Info should avoid a crowded tab row on the main view');
 assert(!harness.appElement.innerHTML.includes('info-alert'), 'Info should not show rule alerts before the user asks for rules');
 
 assert(harness.appElement.innerHTML.includes('info-more-section'), 'Info should tuck heavier guides behind a more section');
+assert(harness.appElement.innerHTML.includes('Hurtige svar'), 'Info should still keep fast answers behind the more section');
 assert(styles.includes('.surface-card'), 'Styles should include shared surface cards');
 assert(styles.includes('.screen-section'), 'Styles should include reusable screen sections');
 assert(styles.includes('.screen-guide'), 'Styles should include app-wide screen guide');
 assert(styles.includes('.creator-pro-list'), 'Styles should include professional completion plan');
 assert(styles.includes('.control-detail-group'), 'Styles should include collapsible control groups');
 assert(styles.includes('.contact-directory'), 'Styles should include the information contact directory');
-assert(styles.includes('.info-simple-actions'), 'Styles should include senior-friendly information action buttons');
+assert(styles.includes('.info-command-card'), 'Styles should include the rebuilt information command card');
+assert(styles.includes('.info-choice-grid'), 'Styles should include senior-friendly information choice cards');
 assert(styles.includes('.info-topic-list'), 'Styles should include a calm topic list for information');
 assert(styles.includes('min-height: 44px'), 'Tap targets should be enlarged for mobile use');
 

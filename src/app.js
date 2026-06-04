@@ -26,9 +26,9 @@
   search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>',
 };
 
-const APP_VERSION = '1.3.3-release-v64';
-const APP_DISPLAY_VERSION = '1.3.3';
-const APP_VERSION_CODE = 16;
+const APP_VERSION = '1.3.4-release-v65';
+const APP_DISPLAY_VERSION = '1.3.4';
+const APP_VERSION_CODE = 17;
 const IMAGE_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
 const PROFILE_PHOTO_MAX_DIMENSION = 512;
 const PROFILE_PHOTO_QUALITY = 0.84;
@@ -4203,33 +4203,68 @@ function renderInfo() {
   const resultTitle = activeInfoCategory === 'favorites' ? 'Dine favoritter'
     : activeInfoCategory === 'all' ? 'Søgeresultater'
       : infoSections.find(section => section.id === activeInfoCategory)?.title || 'Resultater';
+  const featuredSections = [
+    { id: 'operations', label: 'Akut og drift', hint: 'Ring, forsinkelse, skade' },
+    { id: 'trucks', label: 'Lastbil', hint: 'Køre-/hviletid, vejafgift' },
+    { id: 'vans', label: 'Varebil', hint: 'Regler, tilladelser, miljøzoner' },
+    { id: 'documents', label: 'Dokumenter', hint: 'CMR, billeder, vilkår' },
+  ].map(item => ({ ...item, section: infoSections.find(section => section.id === item.id) })).filter(item => item.section);
+  const activeSection = infoSections.find(section => section.id === activeInfoCategory);
+  const priorityContacts = contactDirectoryEntries().filter(contact => contact.priority).slice(0, 3);
   return `
-    <div class="page-heading"><div><p class="eyebrow">Værktøjskasse</p><h2>Information</h2></div><button class="round-btn" data-action="open-info" data-info="operations" aria-label="Åbn kontakter">${icon('phone')}</button></div>
-    <section class="info-hero surface-card">
-      <p class="section-kicker">Hurtig hjælp</p>
-      <h3>Ring eller find svar</h3>
-      <p>Hold det enkelt: ring til drift, find en kollega eller søg efter det du mangler.</p>
-      <div><a href="tel:+4540553131">Budkørsel <b>40 55 31 31</b></a><a href="tel:+4540873131">Lastbil <b>40 87 31 31</b></a></div>
+    <div class="page-heading info-heading"><div><p class="eyebrow">Hjælpecentral</p><h2>Information</h2><small>Ring, find regler eller åbn dokumenter uden at lede.</small></div><button class="round-btn" data-action="open-contact-list" aria-label="Åbn kontaktliste">${icon('phone')}</button></div>
+    <section class="info-command-card">
+      <div>
+        <p class="section-kicker">Første valg</p>
+        <h3>Hvad har du brug for?</h3>
+        <p>Store knapper, få valg og de vigtigste telefonnumre øverst.</p>
+      </div>
+      <nav class="info-emergency-strip" aria-label="Hurtige opkald">
+        <a href="tel:+4540553131">${icon('phone')}<span><b>Drift</b><small>40 55 31 31</small></span></a>
+        <a href="tel:+4540873131">${icon('truck')}<span><b>Lastbil</b><small>40 87 31 31</small></span></a>
+        <a class="danger" href="tel:112">${icon('alert')}<span><b>112</b><small>Akut fare</small></span></a>
+      </nav>
     </section>
-    <section class="info-simple-actions calm screen-section" aria-label="Hurtige informationsvalg">
-      <a class="primary" href="tel:+4540553131">${icon('phone')}<span><b>Ring til drift</b><small>Akut hjælp, forsinkelse eller tvivl</small></span></a>
-      <button type="button" data-action="open-contact-list">${icon('users')}<span><b>Kontaktliste</b><small>Kollegaer, kontor og telefonnumre</small></span></button>
+    <section class="info-choice-grid screen-section" aria-label="Vælg informationstype">
+      ${featuredSections.map(item => `<button class="${activeInfoCategory === item.id ? 'active' : ''}" data-info-category="${text(item.id)}">
+        <span>${icon(item.section.icon)}</span>
+        <b>${text(item.label)}</b>
+        <small>${text(item.hint)}</small>
+      </button>`).join('')}
     </section>
-    <label class="search-box info-search simple"><input data-info-search placeholder="Søg efter fx CMR, miljøzone eller hviletid..." value="${text(infoQuery)}" /><span>${filteredLinks.length} fundet</span></label>
-    <section class="info-topic-list screen-section" aria-label="Vælg informationsemne">
-      <div class="screen-section-head"><span>Vælg emne</span><small>Store knapper, et valg ad gangen</small></div>
+    <section class="info-contact-preview screen-section">
+      <div class="screen-section-head"><span>Kontakt hurtigt</span><small>Ring direkte</small><button type="button" data-action="open-contact-list">Kontaktliste</button></div>
+      <div>
+        ${priorityContacts.map(contact => {
+          const phone = cleanPhone(contact.phone);
+          return `<a href="tel:${text(phone)}"><span class="contact-avatar">${text(contact.initials)}</span><b>${text(contact.name)}</b><small>${text(contact.role)}</small></a>`;
+        }).join('')}
+      </div>
+    </section>
+    <section class="info-search-panel screen-section">
+      <div class="screen-section-head"><span>Søg i håndbogen</span><small>${filteredLinks.length} fundet</small></div>
+      <label class="search-box info-search simple"><input data-info-search placeholder="Søg fx CMR, miljøzone, hviletid..." value="${text(infoQuery)}" /><span>${query ? 'Søgning' : 'Skriv her'}</span></label>
+    </section>
+    <details class="info-topic-list screen-section">
+      <summary><span>Flere emner</span><small>${activeSection ? activeSection.title : 'Alle kilder'}</small></summary>
       ${infoSections.map(section => `<button class="${activeInfoCategory === section.id ? 'active' : ''}" data-info-category="${section.id}">
         <span>${icon(section.icon)}</span><b>${text(section.title)}</b><small>${text(section.subtitle)}</small>${icon('arrow', 'row-arrow')}
       </button>`).join('')}
-    </section>
-    ${isDefaultInfo ? '' : `<div class="screen-section-head info-results-head"><span>${text(resultTitle)}</span><small>${visibleLinks.length} resultater</small><button type="button" data-info-category="all">Ryd</button></div>
-    <section class="info-card-list">${visibleLinks.length ? visibleLinks.map(item => `
+    </details>
+    ${isDefaultInfo ? `<section class="info-empty-start">
+      <span>${icon('info')}</span>
+      <b>Vælg et kort eller søg efter noget</b>
+      <small>De lange regler og links vises først, når du beder om dem.</small>
+    </section>` : `<section class="info-result-panel screen-section">
+      <div class="screen-section-head info-results-head"><span>${text(resultTitle)}</span><small>${visibleLinks.length} resultater</small><button type="button" data-info-category="all">Ryd</button></div>
+      <section class="info-card-list">${visibleLinks.length ? visibleLinks.map(item => `
       <article class="info-card-link ${item.href ? '' : 'no-link'}">
         <span class="utility-icon">${icon(item.icon)}</span>
         <span><em>${text(item.source)}</em><b>${text(item.title)}</b><small>${text(item.description)}</small></span>
-        <button type="button" class="favorite-info-btn ${infoFavorites.includes(item.id) ? 'active' : ''}" data-info-favorite="${text(item.id)}">${infoFavorites.includes(item.id) ? 'â˜…' : 'â˜†'}</button>
+        <button type="button" class="favorite-info-btn ${infoFavorites.includes(item.id) ? 'active' : ''}" data-info-favorite="${text(item.id)}">${infoFavorites.includes(item.id) ? '★' : '☆'}</button>
         ${item.href ? `<a class="open-info-link" href="${text(item.href)}" target="${item.href.startsWith('http') ? '_blank' : '_self'}" rel="noreferrer">Åbn</a>` : '<strong>Info</strong>'}
       </article>` ).join('') : '<p class="empty-state">Ingen information matcher din søgning.</p>'}
+      </section>
     </section>`}
     <details class="info-more-section">
       <summary>Flere guides og favoritter</summary>
