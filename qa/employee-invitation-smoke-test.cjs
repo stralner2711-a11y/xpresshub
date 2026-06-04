@@ -17,8 +17,9 @@ assert(source.includes('Arbejdsmail<input name="email" type="email"'), 'Employee
 assert(source.includes("${isNew ? 'required' : ''}"), 'Work email should be required for new employee invitations');
 assert(source.includes('Opret konto med standardkode'), 'Invite result should explain the standard-password flow');
 assert(source.includes('employeeDownloadPageUrl'), 'Invite flow should include the official app download page');
-assert(source.includes('Download eller åbn appen her'), 'Shared invite message should include the download/open link');
-assert(source.includes('Download/åbn appen her'), 'Invite result should show the download/open link before sending');
+assert(source.includes('Åbn dit invitationslink her'), 'Shared invite message should include the private invitation link');
+assert(source.includes('Invitationslink:'), 'Invite result should show the private invitation link before sending');
+assert(source.includes("new URL('https://stralner2711-a11y.github.io/xpresshub/')"), 'Invite links should point to the official app URL, not a random local page');
 assert(source.includes("onboarding_method: 'standard_password'"), 'Supabase invitations should store the onboarding method');
 assert(source.includes('password_reset_required: true'), 'New employees should be forced to change the temporary password');
 

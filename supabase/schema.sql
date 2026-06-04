@@ -1031,7 +1031,10 @@ begin
     invite.truck,
     'active',
     coalesce(invite.logbook_enabled, false),
-    coalesce(invite.password_reset_required, false)
+    case
+      when coalesce((new.raw_user_meta_data ->> 'first_personal_password')::boolean, false) then false
+      else coalesce(invite.password_reset_required, false)
+    end
   )
   on conflict (id) do nothing;
 

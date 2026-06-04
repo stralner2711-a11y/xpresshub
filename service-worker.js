@@ -1,4 +1,4 @@
-﻿const CACHE_NAME = 'xpressintra-v69-creator-rollback';
+const CACHE_NAME = 'xpressintra-v71-invite-only-signup';
 const APP_FILES = [
   './',
   './indep.html',
@@ -67,4 +67,5 @@ self.addEventListener('fetch', event => {
       })
   );
 });
+
 

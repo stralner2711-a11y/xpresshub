@@ -1,4 +1,4 @@
-﻿# Apple review-info kladde
+# Apple review-info kladde
 
 Denne tekst kan bruges som udgangspunkt i App Store Connect, nÃ¥r den fÃ¸rste TestFlight/App Store-build uploades.
 
@@ -12,7 +12,7 @@ XpressIntra
 
 ## Version
 
-`1.3.8` / build `21`
+`1.3.10` / build `23`
 
 ## Review notes
 
@@ -42,5 +42,6 @@ Udfyld fÃ¸r upload:
 - Identifiers: Supabase Auth-bruger og interne profil-id'er.
 - Usage Data: kun det der faktisk gemmes om opgaver, arbejdsdag og appbrug.
 - Diagnostics: kun hvis der senere tilfÃ¸jes egentlig crash/diagnostiksporing.
+
 
 

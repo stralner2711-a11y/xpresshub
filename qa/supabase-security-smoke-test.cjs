@@ -64,6 +64,8 @@ assert(schema.includes('grant execute on function public.start_direct_conversati
 assert(schema.includes('cannot_start_direct_conversation_with_self'), 'Direct chat RPC should reject self conversations');
 assert(schema.includes('create table if not exists public.employee_invitations'), 'Schema should support safe employee invitations without exposing service-role keys');
 assert(schema.includes('on public.employee_invitations for all to authenticated using (private.is_admin())'), 'Only admins should manage employee invitations');
+assert(schema.includes("new.raw_user_meta_data ->> 'first_personal_password'"), 'Auth trigger should understand first-login personal password onboarding');
+assert(fullBootstrap.includes("new.raw_user_meta_data ->> 'first_personal_password'"), 'Full bootstrap should include first-login personal password onboarding');
 assert(schema.includes('on public.admin_audit_log for insert to authenticated with check (actor_id = auth.uid() and private.is_admin())'), 'Admins should be able to write explicit audit entries as themselves');
 assert(schema.includes("insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)"), 'Schema should create a private Storage bucket for media');
 assert(schema.includes("public = false"), 'Media bucket should be private');
