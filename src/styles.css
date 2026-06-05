@@ -134,11 +134,18 @@ h3 { margin-bottom: 0; font-family: Manrope, sans-serif; font-size: 15px; }
 .home-clean-hero { display: grid; gap: 13px; margin: 8px 0 13px; padding: 17px; }
 .home-clean-hero h2 { margin: 3px 0 6px; font-size: 28px; line-height: 1.02; }
 .home-clean-hero span { color: var(--muted); font-size: 12px; line-height: 1.4; }
+.home-makeover { gap: 15px; padding: 18px; border-radius: 22px; background: linear-gradient(145deg, #123a57, #0b2235); }
+.home-makeover .eyebrow { color: var(--amber); letter-spacing: 1.8px; }
+.home-makeover h2 { font-size: 31px; letter-spacing: -1.1px; }
 .home-next-action { display: grid; grid-template-columns: 42px 1fr; gap: 9px 11px; align-items: center; padding: 13px; border: 1px solid rgba(244,166,65,.42); border-radius: 16px; background: linear-gradient(145deg, rgba(244,166,65,.95), rgba(255,199,112,.95)); color: #2d210d; text-align: left; box-shadow: 0 12px 28px rgba(0,0,0,.18); }
 .home-next-action span { grid-row: span 2; display: grid; width: 42px; height: 42px; place-items: center; border-radius: 50%; background: rgba(12,29,42,.18); color: #2d210d; }
 .home-next-action b, .home-next-action small { display: block; }
 .home-next-action b { font-size: 14px; }
 .home-next-action small { color: rgba(45,33,13,.78); font-size: 10px; line-height: 1.35; }
+.home-makeover .home-next-action { min-height: 86px; grid-template-columns: 52px 1fr; padding: 16px; border-radius: 19px; }
+.home-makeover .home-next-action span { width: 52px; height: 52px; }
+.home-makeover .home-next-action b { font-size: 18px; line-height: 1.1; }
+.home-makeover .home-next-action small { font-size: 12px; }
 .home-status-strip { display: grid; grid-template-columns: repeat(3,1fr); gap: 7px; }
 .home-status-strip span { display: grid; gap: 2px; padding: 10px 8px; border: 1px solid rgba(255,255,255,.12); border-radius: 13px; background: rgba(255,255,255,.07); text-align: center; }
 .home-status-strip b { color: var(--cream); font-size: 12px; }
@@ -153,11 +160,21 @@ h3 { margin-bottom: 0; font-family: Manrope, sans-serif; font-size: 15px; }
 .home-day-tools b { font-size: 14px; line-height: 1.15; }
 .home-day-tools small { color: var(--muted); font-size: 10px; line-height: 1.3; }
 .home-day-tools button.primary small { color: rgba(56,37,12,.72); }
+.home-driver-tools { display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; }
+.home-driver-tools button { min-height: 96px; padding: 14px; border-radius: 19px; align-content: center; }
+.home-driver-tools button span { width: 44px; height: 44px; }
+.home-driver-tools button b { font-size: 15px; }
+.home-driver-tools button small { font-size: 12px; }
 .home-office-board { display: grid; gap: 8px; margin-bottom: 13px; }
 .home-office-board button, .home-office-board article { display: grid; gap: 4px; width: 100%; padding: 13px; border: 1px solid rgba(117,182,154,.36); border-radius: 14px; background: linear-gradient(145deg, rgba(216,234,223,.15), rgba(16,46,55,.92)); color: var(--cream); text-align: left; }
 .home-office-board b { font-size: 13px; }
 .home-office-board small { color: var(--amber); font-size: 9px; font-weight: 900; letter-spacing: .3px; text-transform: uppercase; }
 .home-office-board span { color: #c7d6d2; font-size: 11px; line-height: 1.4; }
+.home-compact-board { padding-top: 2px; }
+.home-compact-board > button { min-height: 72px; border-radius: 17px; }
+.home-community-row { display: grid; grid-template-columns: repeat(2,1fr); gap: 9px; }
+.home-community-row button { grid-template-columns: 38px 1fr; align-items: center; min-height: 74px; }
+.home-community-row button > span:first-child { grid-row: span 2; display: grid; width: 38px; height: 38px; place-items: center; border-radius: 50%; background: rgba(244,166,65,.16); color: var(--amber); }
 .home-simple-actions { display: grid; grid-template-columns: repeat(2,1fr); gap: 9px; margin: 0 0 14px; }
 .home-simple-actions button { display: grid; gap: 8px; align-content: start; min-height: 118px; padding: 14px; border: 1px solid rgba(244,166,65,.24); border-radius: 17px; background: linear-gradient(145deg,#173a53,#102a3e); color: var(--cream); text-align: left; }
 .home-simple-actions span { display: grid; width: 38px; height: 38px; place-items: center; border-radius: 50%; background: rgba(244,166,65,.16); color: var(--amber); }

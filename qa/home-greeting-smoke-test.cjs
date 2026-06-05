@@ -7,8 +7,11 @@ function assert(condition, message) {
 const app = fs.readFileSync('src/app.js', 'utf8');
 
 assert(app.includes('function profileGreetingName()'), 'Home greeting should use a dedicated profile greeting helper');
+assert(app.includes('function dayGreeting'), 'Home greeting should use a time-aware greeting helper');
+assert(app.includes('timeZone = WORKDAY_TIMEZONE'), 'Greeting helper should use Danish workday time zone by default');
 assert(app.includes("!raw.includes('@')"), 'Greeting helper should reject email addresses as display names');
-assert(app.includes('Godmorgen, ${text(profileGreetingName())}'), 'Home hero should greet using the full profile display name');
+assert(app.includes('${text(dayGreeting())}, ${text(profileGreetingName())}'), 'Home hero should greet using time-aware greeting and the full profile display name');
+assert(!app.includes('<h2>Godmorgen, ${text(profileGreetingName())}</h2>'), 'Home hero should not be locked to morning all day');
 assert(!app.includes("Godmorgen, ${text(profile.name.split(' ')[0])}"), 'Home hero should not use first-name-only split logic');
 assert(app.includes("name: row?.full_name || profile.name || ''"), 'Supabase profile fallback should not turn email into display name');
 

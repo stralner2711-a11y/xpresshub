@@ -1,4 +1,4 @@
-﻿const icons = {
+const icons = {
   home: '<svg viewBox="0 0 24 24"><path d="m4 11 8-7 8 7v8a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z"/></svg>',
   users: '<svg viewBox="0 0 24 24"><path d="M16 20a4 4 0 0 0-8 0"/><circle cx="12" cy="9" r="3"/><path d="M19 20a3 3 0 0 0-2-2.83M17 6.13a3 3 0 0 1 0 5.74M5 20a3 3 0 0 1 2-2.83M7 6.13a3 3 0 0 0 0 5.74"/></svg>',
   map: '<svg viewBox="0 0 24 24"><path d="m9 18-6 3V6l6-3 6 3 6-3v15l-6 3z"/><path d="M9 3v15m6-12v15"/></svg>',
@@ -26,9 +26,9 @@
   search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>',
 };
 
-const APP_VERSION = '1.3.23-release-v84';
-const APP_DISPLAY_VERSION = '1.3.23';
-const APP_VERSION_CODE = 36;
+const APP_VERSION = '1.3.25-release-v86';
+const APP_DISPLAY_VERSION = '1.3.25';
+const APP_VERSION_CODE = 38;
 const TEMPORARY_EMPLOYEE_PASSWORD = 'xpress';
 const IMAGE_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
 const PROFILE_PHOTO_MAX_DIMENSION = 512;
@@ -198,7 +198,7 @@ const infoChecklists = [
   { title: 'Ved levering', items: ['Parker sikkert', 'Tjek gods', 'Tag billede ved afvigelse', 'Meld status'] },
 ];
 
-const emojiChoices = ['👍', '😂', '🚚', '📦', '☕', '✅', '🙏', '⚠️'];
+const emojiChoices = ['??', '??', '??', '??', '?', '?', '??', '??'];
 
 const infoSections = [
   { id: 'operations', icon: 'alert', title: 'Akut & drift', subtitle: 'Kontakter, terminal og hjælp til alle' },
@@ -1453,7 +1453,7 @@ function markCurrentVersionSuspect() {
   const fallbackInfo = {
     activeVersion: APP_DISPLAY_VERSION,
     activeVersionCode: APP_VERSION_CODE,
-    apkDownloadUrl: 'https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.23/xpressintra.apk',
+    apkDownloadUrl: 'https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.25/xpressintra.apk',
   };
   const info = appUpdateState.latest || normalizeVersionInfo(fallbackInfo);
   const defective = new Set([...(info.defectiveVersions || []).map(String), APP_DISPLAY_VERSION, String(APP_VERSION_CODE)]);
@@ -1812,6 +1812,18 @@ function profileGreetingName() {
   const employeeName = currentEmployee()?.name || '';
   if (employeeName && !employeeName.includes('@') && employeeName.toLowerCase() !== 'medarbejder') return employeeName;
   return 'kollega';
+}
+
+function dayGreeting(date = new Date(), timeZone = WORKDAY_TIMEZONE) {
+  const hour = Number(new Intl.DateTimeFormat('da-DK', {
+    timeZone,
+    hour: '2-digit',
+    hour12: false,
+  }).format(date));
+  if (hour >= 5 && hour < 10) return 'Godmorgen';
+  if (hour >= 10 && hour < 17) return 'Goddag';
+  if (hour >= 17 && hour < 23) return 'Godaften';
+  return 'Godnat';
 }
 
 function profileFromSupabase(row, user, privateDetails) {
@@ -3216,7 +3228,7 @@ function adminDashboardAlerts(stats = adminDashboardStats()) {
     alerts.push({
       tone: activePickup.status === 'blocked' ? 'urgent' : 'task',
       title: `Afhentning: ${pickupStatusLabel(activePickup.status)}`,
-      body: `${helper?.name || 'Kollega'} · ${activePickup.pickupPlace || 'sted mangler'} → ${activePickup.dropoffPlace || 'aflevering mangler'}`,
+      body: `${helper?.name || 'Kollega'} · ${activePickup.pickupPlace || 'sted mangler'} ? ${activePickup.dropoffPlace || 'aflevering mangler'}`,
       action: 'open-pickup',
     });
   }
@@ -3471,7 +3483,7 @@ function renderGdprGoLivePanel({ compact = false } = {}) {
       <p>${readiness.done}/${readiness.total} punkter markeret klar. Juridisk godkendelse skal stadig ske i virksomheden.</p>
     </div>
     <div class="gdpr-check-grid">
-      ${readiness.items.map(item => `<span class="${item.done ? 'done' : 'todo'}"><b>${item.done ? '✓' : '○'} ${text(item.title)}</b><small>${text(item.body)}</small></span>`).join('')}
+      ${readiness.items.map(item => `<span class="${item.done ? 'done' : 'todo'}"><b>${item.done ? '?' : '?'} ${text(item.title)}</b><small>${text(item.body)}</small></span>`).join('')}
     </div>
   </section>`;
 }
@@ -4700,33 +4712,34 @@ function renderHome() {
   ];
   const onlineEmployees = employees.filter(employee => employee.online);
   const unreadNotifications = notifications.filter(item => item.unread).length;
-  const officePosts = announcements.filter(item => item.kind === 'office' && canReadAudience(item.audience)).slice(0, 3);
+  const officePosts = announcements.filter(item => item.kind === 'office' && canReadAudience(item.audience)).slice(0, 1);
+  const sharingEmployees = onlineEmployees.filter(employee => employee.sharing).length;
   const nowStatus = workday.active ? 'Arbejdsdag aktiv' : location.sharing ? 'Position deles' : 'Klar til dagen';
   const locationText = location.sharing ? locationExpiryText() : 'GPS er skjult';
   const nextAction = activePickup
     ? { title: 'Afhentning i gang', body: activePickup.note || 'Følg status og live noter', action: 'open-pickup', icon: 'pin' }
     : !workday.active
-      ? { title: 'Åbn Arbejde', body: 'Mød ind, del tur og gem logbog samlet ét sted', action: 'open-work', icon: 'check' }
+      ? { title: 'Start arbejdsdag', body: 'Mød ind, vælg deling og få dagens værktøjer samlet', action: 'open-work', icon: 'check' }
       : unreadNotifications
-      ? { title: 'Tjek beskeder', body: `${unreadNotifications} ulæste ting venter`, action: 'open-notifications', icon: 'chat' }
-      : { title: 'Se live-kort', body: location.sharing ? locationExpiryText() : 'Se hvem der deler position', action: 'open-map', icon: 'map' };
-  const todayActions = [
-    ...(nextAction.action !== 'open-notifications' ? [{ label: 'Beskeder', hint: `${unreadNotifications} ulæst`, chat: 'all', icon: 'chat' }] : []),
+        ? { title: 'Tjek beskeder', body: `${unreadNotifications} ulæste ting venter`, action: 'open-notifications', icon: 'chat' }
+        : { title: 'Se live-kort', body: location.sharing ? locationExpiryText() : `${sharingEmployees} deler position lige nu`, action: 'open-map', icon: 'map' };
+  const driverTools = [
+    { label: 'Arbejde', hint: workday.active ? 'Styr arbejdsdag og deling' : 'Mød ind og start dagen', action: 'open-work', icon: 'check' },
+    { label: 'Del position', hint: location.sharing ? locationExpiryText() : 'Start frivillig deling', tab: 'map', icon: 'map' },
+    { label: 'Hent for kollega', hint: activePickup ? 'Opgave i gang' : 'Start hurtig hjælp under Arbejde', action: 'open-work', icon: 'pin' },
+    { label: 'Beskeder', hint: unreadNotifications ? `${unreadNotifications} ulæst` : 'Fælles og privat', chat: 'all', icon: 'chat' },
     { label: 'Information', hint: 'Regler og kontakter', tab: 'info', icon: 'info' },
-    { label: 'Meld fejl', hint: 'Send ønske eller problem', action: 'open-support-request', icon: 'alert' },
-  ];
-  const shortcutActions = [
-    { label: 'Kollegaer', hint: `${onlineEmployees.length} online`, tab: 'team', iconName: 'users' },
-    nextAction.action === 'open-map'
-      ? { label: 'Mine data', hint: 'Privatliv og adgang', action: 'open-my-data', iconName: 'document' }
-      : { label: 'Live-kort', hint: `${onlineEmployees.filter(employee => employee.sharing).length} deler position`, tab: 'map', iconName: 'map' },
-    { label: 'Kontrol', hint: 'Profil, privatliv og indstillinger', tab: 'more', iconName: 'more' },
-  ];
+    { label: 'Logbog', hint: 'Gem dagens noter under Arbejde', action: 'open-work', icon: 'truck' },
+  ].filter(item => item.action !== nextAction.action && !(activePickup && item.label === 'Hent for kollega') && !(item.chat && nextAction.action === 'open-notifications') && !(item.tab === 'map' && nextAction.action === 'open-map')).slice(0, 6);
+  const officeItem = officePosts[0];
+  const communityHint = unreadNotifications
+    ? `${unreadNotifications} ulæste beskeder eller opslag`
+    : `${onlineEmployees.length} kollegaer online`;
   return `
-    <section class="home-clean-hero surface-card">
+    <section class="home-clean-hero home-makeover surface-card">
       <div>
         <p class="eyebrow">Forside</p>
-        <h2>Godmorgen, ${text(profileGreetingName())}</h2>
+        <h2>${text(dayGreeting())}, ${text(profileGreetingName())}</h2>
         <span>${text(nowStatus)} · ${text(profile.truck || vehicleLabel(profile.vehicleType))} · ${text(locationText)}</span>
       </div>
       <button class="home-next-action" data-action="${text(nextAction.action)}">
@@ -4741,27 +4754,25 @@ function renderHome() {
       </div>
     </section>
     <section class="home-day-tools screen-section" aria-label="Dagens værktøjer">
-      <div class="screen-section-head"><span>Dagens værktøjer</span></div>
-      <div>
-        ${todayActions.map(item => `<button class="${item.primary ? 'primary' : ''}" ${item.tab ? `data-tab="${text(item.tab)}"` : item.chat ? `data-chat="${text(item.chat)}"` : `data-action="${text(item.action)}"`}>
+      <div class="screen-section-head"><span>Dagens værktøjer</span><small>Store genveje</small></div>
+      <div class="home-driver-tools">
+        ${driverTools.map(item => `<button ${item.tab ? `data-tab="${text(item.tab)}"` : item.chat ? `data-chat="${text(item.chat)}"` : `data-action="${text(item.action)}"`}>
           <span>${icon(item.icon)}</span><b>${text(item.label)}</b><small>${text(item.hint)}</small>
         </button>`).join('')}
       </div>
     </section>
-    <section class="home-office-board screen-section">
-      <div class="screen-section-head"><span>Vigtigt fra kontoret</span><small>Drift og beskeder</small>${canPublishOfficePosts() ? '<button data-action="new-announcement">Nyt opslag</button>' : ''}</div>
-      ${officePosts.length ? officePosts.map(item => `<button data-action="open-notifications"><b>${text(item.title)}</b><small>${text(item.time)} · ${text(item.author)}</small><span>${text(item.body)}</span></button>`).join('') : '<article><b>Ingen fastgjorte beskeder</b><span>Kontoret kan lægge de vigtigste ting her.</span></article>'}
-    </section>
     ${renderPickupCard()}
-    <section class="home-simple-actions" aria-label="Vigtigste genveje">
-      ${shortcutActions.map(item => `<button ${item.tab ? `data-tab="${text(item.tab)}"` : `data-action="${text(item.action)}"`}><span>${icon(item.iconName)}</span><b>${text(item.label)}</b><small>${text(item.hint)}</small></button>`).join('')}
-    </section>
-    <section class="home-community-preview screen-section">
-      <div class="screen-section-head"><span>Fællesskab</span><small>${onlineEmployees.length} online</small><button data-chat="all">Åbn chat</button></div>
-      <section class="story-rail" aria-label="Kollegaer online">
-        ${onlineEmployees.slice(0, 8).map(employee => `<button data-employee="${text(employee.id)}">${avatar(employee)}<span>${text(employee.id === 'th' ? 'Dig' : employee.name.split(' ')[0])}</span></button>`).join('')}
-      </section>
-      <section class="social-feed compact-feed">${feed.slice(0, 2).map(renderFeedPost).join('')}</section>
+    <section class="home-office-board home-compact-board screen-section">
+      <div class="screen-section-head"><span>Kontor og fællesskab</span><small>${text(communityHint)}</small>${canPublishOfficePosts() ? '<button data-action="new-announcement">Nyt opslag</button>' : ''}</div>
+      <button data-action="open-notifications">
+        <b>${text(officeItem?.title || feed[0]?.title || 'Ingen vigtige opslag lige nu')}</b>
+        <small>${text(officeItem ? `${officeItem.time} · ${officeItem.author}` : 'Rolig dag')}</small>
+        <span>${text(officeItem?.body || feed[0]?.body || 'Når kontoret eller kollegaer har noget vigtigt, vises det kort her.')}</span>
+      </button>
+      <div class="home-community-row">
+        <button data-chat="all"><span>${icon('chat')}</span><b>Åbn chat</b><small>Fælles og direkte beskeder</small></button>
+        <button data-tab="team"><span>${icon('users')}</span><b>Kollegaer</b><small>${onlineEmployees.length} online</small></button>
+      </div>
     </section>`;
 }
 
@@ -4818,7 +4829,7 @@ function renderPickupCard() {
       <span><b>Reference</b><small>${text(activePickup.reference || 'Ingen reference')}</small></span>
       <span><b>Prioritet</b><small>${text(activePickup.priority || 'Normal')}</small></span>
     </div>
-    <div class="pickup-checklist"><b>Tjekliste</b>${checklist.map(item => `<button class="${item.done ? 'done' : ''}" data-pickup-check="${text(item.id)}">${item.done ? '✓' : '○'} ${text(item.label)}</button>`).join('')}</div>
+    <div class="pickup-checklist"><b>Tjekliste</b>${checklist.map(item => `<button class="${item.done ? 'done' : ''}" data-pickup-check="${text(item.id)}">${item.done ? '?' : '?'} ${text(item.label)}</button>`).join('')}</div>
     <div class="pickup-live-notes"><b>Live noter</b>
       ${liveNotes.length ? liveNotes.slice(-5).map(step => `<span><strong>${text(step.authorName || 'Kollega')}</strong><small>${new Date(step.at).toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' })}</small>${text(step.note)}</span>`).join('') : '<span>Ingen noter endnu. Begge parter kan skrive korte opdateringer her.</span>'}
       <form class="pickup-note-form"><input name="note" placeholder="Skriv live note..." autocomplete="off" /><button>Send</button></form>
@@ -5236,7 +5247,7 @@ function renderInfo() {
       <article class="info-card-link ${item.href ? '' : 'no-link'}">
         <span class="utility-icon">${icon(item.icon)}</span>
         <span><em>${text(item.source)}</em><b>${text(item.title)}</b><small>${text(item.description)}</small></span>
-        <button type="button" class="favorite-info-btn ${infoFavorites.includes(item.id) ? 'active' : ''}" data-info-favorite="${text(item.id)}">${infoFavorites.includes(item.id) ? '★' : '☆'}</button>
+        <button type="button" class="favorite-info-btn ${infoFavorites.includes(item.id) ? 'active' : ''}" data-info-favorite="${text(item.id)}">${infoFavorites.includes(item.id) ? '?' : '?'}</button>
         ${item.href ? `<a class="open-info-link" href="${text(item.href)}" target="${item.href.startsWith('http') ? '_blank' : '_self'}" rel="noreferrer">Åbn</a>` : '<strong>Info</strong>'}
       </article>` ).join('') : '<p class="empty-state">Ingen information matcher din søgning.</p>'}
       </section>
@@ -5754,7 +5765,7 @@ async function openSupabaseDiagnosticsModal() {
   const list = modal.querySelector('.diagnostic-list');
   try {
     const checks = await runSupabaseDiagnostics();
-    list.innerHTML = checks.map(check => `<article class="${check.ok ? 'ok' : 'fail'}"><b>${check.ok ? '✓' : '!' } ${text(check.name)}</b><small>${text(check.detail)}</small></article>`).join('');
+    list.innerHTML = checks.map(check => `<article class="${check.ok ? 'ok' : 'fail'}"><b>${check.ok ? '?' : '!' } ${text(check.name)}</b><small>${text(check.detail)}</small></article>`).join('');
   } catch (error) {
     list.innerHTML = `<article class="fail"><b>! Test fejlede</b><small>${text(error.message)}</small></article>`;
   }
@@ -6145,7 +6156,7 @@ function openLaunchChecklistModal() {
     </section>
     <div class="launch-checklist">
       ${readiness.items.map(item => `<article class="${item.done ? 'done' : ''}">
-        <b>${item.done ? '✓' : '○'} ${text(item.title)}</b>
+        <b>${item.done ? '?' : '?'} ${text(item.title)}</b>
         <small>${text(item.body)}</small>
       </article>`).join('')}
     </div>
@@ -6237,7 +6248,7 @@ function openSecurityCenterModal() {
     </section>
     <section class="security-check-list">
       ${readiness.items.map(item => `<article class="${item.done ? 'done' : 'todo'}">
-        <b>${item.done ? '✓' : '•'} ${text(item.title)}</b>
+        <b>${item.done ? '?' : '•'} ${text(item.title)}</b>
         <small>${text(item.body)}</small>
       </article>`).join('')}
     </section>

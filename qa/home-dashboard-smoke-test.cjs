@@ -80,20 +80,24 @@ const harness = createHarness();
 harness.run("activeTab = 'home'; logbookDrafts = [{ id: 'draft-1', title: 'Gem pause eller stop', place: 'Flensburg', note: 'Privat kladde fra turen', kind: 'pause-stop', date: 'I dag', status: 'draft' }]; activePickup = { employeeId: 'ma', note: 'Hent nøgle ved porten', duration: '30', status: 'started', steps: [], startedAt: new Date().toISOString(), startedLocationSharing: false }; render();");
 
 assert(harness.appElement.innerHTML.includes('home-clean-hero'), 'Home should show a clean hero overview');
+assert(harness.appElement.innerHTML.includes('home-makeover'), 'Home should use the approved makeover hero');
 assert(harness.appElement.innerHTML.includes('home-next-action'), 'Home should show one clear next action');
 assert(!harness.appElement.innerHTML.includes('home-profile'), 'Home should not duplicate the profile initials button');
-assert(harness.appElement.innerHTML.includes('Vigtigt fra kontoret'), 'Home should prioritize office posts');
+assert(harness.appElement.innerHTML.includes('Kontor og fællesskab'), 'Home should keep office and community as a compact hint');
 assert(harness.appElement.innerHTML.includes('Dagens værktøjer'), 'Home should show daily driver tools');
-assert(harness.appElement.innerHTML.includes('Meld fejl'), 'Home should let drivers report bugs or wishes quickly');
-assert(harness.appElement.innerHTML.includes('home-simple-actions'), 'Home should show a simple primary action area');
-assert(!/home-simple-actions[\s\S]*<b>Beskeder<\/b>/.test(harness.appElement.innerHTML), 'Home simple actions should not duplicate the messages shortcut');
-assert(harness.appElement.innerHTML.includes('Fællesskab'), 'Home should still show community preview');
+assert(harness.appElement.innerHTML.includes('home-driver-tools'), 'Home should show large daily driver tool cards');
+assert(!harness.appElement.innerHTML.includes('Meld fejl'), 'Home should not promote support/admin-style actions');
+assert(!harness.appElement.innerHTML.includes('home-simple-actions'), 'Home should not keep the old shortcut block');
 assert(!harness.appElement.innerHTML.includes('Mine opgaver'), 'Home should not duplicate work/task details from the Work screen');
 assert(!harness.appElement.innerHTML.includes('Logbogskladder'), 'Home should not surface private logbook drafts');
 assert(harness.appElement.innerHTML.includes('Hent nøgle ved porten'), 'Home task card should show active pickup note');
 assert(!/home-day-tools[\s\S]*<b>Hent for kollega<\/b>/.test(harness.appElement.innerHTML), 'Home day tools should not duplicate active pickup when it is already the top action');
 assert(!harness.appElement.innerHTML.includes('Gem pause eller stop'), 'Home should not surface private logbook draft title');
-assert(harness.appElement.innerHTML.indexOf('Vigtigt fra kontoret') < harness.appElement.innerHTML.indexOf('Fællesskab'), 'Office priority should appear before the community preview');
+assert(harness.appElement.innerHTML.indexOf('Dagens værktøjer') < harness.appElement.innerHTML.indexOf('Kontor og fællesskab'), 'Driver tools should appear before the compact community hint');
+
+harness.run("activePickup = null; workday = { ...workday, active: true }; notifications = notifications.map((item, index) => ({ ...item, unread: index === 0 })); render();");
+assert(harness.appElement.innerHTML.includes('<b>Tjek beskeder</b>'), 'Home should promote messages as the next action when unread items exist');
+assert(!/home-driver-tools[\s\S]*<b>Beskeder<\/b>/.test(harness.appElement.innerHTML), 'Home driver tools should not duplicate messages when messages are already the top action');
 
 harness.run("activePickup = null; workday = { ...workday, active: false }; notifications = notifications.map(item => ({ ...item, unread: false })); render();");
 const openWorkButtons = harness.appElement.innerHTML.match(/data-action=\"open-work\"/g) || [];
@@ -103,7 +107,7 @@ assert(!harness.appElement.innerHTML.includes('undefined'), 'Home should not ren
 
 harness.run("workday = { ...workday, active: true }; location = { ...location, sharing: false }; notifications = notifications.map(item => ({ ...item, unread: false })); render();");
 assert(harness.appElement.innerHTML.includes('<b>Se live-kort</b>'), 'Active workday home should promote the live map as the next action when quiet');
-assert(!/home-simple-actions[\s\S]*<b>Live-kort<\/b>/.test(harness.appElement.innerHTML), 'Home simple actions should not duplicate live map when it is already the top action');
+assert(!/home-driver-tools[\s\S]*<b>Del position<\/b>/.test(harness.appElement.innerHTML), 'Home driver tools should not duplicate live map when it is already the top action');
 
 console.log('Home dashboard smoke test passed');
 

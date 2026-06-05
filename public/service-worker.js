@@ -1,4 +1,4 @@
-const CACHE_NAME = 'xpressintra-v84-install-permissions';
+const CACHE_NAME = 'xpressintra-v86-danish-day-greeting';
 const APP_FILES = [
   './',
   './index.html',

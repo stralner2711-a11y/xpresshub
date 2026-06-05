@@ -78,7 +78,7 @@ const harness = createHarness();
 harness.run("activeTab = 'home'; render();");
 assert(!harness.appElement.innerHTML.includes('Dagens assistent'), 'Home should not show the removed daily assistant');
 assert(!harness.appElement.innerHTML.includes('Næste handling'), 'Home should not show the removed assistant action');
-assert(harness.appElement.innerHTML.includes('home-simple-actions'), 'Home should show a simple primary action area');
+assert(harness.appElement.innerHTML.includes('home-driver-tools'), 'Home should show a simple primary driver tool area');
 assert(!harness.appElement.innerHTML.includes('Mere på forsiden'), 'Home should not hide old duplicate sections behind a more drawer');
 
 harness.run("activeTab = 'chat'; activeChat = null; render();");

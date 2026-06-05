@@ -77,9 +77,9 @@ assert(harness.appElement.innerHTML.includes('screen-guide'), 'Every main screen
 assert(harness.appElement.innerHTML.includes('Start her'), 'Home guide should explain the screen');
 assert(harness.appElement.innerHTML.includes('home-clean-hero'), 'Home should have a clean status hero');
 assert(harness.appElement.innerHTML.includes('Arbejde'), 'Bottom navigation should include the new work screen');
-assert(harness.appElement.innerHTML.includes('Vigtigt fra kontoret'), 'Home should group urgent office content');
+assert(harness.appElement.innerHTML.includes('Kontor og fællesskab'), 'Home should group office and community content compactly');
 assert(!harness.appElement.innerHTML.includes('Opgaver og kladder'), 'Home should not duplicate tasks and drafts from Work');
-assert(harness.appElement.innerHTML.includes('Fællesskab'), 'Home should group social content');
+assert(harness.appElement.innerHTML.includes('Åbn chat'), 'Home should still offer quick access to social content');
 
 harness.run("activeTab = 'more'; render();");
 assert(harness.appElement.innerHTML.includes('Styr appen professionelt'), 'Creator control guide should explain professional app management');

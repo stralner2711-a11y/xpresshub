@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="da">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>XpressIntra makeover</title>
+  <style>
+    :root {
+      --navy: #071827;
+      --panel: #102f48;
+      --panel-2: #123a57;
+      --line: #2f5d78;
+      --cream: #f7f0e4;
+      --muted: #b8c7ca;
+      --amber: #f4a641;
+      --green: #75b69a;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: radial-gradient(circle at top left, #163f5e, var(--navy) 45%, #04111d);
+      color: var(--cream);
+    }
+    main { max-width: 1180px; margin: 0 auto; padding: 28px 18px 42px; }
+    h1 { margin: 0 0 8px; font-size: clamp(30px, 5vw, 56px); letter-spacing: -1.5px; }
+    .intro { max-width: 760px; margin: 0 0 24px; color: var(--muted); font-size: 17px; line-height: 1.55; }
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+    .card {
+      border: 1px solid rgba(255,255,255,.14);
+      border-radius: 24px;
+      background: rgba(255,255,255,.06);
+      box-shadow: 0 20px 50px rgba(0,0,0,.28);
+      overflow: hidden;
+    }
+    .phone { margin: 14px; border-radius: 24px; background: var(--navy); padding: 16px; min-height: 460px; display: grid; gap: 13px; align-content: start; }
+    .top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .logo { font-weight: 900; color: var(--amber); letter-spacing: .8px; }
+    .avatar { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; background: var(--panel-2); border: 2px solid rgba(244,166,65,.55); font-weight: 900; }
+    .search { padding: 13px 14px; border-radius: 16px; background: var(--panel); color: var(--muted); }
+    .hero { border: 1px solid var(--line); border-radius: 22px; padding: 17px; background: linear-gradient(145deg, #174d70, #10334f); }
+    .hero small { color: var(--amber); font-weight: 900; letter-spacing: 1.5px; text-transform: uppercase; }
+    .hero h2 { margin: 6px 0 5px; font-size: 28px; line-height: 1.02; }
+    .hero p { margin: 0; color: var(--muted); line-height: 1.4; }
+    .chips { display: grid; grid-template-columns: repeat(2, 1fr); gap: 9px; }
+    .chip { min-height: 78px; border-radius: 18px; padding: 14px; background: var(--panel); display: grid; align-content: center; }
+    .chip.primary { background: var(--amber); color: #33220b; }
+    .chip b { display: block; font-size: 18px; }
+    .chip span { display: block; margin-top: 4px; font-size: 12px; color: inherit; opacity: .75; }
+    .feed { display: grid; gap: 8px; }
+    .feed article { padding: 12px; border-radius: 15px; background: var(--panel); color: var(--muted); }
+    .feed b { display: block; margin-bottom: 4px; color: var(--cream); }
+    .big-modules { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .big-modules div { min-height: 110px; border-radius: 19px; padding: 15px; background: var(--panel); display: grid; align-content: center; }
+    .body { padding: 0 18px 18px; }
+    .body h3 { margin: 0 0 7px; color: var(--amber); font-size: 20px; }
+    .body p { margin: 0; color: var(--muted); line-height: 1.45; }
+    .recommend {
+      margin-top: 22px;
+      padding: 18px;
+      border-left: 4px solid var(--amber);
+      border-radius: 18px;
+      background: rgba(244,166,65,.12);
+      color: var(--muted);
+      line-height: 1.55;
+    }
+    .recommend b { color: var(--cream); }
+    @media (max-width: 920px) { .grid { grid-template-columns: 1fr; } .phone { min-height: auto; } }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Makeover-retning for XpressIntra</h1>
+    <p class="intro">Vælg den retning der føles mest rigtig: en app som er hurtig, tydelig og behagelig for chauffører, også dem der ikke gider kæmpe med en telefon.</p>
+
+    <section class="grid">
+      <article class="card">
+        <div class="phone">
+          <div class="top"><div class="logo">XPRESSINTRA</div><div class="avatar">TH</div></div>
+          <div class="search">Søg i appen...</div>
+          <div class="hero">
+            <small>Dagens overblik</small>
+            <h2>Klar til dagen</h2>
+            <p>GPS skjult · 2 ulæste · 1 opgave</p>
+          </div>
+          <div class="chips">
+            <div class="chip primary"><b>Mød ind</b><span>Start arbejdsdag</span></div>
+            <div class="chip"><b>Del position</b><span>Frivilligt</span></div>
+            <div class="chip"><b>Beskeder</b><span>Fælles og privat</span></div>
+            <div class="chip"><b>Information</b><span>Regler og kontakter</span></div>
+          </div>
+        </div>
+        <div class="body">
+          <h3>A · Arbejdsdag først</h3>
+          <p>Roligst og mest praktisk. Store knapper, mindre støj, og tydelig prioritet på det chaufføren skal bruge lige nu.</p>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="phone">
+          <div class="top"><div class="logo">XPRESSINTRA</div><div class="avatar">TH</div></div>
+          <div class="search">Søg i appen...</div>
+          <div class="feed">
+            <article><b>Nyt fra kontoret</b>Husk nye rutiner ved afhentning i Flensburg.</article>
+            <article><b>Fælleschat</b>3 nye beskeder fra holdet.</article>
+            <article><b>Kollegaer online</b>4 kollegaer kan hjælpe lige nu.</article>
+            <article><b>Seneste fra logbogen</b>Billeder, noter og dagens små ting.</article>
+          </div>
+          <div class="chips">
+            <div class="chip primary"><b>Chat</b><span>Åbn nu</span></div>
+            <div class="chip"><b>Opslag</b><span>Se nyt</span></div>
+          </div>
+        </div>
+        <div class="body">
+          <h3>B · Socialt intranet</h3>
+          <p>Mere fællesskab og opslag. God til chat og kontorinfo, men forsiden kan hurtigt komme til at føles pakket.</p>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="phone">
+          <div class="top"><div class="logo">XPRESSINTRA</div><div class="avatar">TH</div></div>
+          <div class="search">Søg i appen...</div>
+          <div class="big-modules">
+            <div class="chip primary"><b>Arbejde</b><span>Mød ind / fri</span></div>
+            <div><b>Kort</b><span>Del / se kollegaer</span></div>
+            <div><b>Chat</b><span>Fælles / privat</span></div>
+            <div><b>Info</b><span>Regler / kontakter</span></div>
+          </div>
+          <div class="hero">
+            <small>Drift</small>
+            <p>Alt samlet i få store moduler. Mindre tekst, mere “tryk her”.</p>
+          </div>
+        </div>
+        <div class="body">
+          <h3>C · Kommando-center</h3>
+          <p>Meget enkelt og app-agtigt. Stærkt overblik, men mindre varmt og mindre socialt på forsiden.</p>
+        </div>
+      </article>
+    </section>
+
+    <div class="recommend">
+      <b>Min anbefaling:</b> vælg A som hovedretning og lån lidt fra B til opslag/chat. Så får vi en rolig chauffør-app med fællesskab, uden at forsiden bliver rodet.
+    </div>
+  </main>
+</body>
+</html>

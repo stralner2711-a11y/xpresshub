@@ -1,25 +1,27 @@
 {
-  "latestVersion": "1.3.23",
-  "stableVersion": "1.3.23",
-  "activeVersion": "1.3.23",
-  "previousStableVersion": "1.3.22",
-  "latestVersionCode": 36,
-  "stableVersionCode": 36,
-  "activeVersionCode": 36,
-  "apkDownloadUrl": "https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.23/xpressintra.apk",
-  "stableApkDownloadUrl": "https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.23/xpressintra.apk",
-  "previousStableApkDownloadUrl": "https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.22/xpressintra.apk",
-  "releasePageUrl": "https://github.com/stralner2711-a11y/xpresshub/releases/tag/v1.3.23",
-  "stableReleasePageUrl": "https://github.com/stralner2711-a11y/xpresshub/releases/tag/v1.3.23",
-  "downloadPageUrl": "https://stralner2711-a11y.github.io/xpresshub/download.html",
-  "changelog": [
-    "Android spoerger om notifikationstilladelse ved foerste start efter installation",
-    "Installationsflowet paa web/PWA guider brugeren til at aktivere systembeskeder",
-    "Notifikationsvalget er stadig frivilligt og kan slaas fra i Indstillinger",
-    "Service worker-cache er bumpet, saa tilladelsesflowet kommer rent ud"
-  ],
-  "forceUpdate": true,
-  "rollbackReason": "",
-  "defectiveVersions": [],
-  "updatedAt": "2026-06-05"
+    "latestVersion":  "1.3.25",
+    "stableVersion":  "1.3.25",
+    "activeVersion":  "1.3.25",
+    "previousStableVersion":  "1.3.24",
+    "latestVersionCode":  38,
+    "stableVersionCode":  38,
+    "activeVersionCode":  38,
+    "apkDownloadUrl":  "https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.25/xpressintra.apk",
+    "stableApkDownloadUrl":  "https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.25/xpressintra.apk",
+    "previousStableApkDownloadUrl":  "https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.24/xpressintra.apk",
+    "releasePageUrl":  "https://github.com/stralner2711-a11y/xpresshub/releases/tag/v1.3.25",
+    "stableReleasePageUrl":  "https://github.com/stralner2711-a11y/xpresshub/releases/tag/v1.3.25",
+    "downloadPageUrl":  "https://stralner2711-a11y.github.io/xpresshub/download.html",
+    "changelog":  [
+                      "Forsiden skifter nu automatisk mellem Godmorgen, Goddag, Godaften og Godnat efter dansk tid",
+                      "Hilsenen bruger Europe/Copenhagen, saa den passer til arbejdsdagen i Danmark",
+                      "Makeover-forsiden er bevaret med arbejdsdag foerst og store hverdagsknapper",
+                      "Service worker-cache er bumpet, saa den nye hilsen kommer rent ud"
+                  ],
+    "forceUpdate":  true,
+    "rollbackReason":  "",
+    "defectiveVersions":  [
+
+                          ],
+    "updatedAt":  "2026-06-06"
 }
