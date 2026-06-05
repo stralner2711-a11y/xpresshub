@@ -7,6 +7,8 @@ function assert(condition, message) {
 const app = fs.readFileSync('src/app.js', 'utf8');
 const styles = fs.readFileSync('src/styles.css', 'utf8');
 const version = JSON.parse(fs.readFileSync('public/version.json', 'utf8'));
+const docsVersion = JSON.parse(fs.readFileSync('docs/version.json', 'utf8'));
+const rootVersion = JSON.parse(fs.readFileSync('version.json', 'utf8'));
 const download = fs.readFileSync('public/download.html', 'utf8');
 const configExample = fs.readFileSync('public/app-config.example.js', 'utf8');
 const serviceWorker = fs.readFileSync('public/service-worker.js', 'utf8');
@@ -46,6 +48,10 @@ assert(version.apkDownloadUrl.includes('github.com/stralner2711-a11y/xpresshub')
 assert(version.previousStableVersion === '1.3.16', 'version.json should keep the previous stable version for rollback');
 assert(version.previousStableApkDownloadUrl.includes('/v1.3.16/'), 'version.json should expose previous stable APK for rollback');
 assert(version.changelog.some(item => item.includes('onboarding-overblik')), 'version.json should explain the onboarding control update');
+assert(docsVersion.activeVersion === version.activeVersion, 'docs/version.json should match public version for GitHub Pages');
+assert(docsVersion.activeVersionCode === version.activeVersionCode, 'docs/version.json should match public build code');
+assert(rootVersion.activeVersion === version.activeVersion, 'root version.json should match public version for root-hosted Pages');
+assert(rootVersion.activeVersionCode === version.activeVersionCode, 'root version.json should match public build code');
 
 assert(download.includes('iPhone eller pc'), 'Download page should guide iPhone and PC users to the web app');
 assert(download.includes('Download Android APK'), 'Download page should still have a clear Android APK button');

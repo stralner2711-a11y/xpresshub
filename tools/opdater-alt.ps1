@@ -165,6 +165,22 @@ foreach ($cleanPath in @(
 Invoke-LoggedCommand '[5/9] Bygger og synkroniserer Android- og iOS-filer...' $project 'npm.cmd' @('run', 'native:sync')
 
 Write-Log ''
+Write-Log 'Synkroniserer version.json til alle steder appen og GitHub Pages kan laese den...'
+$canonicalVersionFile = Join-Path $project 'public\version.json'
+foreach ($versionTarget in @(
+  (Join-Path $project 'version.json'),
+  (Join-Path $project 'docs\version.json'),
+  (Join-Path $project 'dist\version.json')
+)) {
+  $versionTargetDir = Split-Path -Parent $versionTarget
+  if (!(Test-Path -LiteralPath $versionTargetDir)) {
+    New-Item -ItemType Directory -Path $versionTargetDir -Force | Out-Null
+  }
+  Copy-Item -LiteralPath $canonicalVersionFile -Destination $versionTarget -Force
+  Write-Log "Version synkroniseret: $versionTarget"
+}
+
+Write-Log ''
 Write-Log '[6/9] Klargor GitHub-pakke...'
 if (!(Test-Path -LiteralPath $ready)) { New-Item -ItemType Directory -Path $ready -Force | Out-Null }
 foreach ($folder in @('assets', 'docs', 'public', 'qa', 'src', 'supabase', 'tools')) {
@@ -211,6 +227,7 @@ foreach ($file in @(
 )) {
   Copy-RootFile $file
 }
+Copy-RootFile 'version.json'
 
 Write-Log ''
 Write-Log '[7/9] Kopierer pakken til GitHub-repo...'
