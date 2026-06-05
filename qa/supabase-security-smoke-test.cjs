@@ -21,6 +21,9 @@ const locationRepair = fs.readFileSync('supabase/REPAIR_LOCATION_SHARES.sql', 'u
   'new.logbook_enabled := old.logbook_enabled;',
 ].forEach(line => assert(schema.includes(line), `Profile trigger should preserve ${line}`));
 
+assert(schema.includes('function private.protect_profile_security_fields()'), 'Profile security trigger should live in private schema');
+assert(schema.includes('execute procedure private.protect_profile_security_fields()'), 'Profiles should use the private security trigger');
+
 [
   'old_department',
   'new_department',
@@ -32,10 +35,12 @@ const locationRepair = fs.readFileSync('supabase/REPAIR_LOCATION_SHARES.sql', 'u
   'new_logbook_enabled',
 ].forEach(field => assert(schema.includes(field), `Audit log should include ${field}`));
 
-assert(schema.includes("p.vehicle_type = 'truck' or p.role ilike '%lastbil%' or p.license_summary ilike '%C/E%'"), 'Truck chat should follow documented work function');
+assert(schema.includes("c.channel_type = 'truck' and p.vehicle_type = 'truck'"), 'Truck chat should follow approved vehicle type only');
+assert(schema.includes('function private.can_read_conversation') || schema.includes('function private.can_access_conversation'), 'Schema should include private chat access helpers');
+assert(schema.includes("coalesce(p.employment_status, 'active') = 'active'"), 'Inactive profiles should not keep chat access through RLS helper functions');
 assert(fullBootstrap.includes("role = 'Appansvarlig") && fullBootstrap.includes('Lastbilchauff'), 'Creator bootstrap should show Tommy as app responsible truck driver by work function');
 assert(fullBootstrap.includes("vehicle_type = 'truck'"), 'Creator bootstrap should grant truck channel through vehicle type');
-assert(schema.includes("p.vehicle_type = 'van' or p.role ilike '%varebil%'"), 'Van chat should follow documented work function');
+assert(schema.includes("c.channel_type = 'van' and p.vehicle_type = 'van'"), 'Van chat should follow approved vehicle type only');
 assert(schema.includes('grant usage on schema public to authenticated;'), 'Schema should explicitly expose public schema to authenticated users');
 assert(firstAdmin.includes("vehicle_type = 'truck'"), 'First admin helper should grant truck channel through vehicle type');
 assert(firstAdmin.includes('license_summary'), 'First admin helper should preserve/set truck driver license summary');
@@ -79,6 +84,8 @@ assert(schema.includes('on public.admin_audit_log for insert to authenticated wi
 assert(schema.includes("insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)"), 'Schema should create a private Storage bucket for media');
 assert(schema.includes("public = false"), 'Media bucket should be private');
 assert(schema.includes('private.can_read_conversation(messages.conversation_id)'), 'Conversation media should only be readable by users who can read the conversation');
+assert(schema.includes('drop policy if exists "xpressintra media read own or admin" on storage.objects;'), 'Full SQL should remove old broad admin read access to raw media objects');
+assert(schema.includes('drop policy if exists "xpressintra media delete own or admin" on storage.objects;'), 'Full SQL should remove old broad admin delete access to raw media objects');
 assert(schema.includes("split_part(name, '/', 1) = auth.uid()::text"), 'Users should only upload media under their own storage prefix');
 assert(schema.includes('create policy "employees can read shared media objects"'), 'Storage should allow recipients to read shared media through metadata checks');
 assert(schema.includes("media_attachments.visibility = 'announcement'"), 'Announcement images should be readable as shared internal media');

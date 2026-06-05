@@ -538,7 +538,9 @@ as $$
   );
 $$;
 
-create or replace function public.protect_profile_security_fields()
+drop function if exists public.protect_profile_security_fields() cascade;
+
+create or replace function private.protect_profile_security_fields()
 returns trigger
 language plpgsql
 security definer
@@ -598,7 +600,7 @@ $$;
 drop trigger if exists protect_profile_security_fields on public.profiles;
 create trigger protect_profile_security_fields
   before update on public.profiles
-  for each row execute procedure public.protect_profile_security_fields();
+  for each row execute procedure private.protect_profile_security_fields();
 
 create or replace function private.is_conversation_member(target_conversation uuid)
 returns boolean
@@ -625,10 +627,11 @@ as $$
     from public.conversations c
     left join public.profiles p on p.id = auth.uid()
     where c.id = target_conversation
+      and coalesce(p.employment_status, 'active') = 'active'
       and (
         c.channel_type = 'all'
-        or (c.channel_type = 'van' and (p.vehicle_type = 'van' or p.role ilike '%varebil%'))
-        or (c.channel_type = 'truck' and (p.vehicle_type = 'truck' or p.role ilike '%lastbil%' or p.license_summary ilike '%C/E%'))
+        or (c.channel_type = 'van' and p.vehicle_type = 'van')
+        or (c.channel_type = 'truck' and p.vehicle_type = 'truck')
         or (c.channel_type = 'direct' and private.is_conversation_member(c.id))
       )
   );
@@ -730,6 +733,13 @@ drop policy if exists "members can send messages" on public.messages;
 drop policy if exists "employees can read visible media" on public.media_attachments;
 drop policy if exists "employees can add own media" on public.media_attachments;
 drop policy if exists "employees can delete own media" on public.media_attachments;
+drop policy if exists "media read own related" on public.media_attachments;
+drop policy if exists "media insert own" on public.media_attachments;
+drop policy if exists "media delete own" on public.media_attachments;
+drop policy if exists "xpressintra media read own or admin" on storage.objects;
+drop policy if exists "xpressintra media delete own or admin" on storage.objects;
+drop policy if exists "xpressintra media update own" on storage.objects;
+drop policy if exists "xpressintra media upload own" on storage.objects;
 drop policy if exists "employees can upload own media objects" on storage.objects;
 drop policy if exists "employees can read own media objects" on storage.objects;
 drop policy if exists "employees can read shared media objects" on storage.objects;
@@ -852,7 +862,7 @@ on public.location_shares for select to authenticated using (
     and exists (
       select 1 from public.profiles p
       where p.id = auth.uid()
-        and (p.vehicle_type = 'truck' or p.role ilike '%lastbil%' or p.license_summary ilike '%C/E%')
+        and p.vehicle_type = 'truck'
     )
   )
   or (
@@ -861,7 +871,7 @@ on public.location_shares for select to authenticated using (
     and exists (
       select 1 from public.profiles p
       where p.id = auth.uid()
-        and (p.vehicle_type = 'van' or p.role ilike '%varebil%')
+        and p.vehicle_type = 'van'
     )
   )
 );

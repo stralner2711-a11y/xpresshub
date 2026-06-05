@@ -7,10 +7,9 @@ function defaultSearchable(value = '') {
 }
 
 export function hasChannelAccess(channel, profile = {}, helpers = {}) {
-  const searchable = helpers.searchable || defaultSearchable;
-  const profileText = searchable(`${profile.role || ''} ${profile.department || ''} ${profile.license || ''} ${profile.truck || ''}`);
-  if (channel === 'truck') return profile.vehicleType === 'truck' || profileText.includes('lastbil') || profileText.includes('c/e');
-  if (channel === 'van') return profile.vehicleType === 'van' || profileText.includes('varebil');
+  if (['admin', 'owner'].includes(profile.accessRole)) return true;
+  if (channel === 'truck') return profile.vehicleType === 'truck';
+  if (channel === 'van') return profile.vehicleType === 'van';
   return true;
 }
 

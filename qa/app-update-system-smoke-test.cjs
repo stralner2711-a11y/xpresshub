@@ -20,8 +20,8 @@ const androidManifest = fs.readFileSync('android/app/src/main/AndroidManifest.xm
 const mainActivity = fs.readFileSync('android/app/src/main/java/dk/xpressbudet/xpressintra/MainActivity.java', 'utf8');
 const updateInstallerPlugin = fs.readFileSync('android/app/src/main/java/dk/xpressbudet/xpressintra/UpdateInstallerPlugin.java', 'utf8');
 
-assert(app.includes("const APP_DISPLAY_VERSION = '1.3.19'"), 'App should expose human APK version');
-assert(app.includes('const APP_VERSION_CODE = 32'), 'App should compare numeric Android version codes');
+assert(app.includes(`const APP_DISPLAY_VERSION = '${version.activeVersion}'`), 'App should expose human APK version');
+assert(app.includes(`const APP_VERSION_CODE = ${version.activeVersionCode}`), 'App should compare numeric Android version codes');
 assert(app.includes('window.XPRESSINTRA_UPDATE'), 'App should read update config from app-config');
 assert(app.includes('fetchVersionInfo'), 'App should fetch version.json');
 assert(app.includes('normalizeVersionInfo'), 'App should validate version.json');
@@ -48,13 +48,13 @@ assert(updateSystem.includes('globalThis.XpressIntraUpdateSystem'), 'Update modu
 assert(styles.includes('.update-summary-card'), 'Update summary should be styled');
 assert(styles.includes('.force-update'), 'Forced update modal should be styled');
 
-assert(version.activeVersion === '1.3.19', 'version.json should expose activeVersion');
-assert(version.activeVersionCode === 32, 'version.json should expose activeVersionCode');
+assert(version.activeVersion === '1.3.20', 'version.json should expose activeVersion');
+assert(version.activeVersionCode === 33, 'version.json should expose activeVersionCode');
 assert(version.forceUpdate === true, 'Test release should force update visibility');
 assert(version.apkDownloadUrl.includes('github.com/stralner2711-a11y/xpresshub'), 'version.json should point to the official GitHub repo');
-assert(version.previousStableVersion === '1.3.18', 'version.json should keep the previous stable version for rollback');
-assert(version.previousStableApkDownloadUrl.includes('/v1.3.18/'), 'version.json should expose previous stable APK for rollback');
-assert(version.changelog.some(item => item.includes('Beta-stabilisering')), 'version.json should explain the beta stabilization update');
+assert(version.previousStableVersion === '1.3.19', 'version.json should keep the previous stable version for rollback');
+assert(version.previousStableApkDownloadUrl.includes('/v1.3.19/'), 'version.json should expose previous stable APK for rollback');
+assert(version.changelog.some(item => item.includes('Sikkerhedsrettelse')), 'version.json should explain the access hardening update');
 assert(docsVersion.activeVersion === version.activeVersion, 'docs/version.json should match public version for GitHub Pages');
 assert(docsVersion.activeVersionCode === version.activeVersionCode, 'docs/version.json should match public build code');
 assert(rootVersion.activeVersion === version.activeVersion, 'root version.json should match public version for root-hosted Pages');
@@ -65,7 +65,7 @@ assert(download.includes('Download Android APK'), 'Download page should still ha
 assert(download.includes('Føj til hjemmeskærm'), 'Download page should guide iPhone home screen installation');
 assert(download.includes('Tillad installation fra ukendte kilder'), 'Download page should guide APK installation');
 assert(download.includes('Skriv aldrig adgangskoden andre steder'), 'Download page should include plain safety guidance');
-assert(download.includes('/releases/download/v1.3.19/xpressintra.apk'), 'Download page should point directly to the latest APK');
+assert(download.includes(`/releases/download/v${version.activeVersion}/xpressintra.apk`), 'Download page should point directly to the latest APK');
 
 assert(configExample.includes('XPRESSINTRA_UPDATE'), 'Config example should document update config');
 assert(configExample.includes('stralner2711-a11y.github.io/xpresshub/version.json'), 'Config example should show official GitHub Pages version.json URL');

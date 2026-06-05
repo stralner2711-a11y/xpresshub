@@ -26,9 +26,9 @@
   search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>',
 };
 
-const APP_VERSION = '1.3.19-release-v80';
-const APP_DISPLAY_VERSION = '1.3.19';
-const APP_VERSION_CODE = 32;
+const APP_VERSION = '1.3.20-release-v81';
+const APP_DISPLAY_VERSION = '1.3.20';
+const APP_VERSION_CODE = 33;
 const TEMPORARY_EMPLOYEE_PASSWORD = 'xpress';
 const IMAGE_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
 const PROFILE_PHOTO_MAX_DIMENSION = 512;
@@ -1353,7 +1353,7 @@ function markCurrentVersionSuspect() {
   const fallbackInfo = {
     activeVersion: APP_DISPLAY_VERSION,
     activeVersionCode: APP_VERSION_CODE,
-    apkDownloadUrl: 'https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.19/xpressintra.apk',
+    apkDownloadUrl: 'https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.20/xpressintra.apk',
   };
   const info = appUpdateState.latest || normalizeVersionInfo(fallbackInfo);
   const defective = new Set([...(info.defectiveVersions || []).map(String), APP_DISPLAY_VERSION, String(APP_VERSION_CODE)]);
@@ -1601,9 +1601,9 @@ function hasChannelAccess(channel) {
   if (globalThis.XpressIntraChat?.hasChannelAccess) {
     return globalThis.XpressIntraChat.hasChannelAccess(channel, profile, { searchable });
   }
-  const profileText = searchable(`${profile.role || ''} ${profile.department || ''} ${profile.license || ''} ${profile.truck || ''}`);
-  if (channel === 'truck') return profile.vehicleType === 'truck' || profileText.includes('lastbil') || profileText.includes('c/e');
-  if (channel === 'van') return profile.vehicleType === 'van' || profileText.includes('varebil');
+  if (['admin', 'owner'].includes(profile.accessRole)) return true;
+  if (channel === 'truck') return profile.vehicleType === 'truck';
+  if (channel === 'van') return profile.vehicleType === 'van';
   return true;
 }
 
@@ -2541,6 +2541,7 @@ async function applySupabaseSession(authSession) {
   session = { email: authSession.user.email, userId: authSession.user.id, mode: 'supabase', signedInAt: new Date().toISOString() };
   save('session', session);
   await loadSupabaseData(authSession);
+  sanitizeCreatorRoleTester();
   subscribeSupabaseChat();
   subscribeSupabaseLocations();
   subscribeSupabasePickupTasks();
@@ -2704,6 +2705,8 @@ async function signOut() {
   }
   if (client && session?.mode === 'supabase') await client.auth.signOut();
   localStorage.removeItem('roadlog:session');
+  localStorage.removeItem('roadlog:creatorRoleTester');
+  creatorRoleTester = { active: false, originalProfile: null, currentRole: null };
   session = null;
   render();
 }
@@ -2713,7 +2716,7 @@ function isAdmin() {
 }
 
 function isDispatcher() {
-  return ['dispatcher', 'admin', 'owner'].includes(profile.accessRole) || profile.role === 'Disponent' || profile.role === 'Chef';
+  return ['dispatcher', 'admin', 'owner'].includes(profile.accessRole);
 }
 
 function canManageEmployees() {
@@ -2730,8 +2733,12 @@ function canUseInternalAction(action) {
     'test-supabase',
     'open-security-center',
     'show-update-status',
+    'open-rollback-center',
+    'mark-current-version-suspect',
+    'install-stable-rollback',
   ]);
   const adminActions = new Set([
+    'open-admin',
     'new-employee',
     'open-launch-checklist',
     'open-gdpr-go-live',
@@ -2765,9 +2772,15 @@ const creatorRolePresets = {
 function canUseCreatorRoleTester() {
   const original = creatorRoleTester.originalProfile || {};
   return profile.accessRole === 'owner'
-    || profile.email === 'stralner2711@gmail.com'
-    || original.accessRole === 'owner'
-    || original.email === 'stralner2711@gmail.com';
+    || (creatorRoleTester.active && original.accessRole === 'owner' && original.email === profile.email);
+}
+
+function sanitizeCreatorRoleTester() {
+  const original = creatorRoleTester.originalProfile || {};
+  const sameUser = !original.email || original.email === profile.email;
+  if (profile.accessRole === 'owner' || (creatorRoleTester.active && original.accessRole === 'owner' && sameUser)) return;
+  creatorRoleTester = { active: false, originalProfile: null, currentRole: null };
+  save('creatorRoleTester', creatorRoleTester);
 }
 
 function creatorPerspectiveLabel() {
@@ -4379,7 +4392,7 @@ function renderLogin() {
       <label>Adgangskode<input name="password" type="password" value="${demoCredentials ? 'demo1234' : ''}" minlength="6" required /></label>
       <button>Log ind</button>
       ${canUseStandardSignup ? '<button class="login-secondary" data-action="signup-standard-password">Opret konto med standardkode</button>' : ''}
-      <span>${text(canUseStandardSignup ? 'Du er åbnet via invitationslink. Skriv standardkoden xpress og lav derefter din egen kode.' : backend.ready ? 'Ny medarbejder? Brug det personlige invitationslink fra chef eller creator. Standardkode-oprettelse vises kun via link.' : 'Har du ikke adgang endnu, skal din chef eller creator oprette dig først.')}</span>
+      <span>${text(canUseStandardSignup ? 'Du er åbnet via invitationslink. Skriv standardkoden xpress og lav derefter din egen kode. Har du allerede oprettet kontoen, skal du logge ind med din personlige kode.' : backend.ready ? 'Ny medarbejder? Brug det personlige invitationslink fra chef eller creator. Standardkode-oprettelse vises kun første gang via link. Har du allerede oprettet konto, logger du ind med din personlige kode.' : 'Har du ikke adgang endnu, skal din chef eller creator oprette dig først.')}</span>
     </form>
   </section>`;
 }
@@ -4818,7 +4831,7 @@ function renderMore() {
       <button data-action="open-legal">Åbn</button>
     </section>`}
     <section class="control-tabs" aria-label="Kontrolcenter overblik">
-      <span>Daglig brug</span><span>Privatliv</span><span>Chef/admin</span>
+      <span>Daglig brug</span><span>Privatliv</span><span>${canManageEmployees() || isDispatcher() || isCreatorOwner() ? 'Administration' : 'Konto'}</span>
     </section>
     <section class="utility-list control-center">
       <details class="control-detail-group" open>
@@ -4838,12 +4851,12 @@ function renderMore() {
         <button class="utility-row" data-action="open-settings"><span class="utility-icon">${icon('settings')}</span><span><b>Indstillinger</b><small>Notifikationer og privatliv</small></span>${icon('arrow', 'row-arrow')}</button>
       </details>
       <details class="control-detail-group">
-        <summary>Administration</summary>
+        <summary>${canManageEmployees() || isDispatcher() || isCreatorOwner() ? 'Administration' : 'Konto'}</summary>
         ${isDispatcher() ? `<button class="utility-row" data-action="open-dispatch"><span class="utility-icon">${icon('alert')}</span><span><b>Driftsoverblik</b><small>Hold, positioner og driftsopslag</small></span>${icon('arrow', 'row-arrow')}</button>` : ''}
-        <button class="utility-row" data-action="open-admin"><span class="utility-icon">${icon('settings')}</span><span><b>${isCreatorOwner() ? 'Appens drift' : canManageEmployees() ? 'Chef/admin' : 'Sikkerhed og rettigheder'}</b><small>${isCreatorOwner() ? 'Status, sikkerhed, Supabase og vigtige styringer' : canManageEmployees() ? 'Rettigheder, sikkerhed og medarbejdere' : 'Se hvad chef/admin kan styre'}</small></span>${icon('arrow', 'row-arrow')}</button>
+        ${canManageEmployees() || isCreatorOwner() ? `<button class="utility-row" data-action="open-admin"><span class="utility-icon">${icon('settings')}</span><span><b>${isCreatorOwner() ? 'Appens drift' : 'Chef/admin'}</b><small>${isCreatorOwner() ? 'Status, sikkerhed, Supabase og vigtige styringer' : 'Rettigheder, sikkerhed og medarbejdere'}</small></span>${icon('arrow', 'row-arrow')}</button>` : ''}
         ${canManageEmployees() ? `<button class="utility-row" data-action="open-launch-checklist"><span class="utility-icon">${icon('check')}</span><span><b>Klar til drift</b><small>Supabase, første admin, telefon-test og jura</small></span>${icon('arrow', 'row-arrow')}</button>` : ''}
         ${renderCreatorRoleTester()}
-        <button class="utility-row" data-action="reset-demo"><span class="utility-icon">${icon('settings')}</span><span><b>Nulstil demo</b><small>Gendan de oprindelige eksempeldata</small></span>${icon('arrow', 'row-arrow')}</button>
+        ${DEMO_MODE ? `<button class="utility-row" data-action="reset-demo"><span class="utility-icon">${icon('settings')}</span><span><b>Nulstil demo</b><small>Gendan de oprindelige eksempeldata</small></span>${icon('arrow', 'row-arrow')}</button>` : ''}
         <button class="utility-row" data-action="logout"><span class="utility-icon">${icon('close')}</span><span><b>Log ud</b><small>Afslut din session på denne enhed</small></span>${icon('arrow', 'row-arrow')}</button>
       </details>
     </section>`;
@@ -5428,6 +5441,10 @@ async function startPickupTask(task, modalElement = null) {
 }
 
 async function openSupabaseDiagnosticsModal() {
+  if (!isCreatorOwner()) {
+    showToast('Kun creator kan teste Supabase-forbindelsen');
+    return;
+  }
   const modal = document.createElement('div');
   modal.className = 'modal-backdrop';
   modal.innerHTML = `<section class="profile-modal supabase-diagnostics-modal">
@@ -5683,19 +5700,21 @@ function openInfoModal(id) {
 }
 
 function openRuleUpdatesModal() {
+  const canSeeDrafts = canManageEmployees() || isCreatorOwner();
+  const visibleRuleUpdates = canSeeDrafts ? ruleUpdates : ruleUpdates.filter(update => update.status === 'approved');
   const modal = document.createElement('div');
   modal.className = 'modal-backdrop';
   modal.innerHTML = `<section class="profile-modal rule-updates-modal">
     <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
     <p class="eyebrow">Overvågede kilder</p><h3>Regelnyt</h3>
-    <p class="info-intro">Når appen forbindes online, kan den kontrollere udvalgte officielle kilder automatisk. Nye tekster bør godkendes internt, før medarbejderne får en besked.</p>
-    <div class="rule-update-list">${ruleUpdates.map(update => `
+    <p class="info-intro">${canSeeDrafts ? 'Når appen forbindes online, kan den kontrollere udvalgte officielle kilder automatisk. Nye tekster bør godkendes internt, før medarbejderne får en besked.' : 'Her vises kun godkendte regelopdateringer, så medarbejderne får enkel og sikker information.'}</p>
+    <div class="rule-update-list">${visibleRuleUpdates.map(update => `
       <a href="${text(update.href)}" target="_blank" rel="noreferrer">
-        <div class="rule-meta"><small>${text(update.audience)}</small><i class="approval-pill ${text(update.status)}">${text(update.status === 'approved' ? 'Godkendt' : 'Kladde')}</i></div>
+        <div class="rule-meta"><small>${text(update.audience)}</small>${canSeeDrafts ? `<i class="approval-pill ${text(update.status)}">${text(update.status === 'approved' ? 'Godkendt' : 'Kladde')}</i>` : ''}</div>
         <b>${text(update.title)}</b>
         <span>${text(update.body)}</span><em>${text(update.source)} · ${text(update.checked)}</em>
         <strong>${text(update.effectiveDate)} · ${text(update.whyItMatters)}</strong>
-      </a>`).join('')}</div>
+      </a>`).join('') || '<p class="empty-state">Der er ingen godkendte regelopdateringer lige nu.</p>'}</div>
     <p class="source-note">Planlagt kontrol: dagligt. Notifikation: kun ved godkendte ændringer, så medarbejderne ikke bliver støjbelastet.</p>
   </section>`;
   document.body.append(modal);
@@ -5721,6 +5740,10 @@ function openAnnouncementModal() {
 }
 
 function openDispatchModal() {
+  if (!isDispatcher()) {
+    showToast('Kun drift/disponent kan åbne driftsoverblik');
+    return;
+  }
   const online = employees.filter(employee => employee.online);
   const sharing = employees.filter(employee => employee.sharing);
   const trucks = employees.filter(employee => employee.vehicleType === 'truck');
@@ -5747,6 +5770,10 @@ function openDispatchModal() {
 }
 
 function openAdminModal() {
+  if (!canManageEmployees() && !isCreatorOwner()) {
+    showToast('Du har ikke adgang til chef/admin eller creator-drift');
+    return;
+  }
   const admins = employees.filter(employee => ['admin', 'owner'].includes(employee.accessRole));
   const dispatchers = employees.filter(employee => employee.accessRole === 'dispatcher');
   const lockedChannels = chats.filter(chat => chat.channel).length;
@@ -5797,6 +5824,10 @@ function openAdminModal() {
 }
 
 function openLaunchChecklistModal() {
+  if (!canManageEmployees() && !isCreatorOwner()) {
+    showToast('Kun chef/admin kan åbne go-live tjek');
+    return;
+  }
   const readiness = launchReadiness();
   const backend = supabaseStatus();
   const modal = document.createElement('div');
@@ -5833,6 +5864,10 @@ function openLaunchChecklistModal() {
 }
 
 function openGdprGoLiveModal() {
+  if (!canManageEmployees() && !isCreatorOwner()) {
+    showToast('Kun chef/admin kan åbne GDPR go-live pakken');
+    return;
+  }
   const readiness = gdprGoLiveReadiness();
   const pendingRequests = dataRequests.filter(request => !/completed|closed|done|afsluttet|rejected/i.test(request.status || ''));
   const modal = document.createElement('div');
@@ -5879,6 +5914,10 @@ function openGdprGoLiveModal() {
 }
 
 function openSecurityCenterModal() {
+  if (!isCreatorOwner()) {
+    showToast('Kun creator kan åbne sikkerhedscenter');
+    return;
+  }
   const readiness = securityReadiness();
   const backend = supabaseStatus();
   const criticalOpen = readiness.items.filter(item => !item.done).slice(0, 4);
@@ -5930,7 +5969,7 @@ function openLegalModal() {
       <span>Alle medarbejdere bør gennemgå denne side før rigtig drift. Demo-accept gemmes kun lokalt.</span>
     </section>
     ${renderGdprGoLivePanel({ compact: true })}
-    <button class="save-btn secondary" type="button" data-action="open-gdpr-go-live">Åbn GDPR go-live pakke</button>
+    ${canManageEmployees() || isCreatorOwner() ? '<button class="save-btn secondary" type="button" data-action="open-gdpr-go-live">Åbn GDPR go-live pakke</button>' : ''}
     <div class="legal-grid">
       <article><b>GPS</b><span>GPS er frivillig, synlig og kan stoppes. Chef/admin må ikke bruge appen som skjult overvågning.</span></article>
       <article><b>Chats</b><span>Fælleschat er intern. Lastbil- og varebilchat følger arbejdsfunktion. Chef/admin kan kun se kanalchat, hvis profilen også er sat som lastbil- eller varebilsfunktion.</span></article>
@@ -6592,7 +6631,7 @@ document.addEventListener('submit', async event => {
           openStandardSignupPasswordModal(email, inviteContext.invite);
         } else {
           if (String(data.get('password') || '') === TEMPORARY_EMPLOYEE_PASSWORD) {
-            showToast('Standardkoden bruges kun via "Opret konto med standardkode"');
+            showToast('Standardkoden bruges kun til første oprettelse via invitationslink. Har du allerede oprettet konto, skal du bruge din personlige kode.');
             return;
           }
           await signInSupabase(data.get('email'), data.get('password'));

@@ -8,9 +8,10 @@ const app = fs.readFileSync('src/app.js', 'utf8');
 const worker = fs.readFileSync('public/service-worker.js', 'utf8');
 const rootWorker = fs.readFileSync('service-worker.js', 'utf8');
 const manifest = fs.readFileSync('android/app/src/main/AndroidManifest.xml', 'utf8');
+const version = JSON.parse(fs.readFileSync('public/version.json', 'utf8'));
 
 for (const source of [worker, rootWorker]) {
-  assert(source.includes("CACHE_NAME = 'xpressintra-v80-beta-stabilisering'"), 'Service worker cache version should be bumped');
+  assert(source.includes("CACHE_NAME = 'xpressintra-v81-access-hardening'"), 'Service worker cache version should be bumped');
   assert(source.includes("'./index.html'"), 'Service worker should precache index.html');
   assert(!source.includes('indep.html'), 'Service worker should not reference old indep.html fallback');
   assert(!source.includes('ppressbudet'), 'Service worker should not reference misspelled logo file');
@@ -31,9 +32,9 @@ assert(manifest.includes('android.hardware.camera" android:required="false"'), '
 assert(!manifest.includes('READ_EXTERNAL_STORAGE'), 'Legacy broad external storage permission should not be requested');
 assert(!manifest.includes('WRITE_EXTERNAL_STORAGE'), 'Legacy write storage permission should not be requested');
 
-assert(app.includes("const APP_VERSION = '1.3.19-release-v80'"), 'App version should be visible in code');
-assert(app.includes("const APP_DISPLAY_VERSION = '1.3.19'"), 'APK display version should be visible in code');
-assert(app.includes('const APP_VERSION_CODE = 32'), 'APK version code should be visible in code');
+assert(app.includes(`const APP_VERSION = '${version.activeVersion}-release-v81'`), 'App version should be visible in code');
+assert(app.includes(`const APP_DISPLAY_VERSION = '${version.activeVersion}'`), 'APK display version should be visible in code');
+assert(app.includes(`const APP_VERSION_CODE = ${version.activeVersionCode}`), 'APK version code should be visible in code');
 assert(app.includes('!hasSupabaseConfigForMode && storedSessionForMode'), 'Demo mode should not override a configured production backend');
 
 console.log('Professional readiness smoke test passed');

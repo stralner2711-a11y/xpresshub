@@ -13,7 +13,7 @@ Native iOS/TestFlight er teknisk forberedt i projektet, men upload kræver stadi
 - `@capacitor/ios` er installeret.
 - `ios/`-mappen findes.
 - `npm run native:sync` bygger web og synkroniserer både Android og iOS.
-- Xcode-projektet matcher fælles version: `1.3.19` / build `32`.
+- Xcode-projektet matcher fælles version: `1.3.20` / build `33`.
 - `Build Apple iOS paa Mac.command` og `tools/build-ios-mac.sh` findes til senere Mac-flow.
 - `docs/APPLE_REVIEW_INFO.md` indeholder review-noter og privacy-kladden.
 

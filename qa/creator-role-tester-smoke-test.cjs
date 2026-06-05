@@ -61,6 +61,10 @@ assert(harness.appElement.innerHTML.includes('Creator test'), 'Demo creator shou
 harness.run("profile = { ...profile, email: 'almindelig@example.com', accessRole: 'employee' }; activeTab = 'more'; render();");
 assert(!harness.appElement.innerHTML.includes('Creator test'), 'Normal employees should not see creator role tester');
 
+harness.run("creatorRoleTester = { active: true, originalProfile: { email: 'stralner2711@gmail.com', accessRole: 'owner' }, currentRole: 'truck' }; profile = { ...profile, email: 'almindelig@example.com', accessRole: 'employee' }; sanitizeCreatorRoleTester(); activeTab = 'more'; render();");
+assert(harness.run("creatorRoleTester.active") === false, 'Stale creator tester state should be cleared for another logged-in user');
+assert(!harness.appElement.innerHTML.includes('Creator test'), 'Employees should not inherit creator tester from a previous session on the same device');
+
 harness.run("profile = { ...profile, email: 'stralner2711@gmail.com', accessRole: 'owner', role: 'Appansvarlig · Lastbilchauffør', vehicleType: 'truck' }; activeTab = 'more'; render();");
 assert(harness.appElement.innerHTML.includes('Creator test'), 'Creator should see role tester');
 assert(harness.appElement.innerHTML.includes('Appansvarlig'), 'Role tester should include app responsible perspective');

@@ -83,6 +83,10 @@ alter table public.employee_invitations
   add column if not exists accepted_at timestamptz,
   add column if not exists used_by uuid references public.profiles(id) on delete set null;
 
+alter table public.media_attachments
+  add column if not exists visibility text not null default 'conversation'
+  check (visibility in ('conversation', 'announcement', 'private_log', 'profile'));
+
 create unique index if not exists employee_invitations_one_pending_email_idx
 on public.employee_invitations (lower(email))
 where status = 'pending';

@@ -81,10 +81,37 @@ assert(typeof listeners.click === 'function', 'App should register a click handl
 
 vm.runInContext("profile = { ...profile, name: 'Almindelig Chauffør', email: 'driver@example.com', accessRole: 'employee', role: 'Chauffør', vehicleType: 'truck' };", context);
 
-for (const action of ['test-supabase', 'new-employee', 'new-announcement', 'open-dispatch', 'open-security-center', 'open-launch-checklist', 'open-gdpr-go-live']) {
+for (const action of ['open-admin', 'test-supabase', 'new-employee', 'new-announcement', 'open-dispatch', 'open-security-center', 'open-launch-checklist', 'open-gdpr-go-live', 'open-rollback-center', 'mark-current-version-suspect', 'install-stable-rollback']) {
   listeners.click({ target: makeNode(action), preventDefault() {} });
   assert(modalNodes.length === 0, `Employee should not be able to open restricted action: ${action}`);
 }
+
+[
+  'openAdminModal()',
+  'openDispatchModal()',
+  'openSecurityCenterModal()',
+  'openLaunchChecklistModal()',
+  'openGdprGoLiveModal()',
+  'openRollbackCenterModal()',
+  'openSupabaseDiagnosticsModal()',
+].forEach(call => {
+  vm.runInContext(call, context);
+  assert(modalNodes.length === 0, `Employee should not be able to call ${call} directly`);
+});
+
+vm.runInContext("profile = { ...profile, name: 'Manipuleret Titel', email: 'driver@example.com', accessRole: 'employee', role: 'Chef', vehicleType: 'truck' };", context);
+assert(vm.runInContext("isDispatcher()", context) === false, 'Employee title text must not grant dispatcher/admin rights');
+assert(vm.runInContext("canPublishOfficePosts()", context) === false, 'Employee title text must not grant office-post rights');
+vm.runInContext("openDispatchModal()", context);
+assert(modalNodes.length === 0, 'Employee with title text Chef should not be able to open dispatch modal');
+
+vm.runInContext("profile = { ...profile, accessRole: 'employee', role: 'Lastbilchauffør', vehicleType: 'van' };", context);
+assert(vm.runInContext("hasChannelAccess('truck')", context) === false, 'Employee channel access must use vehicle type, not editable title text');
+
+vm.runInContext("openRuleUpdatesModal()", context);
+assert(modalNodes.length === 1, 'Employees should still be able to read approved rule updates');
+assert(!modalNodes[0].innerHTML.includes('Kladde'), 'Employees should not see draft rule updates');
+modalNodes.length = 0;
 
 vm.runInContext("profile = { ...profile, name: 'Tommy Hansen', email: 'stralner2711@gmail.com', accessRole: 'owner', role: 'Appansvarlig · Lastbilchauffør', vehicleType: 'truck' };", context);
 listeners.click({ target: makeNode('test-supabase'), preventDefault() {} });

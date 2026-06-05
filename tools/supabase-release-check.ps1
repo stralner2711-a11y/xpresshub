@@ -102,6 +102,9 @@ if ($schema -notmatch 'create schema if not exists private') { Fail "schema.sql 
 if ($schema -notmatch 'function private\.is_admin\(\)' -or $schema -notmatch 'function private\.can_read_conversation') {
   Fail "schema.sql skal bruge private RLS-hjaelpefunktioner"
 }
+if ($schema -notmatch 'function private\.protect_profile_security_fields\(\)' -or $schema -notmatch 'execute procedure private\.protect_profile_security_fields\(\)') {
+  Fail "schema.sql skal laase profilens rolle/adgangsfelter med en private trigger"
+}
 if ($schema -match 'function public\.(is_admin|is_dispatcher_or_admin|is_conversation_member|can_read_conversation|can_access_conversation)') {
   Fail "schema.sql maa ikke oprette offentlige RLS-hjaelpefunktioner"
 }
