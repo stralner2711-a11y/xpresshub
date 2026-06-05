@@ -26,9 +26,9 @@
   search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>',
 };
 
-const APP_VERSION = '1.3.20-release-v81';
-const APP_DISPLAY_VERSION = '1.3.20';
-const APP_VERSION_CODE = 33;
+const APP_VERSION = '1.3.21-release-v82';
+const APP_DISPLAY_VERSION = '1.3.21';
+const APP_VERSION_CODE = 34;
 const TEMPORARY_EMPLOYEE_PASSWORD = 'xpress';
 const IMAGE_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
 const PROFILE_PHOTO_MAX_DIMENSION = 512;
@@ -1353,7 +1353,7 @@ function markCurrentVersionSuspect() {
   const fallbackInfo = {
     activeVersion: APP_DISPLAY_VERSION,
     activeVersionCode: APP_VERSION_CODE,
-    apkDownloadUrl: 'https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.20/xpressintra.apk',
+    apkDownloadUrl: 'https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.21/xpressintra.apk',
   };
   const info = appUpdateState.latest || normalizeVersionInfo(fallbackInfo);
   const defective = new Set([...(info.defectiveVersions || []).map(String), APP_DISPLAY_VERSION, String(APP_VERSION_CODE)]);
@@ -1494,7 +1494,7 @@ function handleLocationShareSchemaError(error) {
   supabaseSchemaState.missingLocationShares = true;
   if (!supabaseSchemaState.locationWarningShown) {
     supabaseSchemaState.locationWarningShown = true;
-    showToast('GPS deles lokalt. Supabase mangler location_shares-tabellen.');
+    showToast('GPS er kun aktiv på denne telefon. Online-deling mangler opsætning i XpressIntra.');
   }
   return true;
 }
@@ -2566,13 +2566,13 @@ async function restoreSupabaseSession() {
     localStorage.removeItem('roadlog:session');
     session = null;
     render();
-    showToast(`Supabase er forbundet, men data kunne ikke hentes: ${error.message}`);
+    showToast(`XpressIntra er online, men dine data kunne ikke hentes: ${error.message}`);
   }
 }
 
 async function signInSupabase(email, password) {
   const client = getSupabaseClient();
-  if (!client) throw new Error('Supabase er ikke konfigureret endnu');
+  if (!client) throw new Error('XpressIntra-onlineforbindelsen er ikke sat op endnu');
   const { data, error } = await client.auth.signInWithPassword({ email, password });
   if (error) throw error;
   if (!data.session) throw new Error('Login lykkedes ikke. Tjek mail og adgangskode.');
@@ -2600,7 +2600,7 @@ async function markSupabasePasswordReady() {
 
 async function signUpSupabase(email, password, options = {}) {
   const client = getSupabaseClient();
-  if (!client) throw new Error('Supabase er ikke konfigureret endnu');
+  if (!client) throw new Error('XpressIntra-onlineforbindelsen er ikke sat op endnu');
   const normalizedEmail = normalizeEmployeeEmail(email);
   const { data, error } = await client.auth.signUp({
     email: normalizedEmail,
@@ -2634,7 +2634,7 @@ async function signUpSupabase(email, password, options = {}) {
 async function resendSupabaseSignupConfirmation(email) {
   const client = getSupabaseClient();
   const normalizedEmail = normalizeEmployeeEmail(email);
-  if (!client) throw new Error('Supabase er ikke konfigureret endnu');
+  if (!client) throw new Error('XpressIntra-onlineforbindelsen er ikke sat op endnu');
   if (!normalizedEmail) throw new Error('Der mangler en arbejdsmail');
   if (!client.auth?.resend) throw new Error('Denne Supabase-klient kan ikke gensende bekræftelsesmail endnu');
   const { error } = await client.auth.resend({
@@ -2666,7 +2666,7 @@ function openEmailConfirmationModal(email) {
     <h3>Tjek din mail</h3>
     <section class="invite-help">
       <b>Bekræftelsesmail er sendt</b>
-      <span>Åbn mailen fra XpressIntra/Supabase og tryk bekræft. Derefter kan du logge ind med din personlige kode.</span>
+      <span>Åbn mailen fra XpressIntra og tryk bekræft. Derefter kan du logge ind med din personlige kode.</span>
       <span>Mail: <strong>${text(normalizedEmail)}</strong></span>
     </section>
     <div class="invite-actions">
@@ -3355,6 +3355,179 @@ function completeDataRequest(requestId) {
   showToast('Dataanmodningen er markeret som behandlet');
 }
 
+function creatorUserTestItems() {
+  const backend = supabaseStatus();
+  const activeEmployees = employees.filter(employee => employee.employmentStatus !== 'offboarded');
+  const hasTruckProfile = activeEmployees.some(employee => employee.vehicleType === 'truck');
+  const hasVanProfile = activeEmployees.some(employee => employee.vehicleType === 'van');
+  const canUseAsEmployee = action => {
+    const previousProfile = profile;
+    profile = { ...profile, email: 'employee-test@example.com', accessRole: 'employee', role: 'Chauffør', vehicleType: 'truck' };
+    const allowed = canUseInternalAction(action);
+    profile = previousProfile;
+    return allowed;
+  };
+  const employeeCanSeeAdmin = canUseAsEmployee('open-admin');
+  const employeeCanSeeCreator = canUseAsEmployee('test-supabase') || canUseAsEmployee('open-rollback-center');
+  const truckChat = chats.find(chat => chat.channel === 'truck');
+  const vanChat = chats.find(chat => chat.channel === 'van');
+  const publicChat = chats.find(chat => chat.community);
+  const data = [
+    {
+      area: 'Forside',
+      title: 'Chaufførens startside er enkel',
+      body: 'Forsiden har hverdagsstatus, hurtige handlinger og skjuler ekstra driftsting for medarbejdere.',
+      done: true,
+      warn: false,
+      action: 'home',
+    },
+    {
+      area: 'Adgang',
+      title: 'Employee ser ikke admin/creator',
+      body: employeeCanSeeAdmin || employeeCanSeeCreator
+        ? 'Medarbejderrollen kan stadig åbne en beskyttet handling. Det skal undersøges før bred test.'
+        : 'Medarbejderrollen er blokeret fra admin, creator-test og rollback.',
+      done: !employeeCanSeeAdmin && !employeeCanSeeCreator,
+      warn: false,
+      action: 'more',
+    },
+    {
+      area: 'Roller',
+      title: 'Creator kan teste perspektiver',
+      body: 'Lastbil, varebil, disponent og chef/admin kan vælges lokalt uden at ændre rigtige roller.',
+      done: canUseCreatorRoleTester() && Object.keys(creatorRolePresets).length >= 5,
+      warn: false,
+      action: 'more',
+    },
+    {
+      area: 'Chat',
+      title: 'Fælles og interne chats er adskilt',
+      body: publicChat && truckChat && vanChat
+        ? 'Fælles, lastbil og varebil findes som separate kanaler.'
+        : 'En eller flere standardkanaler mangler i appens lokale chatliste.',
+      done: Boolean(publicChat && truckChat && vanChat),
+      warn: false,
+      action: 'chat',
+    },
+    {
+      area: 'Livekort',
+      title: 'Livekort har kort og GPS-status',
+      body: coreSettings.gps
+        ? 'GPS-funktionen er slået til, og livekortet kan vise aktive delinger.'
+        : 'GPS er slået fra i kernefunktioner. Det er ok, hvis det er et bevidst valg.',
+      done: true,
+      warn: !coreSettings.gps,
+      action: 'map',
+    },
+    {
+      area: 'Information',
+      title: 'Information er samlet for ældre brugere',
+      body: 'Kontaktliste, akut hjælp, søgning og emner ligger samlet i informationspanelet.',
+      done: companyContacts.length >= 3 && infoSections.length >= 4,
+      warn: false,
+      action: 'info',
+    },
+    {
+      area: 'Onboarding',
+      title: 'Medarbejderoprettelse kan følges op',
+      body: onboardingOverviewStats().needsAttention
+        ? `${onboardingOverviewStats().needsAttention} medarbejder(e) kræver opfølgning på invitation/login.`
+        : 'Aktive profiler ser klarere ud i onboarding-overblikket.',
+      done: onboardingOverviewStats().needsAttention === 0,
+      warn: onboardingOverviewStats().needsAttention > 0,
+      action: 'open-admin',
+    },
+    {
+      area: 'Billeder',
+      title: 'Billeder og profilfoto er slået til',
+      body: coreSettings.media
+        ? 'Upload er åben for profilfoto, chatbilleder og dokumentation.'
+        : 'Billeder er slået fra af chef/admin.',
+      done: coreSettings.media,
+      warn: !coreSettings.media,
+      action: 'open-settings',
+    },
+    {
+      area: 'Backend',
+      title: 'Onlineforbindelse er klar',
+      body: backend.detail,
+      done: backend.ready,
+      warn: !backend.ready,
+      action: 'test-supabase',
+    },
+    {
+      area: 'Telefon-test',
+      title: 'Rigtig test med flere telefoner mangler',
+      body: hasTruckProfile && hasVanProfile
+        ? 'Der findes både lastbil- og varebilprofiler, men rigtig live-test skal stadig gøres på telefoner.'
+        : 'Opret mindst én lastbil- og én varebilprofil før den bedste realtest.',
+      done: false,
+      warn: true,
+      action: 'open-admin',
+    },
+  ];
+  return data.map(item => ({
+    ...item,
+    status: item.done ? 'Bestået' : item.warn ? 'Bør tjekkes' : 'Fejl',
+    tone: item.done ? 'ok' : item.warn ? 'warn' : 'fail',
+  }));
+}
+
+function creatorUserTestReadiness() {
+  const items = creatorUserTestItems();
+  const passed = items.filter(item => item.done).length;
+  const warnings = items.filter(item => !item.done && item.warn).length;
+  const failures = items.filter(item => !item.done && !item.warn).length;
+  const score = Math.round((passed / items.length) * 100);
+  const label = failures ? 'Fejl skal rettes' : warnings ? 'Klar til kontrolleret test' : 'Ser klar ud';
+  return { items, passed, warnings, failures, total: items.length, score, label };
+}
+
+function renderCreatorUserTestPanel({ compact = false } = {}) {
+  if (!isCreatorOwner()) return '';
+  const test = creatorUserTestReadiness();
+  return `<section class="creator-user-test-panel ${compact ? 'compact' : ''}">
+    <div class="creator-user-test-head">
+      <div><p class="eyebrow">Brugertest</p><h4>Kør appen igennem som medarbejder</h4><span>Samler de vigtigste brugerrejser uden at åbne private beskeder eller logbøger.</span></div>
+      <strong class="${test.failures ? 'risk' : test.warnings ? 'warn' : 'good'}">${test.score}%</strong>
+    </div>
+    <div class="creator-user-test-kpis">
+      <span><b>${test.passed}</b><small>Bestået</small></span>
+      <span><b>${test.warnings}</b><small>Bør tjekkes</small></span>
+      <span><b>${test.failures}</b><small>Fejl</small></span>
+    </div>
+    <div class="creator-user-test-list">
+      ${test.items.map(item => `<button type="button" class="${text(item.tone)}" ${['home', 'work', 'team', 'map', 'chat', 'more', 'info'].includes(item.action) ? `data-tab="${text(item.action)}"` : `data-action="${text(item.action)}"`}>
+        <span><b>${text(item.area)}</b><strong>${text(item.status)}</strong></span>
+        <em>${text(item.title)}</em>
+        <small>${text(item.body)}</small>
+      </button>`).join('')}
+    </div>
+  </section>`;
+}
+
+function openCreatorUserTestModal() {
+  if (!isCreatorOwner()) {
+    showToast('Kun creator kan køre samlet brugertest');
+    return;
+  }
+  const test = creatorUserTestReadiness();
+  const modal = document.createElement('div');
+  modal.className = 'modal-backdrop';
+  modal.innerHTML = `<section class="profile-modal creator-user-test-modal">
+    <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
+    <p class="eyebrow">Creator QA</p>
+    <h3>${text(test.label)}</h3>
+    <p class="info-intro">Denne rapport tester appens vigtigste brugerrejser ud fra den aktuelle konfiguration. Den erstatter ikke en rigtig test på telefon, men den finder hurtigt oplagte fejl før opdatering.</p>
+    ${renderCreatorUserTestPanel({ compact: true })}
+    <section class="creator-ops-privacy">
+      <b>Privatlivsvagt</b>
+      <span>Rapporten bruger kun status, roller og antal. Den viser ikke indhold fra direkte beskeder, private logbøger eller billeder.</span>
+    </section>
+  </section>`;
+  document.body.append(modal);
+}
+
 function renderCreatorOperationsDashboard() {
   if (!isCreatorOwner()) return '';
   const stats = creatorOperationsStats();
@@ -3380,6 +3553,7 @@ function renderCreatorOperationsDashboard() {
       <span><b>${stats.security.percent}%</b><small>Sikkerhed</small></span>
     </div>
     <div class="creator-ops-actions">
+      <button type="button" data-action="open-creator-user-test">Kør brugertest</button>
       <button type="button" data-action="test-supabase">Test Supabase</button>
       <button type="button" data-action="check-update">Tjek update</button>
       <button type="button" data-action="open-rollback-center">Backup</button>
@@ -3388,6 +3562,7 @@ function renderCreatorOperationsDashboard() {
       <button type="button" data-action="open-settings">Backend</button>
     </div>
     ${renderUpdateSummary()}
+    ${renderCreatorUserTestPanel({ compact: true })}
     <section class="creator-ops-checks">
       <span class="${stats.backend.ready ? 'ok' : 'fail'}"><b>Forbindelse</b><small>${text(stats.backend.detail)}</small></span>
       <span class="${stats.onboarding.needsAttention ? 'warn' : 'ok'}"><b>Onboarding</b><small>${stats.onboarding.needsAttention ? `${stats.onboarding.needsAttention} medarbejder(e) skal følges op` : 'Alle aktive profiler ser klarere ud'}</small></span>
@@ -3494,12 +3669,12 @@ function renderAdminDashboard() {
       <span><b>${stats.vehicleIssues}</b><small>bil-tjek</small></span>
       <span><b>${stats.unreadOffice}</b><small>ulæst kontor</small></span>
     </div>
-    <div class="admin-command-row">
+    ${isCreatorOwner() ? '' : `<div class="admin-command-row">
       <button type="button" data-action="new-employee">Registrér kollega</button>
       <button type="button" data-action="new-announcement">Kontoropslag</button>
       <button type="button" data-action="open-rule-updates">Regelnyt</button>
       <button type="button" data-action="open-vehicles">Køretøjer</button>
-    </div>
+    </div>`}
     <section class="admin-alert-list">
       <h4>Kræver opmærksomhed</h4>
       ${alerts.length ? alerts.map(alert => `<button type="button" class="${text(alert.tone)}" data-action="${text(alert.action)}"><b>${text(alert.title)}</b><small>${text(alert.body)}</small></button>`).join('') : '<p class="empty-state">Ingen kritiske ting lige nu.</p>'}
@@ -3906,7 +4081,7 @@ async function startWorkday() {
     try {
       await startSupabaseWorkday();
     } catch (error) {
-      showToast(`Mødt ind lokalt, men Supabase fejlede: ${error.message}`);
+      showToast(`Du er mødt ind på telefonen, men online-synkronisering fejlede: ${error.message}`);
     }
   }
   if (permissions.gps) startLocationSharing('Du er mødt ind, og din position deles efter dine tilladelser');
@@ -3920,7 +4095,7 @@ async function endWorkday(message = 'Du er meldt fri, og dagens deling er slukke
     try {
       await endSupabaseWorkday(status);
     } catch (error) {
-      showToast(`Arbejdsdagen stoppede lokalt, men Supabase fejlede: ${error.message}`);
+      showToast(`Arbejdsdagen er stoppet på telefonen, men online-synkronisering fejlede: ${error.message}`);
     }
   }
   workday = { ...workday, active: false, endedAt: new Date().toISOString() };
@@ -4147,27 +4322,6 @@ function visibleMapPeople() {
       ]
     : sharedPeople;
   return people.filter(person => mapFilter === 'all' || mapFilter === 'sharing' || person.vehicleType === mapFilter);
-}
-
-function homeTopPriorities(activeTasks, unreadNotifications) {
-  const priorities = [];
-  if (!workday.active) {
-    priorities.push({ title: 'Åbn Arbejde', body: 'Mød ind, del tur og se dine tilladelser samlet.', action: 'open-work', icon: 'check' });
-  }
-  if (activePickup) {
-    priorities.push({ title: 'Følg afhentning', body: activePickup.note || 'Live noter og status på hjælpeopgaven.', action: 'open-pickup', icon: 'pin' });
-  }
-  if (unreadNotifications) {
-    priorities.push({ title: 'Tjek beskeder', body: `${unreadNotifications} ulæste beskeder, opslag eller regelnyt.`, action: 'open-notifications', icon: 'alert' });
-  }
-  if (!location.sharing) {
-    priorities.push({ title: 'Del position ved behov', body: 'Hurtig GPS-deling når en kollega skal finde dig.', action: 'toggle-location', icon: 'map' });
-  }
-  if (logbookDrafts.length) {
-    priorities.push({ title: 'Gem logbog', body: `${logbookDrafts.length} automatiske kladder venter.`, action: 'open-logbook', icon: 'truck' });
-  }
-  priorities.push(...activeTasks.map(task => ({ title: task.title, body: task.body, action: task.action, icon: 'info' })));
-  return priorities.slice(0, 3);
 }
 
 function formatClock(isoValue) {
@@ -4415,18 +4569,16 @@ function renderHome() {
       ? { title: 'Tjek beskeder', body: `${unreadNotifications} ulæste ting venter`, action: 'open-notifications', icon: 'chat' }
       : { title: 'Se live-kort', body: location.sharing ? locationExpiryText() : 'Se hvem der deler position', action: 'open-map', icon: 'map' };
   const todayActions = [
-    ...(!activePickup ? [{ label: 'Hent for kollega', hint: 'Start hurtig opgave', action: 'open-pickup', icon: 'pin' }] : []),
-    { label: location.sharing ? 'GPS aktiv' : 'Del tur', hint: location.sharing ? locationExpiryText() : 'Frivillig deling', action: 'toggle-location', icon: 'map' },
     ...(nextAction.action !== 'open-notifications' ? [{ label: 'Beskeder', hint: `${unreadNotifications} ulæst`, chat: 'all', icon: 'chat' }] : []),
+    { label: 'Information', hint: 'Regler og kontakter', tab: 'info', icon: 'info' },
     { label: 'Meld fejl', hint: 'Send ønske eller problem', action: 'open-support-request', icon: 'alert' },
   ];
   const shortcutActions = [
     { label: 'Kollegaer', hint: `${onlineEmployees.length} online`, tab: 'team', iconName: 'users' },
-    { label: 'Logbog', hint: 'Gem minder og dagens kladder', action: 'open-logbook', iconName: 'truck' },
     nextAction.action === 'open-map'
       ? { label: 'Mine data', hint: 'Privatliv og adgang', action: 'open-my-data', iconName: 'document' }
       : { label: 'Live-kort', hint: `${onlineEmployees.filter(employee => employee.sharing).length} deler position`, tab: 'map', iconName: 'map' },
-    { label: 'Information', hint: 'Regler, håndbog og kontakter', tab: 'info', iconName: 'info' },
+    { label: 'Kontrol', hint: 'Profil, privatliv og indstillinger', tab: 'more', iconName: 'more' },
   ];
   return `
     <section class="home-clean-hero surface-card">
@@ -4449,7 +4601,7 @@ function renderHome() {
     <section class="home-day-tools screen-section" aria-label="Dagens værktøjer">
       <div class="screen-section-head"><span>Dagens værktøjer</span></div>
       <div>
-        ${todayActions.map(item => `<button class="${item.primary ? 'primary' : ''}" ${item.chat ? `data-chat="${text(item.chat)}"` : `data-action="${text(item.action)}"`}>
+        ${todayActions.map(item => `<button class="${item.primary ? 'primary' : ''}" ${item.tab ? `data-tab="${text(item.tab)}"` : item.chat ? `data-chat="${text(item.chat)}"` : `data-action="${text(item.action)}"`}>
           <span>${icon(item.icon)}</span><b>${text(item.label)}</b><small>${text(item.hint)}</small>
         </button>`).join('')}
       </div>
@@ -5427,7 +5579,7 @@ async function startPickupTask(task, modalElement = null) {
     try {
       await createSupabasePickupTask();
     } catch (error) {
-      showToast(`Afhentningen er startet lokalt, men Supabase fejlede: ${error.message}`);
+      showToast(`Afhentningen er startet på telefonen, men online-synkronisering fejlede: ${error.message}`);
     }
   }
   addNotification({ type: 'Afhentning', title: 'Afhentning startet', body: activePickup.note || 'Midlertidig opgave er startet.', level: 'task' });
@@ -5795,7 +5947,7 @@ function openAdminModal() {
       <span><b>Chef/admin</b><small>Kan oprette medarbejdere, ændre roller, godkende regelnyt og styre sikkerhedsindstillinger.</small></span>
       <span><b>Privat data</b><small>Logbog er privat. GPS er frivillig. Historik bør slettes efter aftalt periode i online-versionen.</small></span>
     </section>
-    ${canManageEmployees() ? `${renderAdminDashboard()}${renderOnboardingControlPanel()}<div class="admin-actions"><button data-action="new-employee">Registrér kollega</button><button data-action="open-rule-updates">Godkend regelnyt</button><button data-action="open-dispatch">Driftsoverblik</button></div>
+    ${canManageEmployees() ? `${renderAdminDashboard()}${isCreatorOwner() ? '' : `${renderOnboardingControlPanel()}<div class="admin-actions"><button data-action="new-employee">Registrér kollega</button><button data-action="open-rule-updates">Godkend regelnyt</button><button data-action="open-dispatch">Driftsoverblik</button></div>`}
     <form class="core-settings-form">
       <h4>Kernefunktioner</h4>
       <label><span><b>GPS-deling</b><small>Medarbejdere kan dele liveposition frivilligt</small></span><input type="checkbox" name="gps" ${coreSettings.gps ? 'checked' : ''} /></label>
@@ -6172,6 +6324,30 @@ function render(options = {}) {
   setTimeout(initializeMaps, 0);
 }
 
+function handleSearchInput(event, selector, updateValue) {
+  if (!event.target.matches(selector)) return false;
+  const cursorStart = event.target.selectionStart;
+  const cursorEnd = event.target.selectionEnd;
+  updateValue(event.target.value);
+  render({ preserveScroll: true });
+  const restoreInput = () => {
+    const input = document.querySelector(selector);
+    if (!input) return;
+    input.focus({ preventScroll: true });
+    if (typeof cursorStart === 'number' && typeof cursorEnd === 'number' && input.setSelectionRange) {
+      try {
+        input.setSelectionRange(cursorStart, cursorEnd);
+      } catch (error) {
+        console.warn('Søgefeltets cursor kunne ikke genskabes', error);
+      }
+    }
+  };
+  const nextFrame = window.requestAnimationFrame || (callback => setTimeout(callback, 0));
+  nextFrame(restoreInput);
+  setTimeout(restoreInput, 0);
+  return true;
+}
+
 document.addEventListener('click', async event => {
   const tab = event.target.closest('[data-tab]')?.dataset.tab;
   const action = event.target.closest('[data-action]')?.dataset.action;
@@ -6365,6 +6541,7 @@ document.addEventListener('click', async event => {
     'test-supabase',
     'show-update-status',
     'open-rollback-center',
+    'open-creator-user-test',
     'open-admin',
     'open-launch-checklist',
     'open-gdpr-go-live',
@@ -6403,6 +6580,7 @@ document.addEventListener('click', async event => {
   if (action === 'check-update') await checkForAppUpdate({ manual: true });
   if (action === 'show-update-status') openUpdateStatusModal();
   if (action === 'open-rollback-center') openRollbackCenterModal();
+  if (action === 'open-creator-user-test') openCreatorUserTestModal();
   if (action === 'install-pwa') await installPwaApp();
   if (action === 'reload-for-install') window.location.reload();
   if (action === 'install-update') await installAppUpdate(appUpdateState.required?.apkDownloadUrl || appUpdateState.latest?.apkDownloadUrl);
@@ -6517,26 +6695,10 @@ document.addEventListener('click', async event => {
 });
 
 document.addEventListener('input', event => {
-  if (event.target.matches('[data-global-search]')) {
-    globalQuery = event.target.value;
-    render();
-    document.querySelector('[data-global-search]')?.focus();
-  }
-  if (event.target.matches('[data-team-search]')) {
-    teamQuery = event.target.value;
-    render();
-    document.querySelector('[data-team-search]')?.focus();
-  }
-  if (event.target.matches('[data-info-search]')) {
-    infoQuery = event.target.value;
-    render();
-    document.querySelector('[data-info-search]')?.focus();
-  }
-  if (event.target.matches('[data-chat-search]')) {
-    chatQuery = event.target.value;
-    render();
-    document.querySelector('[data-chat-search]')?.focus();
-  }
+  if (handleSearchInput(event, '[data-global-search]', value => { globalQuery = value; })) return;
+  if (handleSearchInput(event, '[data-team-search]', value => { teamQuery = value; })) return;
+  if (handleSearchInput(event, '[data-info-search]', value => { infoQuery = value; })) return;
+  if (handleSearchInput(event, '[data-chat-search]', value => { chatQuery = value; })) return;
 });
 
 document.addEventListener('change', async event => {
@@ -6648,7 +6810,7 @@ document.addEventListener('submit', async event => {
       return;
     }
     if (!DEMO_MODE) {
-      showToast('Supabase skal sættes op før login i produktionsappen');
+      showToast('XpressIntra-onlineforbindelsen skal sættes op før login virker');
       return;
     }
     session = { email: data.get('email'), signedInAt: new Date().toISOString(), mode: 'demo' };

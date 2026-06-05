@@ -1,4 +1,4 @@
-const CACHE_NAME = 'xpressintra-v81-access-hardening';
+const CACHE_NAME = 'xpressintra-v82-centralized-qa';
 const APP_FILES = [
   './',
   './index.html',
