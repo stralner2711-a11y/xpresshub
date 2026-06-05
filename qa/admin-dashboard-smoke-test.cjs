@@ -115,6 +115,10 @@ assert(creatorModal.innerHTML.includes('Dataanmodninger'), 'Creator should see p
 assert(!creatorModal.innerHTML.includes('Godmorgen Tommy. Din næste aflæsning'), 'Creator operations panel should not expose private/direct chat message content');
 
 assert(creatorModal.innerHTML.includes('Hvad skal du holde øje med?'), 'Creator should see prioritized action items');
+assert(creatorModal.innerHTML.includes('Onboarding kontrol'), 'Creator should see an onboarding control section');
+assert(creatorModal.innerHTML.includes('Medarbejdere ind i appen'), 'Creator should see employee onboarding overview');
+assert(creatorModal.innerHTML.includes('Mangler kode') && creatorModal.innerHTML.includes('Skal følges op'), 'Onboarding overview should show follow-up KPIs');
+assert(creatorModal.innerHTML.includes('data-open-employee-invite'), 'Onboarding overview should let admins reopen invite generators');
 assert(creatorModal.innerHTML.includes('Creator genveje'), 'Creator should see operations shortcuts');
 assert(creatorModal.innerHTML.includes('Test appen som'), 'Creator should be able to switch role perspectives from operations');
 assert(creatorModal.innerHTML.includes('Mangler og kvalitet'), 'Creator should see quality gaps');

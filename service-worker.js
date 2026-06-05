@@ -1,4 +1,4 @@
-﻿const CACHE_NAME = 'xpressintra-v77-generate-email-confirmation';
+﻿const CACHE_NAME = 'xpressintra-v78-onboarding-control';
 const APP_FILES = [
   './',
   './indep.html',

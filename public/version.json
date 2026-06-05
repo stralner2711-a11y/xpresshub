@@ -1,26 +1,25 @@
 {
-  "latestVersion": "1.3.16",
-  "stableVersion": "1.3.16",
-  "activeVersion": "1.3.16",
-  "previousStableVersion": "1.3.15",
-  "latestVersionCode": 29,
-  "stableVersionCode": 29,
-  "activeVersionCode": 29,
-  "apkDownloadUrl": "https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.16/xpressintra.apk",
-  "stableApkDownloadUrl": "https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.16/xpressintra.apk",
-  "previousStableApkDownloadUrl": "https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.15/xpressintra.apk",
-  "releasePageUrl": "https://github.com/stralner2711-a11y/xpresshub/releases/tag/v1.3.16",
-  "stableReleasePageUrl": "https://github.com/stralner2711-a11y/xpresshub/releases/tag/v1.3.16",
+  "latestVersion": "1.3.17",
+  "stableVersion": "1.3.17",
+  "activeVersion": "1.3.17",
+  "previousStableVersion": "1.3.16",
+  "latestVersionCode": 30,
+  "stableVersionCode": 30,
+  "activeVersionCode": 30,
+  "apkDownloadUrl": "https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.17/xpressintra.apk",
+  "stableApkDownloadUrl": "https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.17/xpressintra.apk",
+  "previousStableApkDownloadUrl": "https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.16/xpressintra.apk",
+  "releasePageUrl": "https://github.com/stralner2711-a11y/xpresshub/releases/tag/v1.3.17",
+  "stableReleasePageUrl": "https://github.com/stralner2711-a11y/xpresshub/releases/tag/v1.3.17",
   "downloadPageUrl": "https://stralner2711-a11y.github.io/xpresshub/download.html",
   "changelog": [
-    "Opret konto genererer nu Supabase mailbekræftelse med XpressIntra-returadresse",
-    "Brugeren får en tydelig Tjek din mail-boks efter oprettelse",
-    "Hvis login stoppes af manglende mailbekræftelse, vises samme gensend-hjælp",
-    "Admin kan stadig gensende bekræftelsesmail til brugere der allerede har oprettet sig"
+    "Creator og chef får et tydeligt onboarding-overblik over medarbejdere",
+    "Medarbejdere kan følges op på invitation, første login og personlig kode",
+    "Invitationer kan åbnes igen direkte fra driftspanelet",
+    "Opdateringsboksen viser nu danske bogstaver korrekt"
   ],
   "forceUpdate": true,
   "rollbackReason": "",
   "defectiveVersions": [],
-  "updatedAt": "2026-06-04"
+  "updatedAt": "2026-06-05"
 }
-

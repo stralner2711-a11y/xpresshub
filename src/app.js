@@ -26,9 +26,9 @@
   search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>',
 };
 
-const APP_VERSION = '1.3.16-release-v77';
-const APP_DISPLAY_VERSION = '1.3.16';
-const APP_VERSION_CODE = 29;
+const APP_VERSION = '1.3.17-release-v78';
+const APP_DISPLAY_VERSION = '1.3.17';
+const APP_VERSION_CODE = 30;
 const TEMPORARY_EMPLOYEE_PASSWORD = 'xpress';
 const IMAGE_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
 const PROFILE_PHOTO_MAX_DIMENSION = 512;
@@ -1287,7 +1287,7 @@ function markCurrentVersionSuspect() {
   const fallbackInfo = {
     activeVersion: APP_DISPLAY_VERSION,
     activeVersionCode: APP_VERSION_CODE,
-    apkDownloadUrl: 'https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.16/xpressintra.apk',
+    apkDownloadUrl: 'https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.17/xpressintra.apk',
   };
   const info = appUpdateState.latest || normalizeVersionInfo(fallbackInfo);
   const defective = new Set([...(info.defectiveVersions || []).map(String), APP_DISPLAY_VERSION, String(APP_VERSION_CODE)]);
@@ -3028,9 +3028,96 @@ function securityReadiness() {
   return { items, done, total: items.length, percent: Math.round((done / items.length) * 100) };
 }
 
+function employeeOnboardingState(employee = {}) {
+  const isSelf = employee.id === (session?.userId || 'th') || employee.id === 'th';
+  const hasInvite = Boolean(employee.invitationId || employee.invitationEmail || employee.invitationStatus);
+  const email = normalizeEmployeeEmail(employee.email || employee.invitationEmail);
+  if (employee.employmentStatus === 'offboarded') {
+    return { key: 'offboarded', label: 'Deaktiveret', tone: 'neutral', step: 'Brugeren er lukket i appen.', next: 'Aktivér igen hvis personen skal tilbage.' };
+  }
+  if (isSelf && session?.mode === 'supabase') {
+    return { key: 'ready', label: 'Aktiv', tone: 'good', step: 'Du er logget ind i online-appen.', next: 'Ingen handling.' };
+  }
+  if (!email) {
+    return { key: 'missing-email', label: 'Mangler mail', tone: 'risk', step: 'Profilen mangler arbejdsmail.', next: 'Åbn profilen og tilføj mail før invitation.' };
+  }
+  if (!hasInvite) {
+    return { key: 'missing-invite', label: 'Mangler invitation', tone: 'risk', step: 'Der er ikke gemt en invitation på profilen.', next: 'Åbn invitation og send linket til kollegaen.' };
+  }
+  if (employee.invitationStatus === 'local') {
+    return { key: 'local-only', label: 'Kun lokalt', tone: 'warn', step: 'Invitationen er klar på denne enhed, men ikke bekræftet online.', next: 'Tjek Supabase og opret invitationen igen hvis nødvendigt.' };
+  }
+  if (employee.passwordResetRequired) {
+    return { key: 'needs-password', label: 'Mangler personlig kode', tone: 'warn', step: 'Kollegaen skal logge ind via invitationslink og vælge egen kode.', next: 'Send invitation eller gensend bekræftelsesmail.' };
+  }
+  if (employee.online) {
+    return { key: 'ready', label: 'I brug', tone: 'good', step: 'Kollegaen er aktiv i appen.', next: 'Ingen handling.' };
+  }
+  return { key: 'invited', label: 'Inviteret', tone: 'warn', step: 'Invitationen er klar, men første brug er ikke tydeligt registreret her.', next: 'Send linket igen hvis kollegaen ikke kan komme ind.' };
+}
+
+function onboardingOverviewStats() {
+  const managed = employees.filter(employee => employee.employmentStatus !== 'offboarded');
+  const states = managed.map(employeeOnboardingState);
+  const needsAttention = states.filter(state => ['missing-email', 'missing-invite', 'local-only', 'needs-password', 'invited'].includes(state.key)).length;
+  return {
+    total: managed.length,
+    ready: states.filter(state => state.key === 'ready').length,
+    invited: states.filter(state => state.key === 'invited').length,
+    needsPassword: states.filter(state => state.key === 'needs-password').length,
+    localOnly: states.filter(state => state.key === 'local-only').length,
+    missing: states.filter(state => ['missing-email', 'missing-invite'].includes(state.key)).length,
+    needsAttention,
+  };
+}
+
+function renderOnboardingControlPanel({ compact = false } = {}) {
+  if (!canManageEmployees()) return '';
+  const stats = onboardingOverviewStats();
+  const rows = employees
+    .filter(employee => employee.employmentStatus !== 'offboarded')
+    .map(employee => ({ employee, state: employeeOnboardingState(employee) }))
+    .sort((a, b) => {
+      const order = { risk: 0, warn: 1, neutral: 2, good: 3 };
+      return (order[a.state.tone] ?? 2) - (order[b.state.tone] ?? 2) || String(a.employee.name).localeCompare(String(b.employee.name), 'da');
+    });
+  return `<section class="onboarding-control-panel ${compact ? 'compact' : ''}">
+    <div class="onboarding-head">
+      <div><p class="eyebrow">Onboarding</p><h4>Medarbejdere ind i appen</h4><span>Følg invitation, første login og personlig kode uden at vise private beskeder.</span></div>
+      <button type="button" data-action="new-employee">Ny medarbejder</button>
+    </div>
+    <div class="onboarding-kpis">
+      <span><b>${stats.total}</b><small>Profiler</small></span>
+      <span><b>${stats.ready}</b><small>Klar</small></span>
+      <span><b>${stats.needsPassword}</b><small>Mangler kode</small></span>
+      <span><b>${stats.needsAttention}</b><small>Skal følges op</small></span>
+    </div>
+    <div class="onboarding-flow">
+      <span class="${stats.missing ? 'warn' : 'ok'}"><b>1</b><small>Profil + mail</small></span>
+      <span class="${stats.localOnly ? 'warn' : 'ok'}"><b>2</b><small>Invitation online</small></span>
+      <span class="${stats.needsPassword || stats.invited ? 'warn' : 'ok'}"><b>3</b><small>Første login</small></span>
+      <span class="${stats.ready === stats.total && stats.total ? 'ok' : 'warn'}"><b>4</b><small>Klar i drift</small></span>
+    </div>
+    <div class="onboarding-list">
+      ${rows.map(({ employee, state }) => `<article class="${text(state.tone)}">
+        <span class="person-avatar">${text(employee.initials || initialsFromName(employee.name))}</span>
+        <div><b>${text(employee.name)}</b><small>${text(employee.email || 'Mail mangler')} · ${text(vehicleLabel(employee.vehicleType))}</small><em>${text(state.step)}</em></div>
+        <strong>${text(state.label)}</strong>
+        <nav>
+          <button type="button" data-open-employee-invite="${text(employee.id)}">Invitation</button>
+          ${employee.email ? `<button type="button" data-resend-confirmation="${text(employee.email)}">Mail</button>` : ''}
+          <button type="button" data-employee="${text(employee.id)}">Profil</button>
+        </nav>
+      </article>`).join('')}
+    </div>
+    <p class="onboarding-note">Bemærk: Supabase skjuler bekræftet mail-status for den almindelige app af sikkerhedsgrunde. Hvis vi senere vil se “mail bekræftet” 100%, skal det laves via en sikker admin/Edge Function.</p>
+  </section>`;
+}
+
 function creatorOperationsStats() {
   const backend = supabaseStatus();
   const readiness = launchReadiness();
+  const onboarding = onboardingOverviewStats();
   const activeEmployees = employees.filter(employee => employee.employmentStatus !== 'offboarded');
   const directChats = chats.filter(chat => !chat.channel).length;
   const channelChats = chats.filter(chat => chat.channel).length;
@@ -3056,6 +3143,7 @@ function creatorOperationsStats() {
     updateStatus: updateStatusLabel(),
     backend,
     readiness,
+    onboarding,
     activeEmployees: activeEmployees.length,
     directChats,
     channelChats,
@@ -3073,6 +3161,7 @@ function creatorOperationsActionItems(stats = creatorOperationsStats()) {
   if (appUpdateState.required) items.push({ tone: 'risk', title: 'App-opdatering kræves', body: `${appUpdateState.required.activeVersion} er markeret som påkrævet.`, action: 'show-update-status' });
   if (isPlaceholderUpdateConfig()) items.push({ tone: 'warn', title: 'GitHub placeholder', body: 'Skift GitHub-placeholder før medarbejdere får opdateringslink.', action: 'show-update-status' });
   if (!stats.backend.ready) items.push({ tone: 'risk', title: 'Supabase skal tjekkes', body: stats.backend.detail, action: 'test-supabase' });
+  if (stats.onboarding.needsAttention) items.push({ tone: 'warn', title: 'Onboarding kræver opfølgning', body: `${stats.onboarding.needsAttention} medarbejder(e) mangler invitation, første login eller personlig kode.`, action: 'open-admin' });
   if (stats.readiness.percent < 100) items.push({ tone: 'warn', title: 'Go-live er ikke helt klar', body: `${stats.readiness.done}/${stats.readiness.total} punkter er klar til professionel brug.`, action: 'open-launch-checklist' });
   if (stats.security.percent < 75) items.push({ tone: 'risk', title: 'Sikkerhedspakken mangler', body: `${stats.security.done}/${stats.security.total} sikkerhedspunkter er markeret klar.`, action: 'open-security-center' });
   if (!legalAcceptance) items.push({ tone: 'risk', title: 'Jura og persondata mangler', body: 'Godkend interne regler for GPS, billeder, chat, logbog og slettefrister.', action: 'open-legal' });
@@ -3177,6 +3266,7 @@ function renderCreatorOperationsDashboard() {
     <div class="creator-ops-grid">
       <span><b>${text(stats.backend.label)}</b><small>Supabase</small></span>
       <span><b>${stats.readiness.percent}%</b><small>Klar til drift</small></span>
+      <span><b>${stats.onboarding.needsAttention}</b><small>Onboarding</small></span>
       <span><b>${stats.activeEmployees}</b><small>Aktive profiler</small></span>
       <span><b>${stats.channelChats}/${stats.directChats}</b><small>Kanaler / direkte</small></span>
       <span><b>${stats.unreadNotifications}</b><small>Ulaeste beskeder</small></span>
@@ -3195,11 +3285,18 @@ function renderCreatorOperationsDashboard() {
     ${renderUpdateSummary()}
     <section class="creator-ops-checks">
       <span class="${stats.backend.ready ? 'ok' : 'fail'}"><b>Forbindelse</b><small>${text(stats.backend.detail)}</small></span>
+      <span class="${stats.onboarding.needsAttention ? 'warn' : 'ok'}"><b>Onboarding</b><small>${stats.onboarding.needsAttention ? `${stats.onboarding.needsAttention} medarbejder(e) skal følges op` : 'Alle aktive profiler ser klarere ud'}</small></span>
       <span class="${stats.security.percent >= 75 ? 'ok' : 'warn'}"><b>Sikkerhed</b><small>${stats.security.done}/${stats.security.total} punkter klar mod hacking og misbrug</small></span>
       <span class="${legalAcceptance ? 'ok' : 'warn'}"><b>Jura</b><small>${text(legalStatusText())}</small></span>
       <span class="${stats.disabledCore ? 'warn' : 'ok'}"><b>Kernefunktioner</b><small>${stats.disabledCore ? `${stats.disabledCore} funktion(er) er slaaet fra` : 'Alle kernefunktioner er aabne'}</small></span>
       <span class="${stats.pendingDataRequests ? 'warn' : 'ok'}"><b>Persondata</b><small>${stats.pendingDataRequests ? `${stats.pendingDataRequests} anmodning(er) boer behandles` : 'Ingen aabne dataanmodninger'}</small></span>
     </section>
+    <details class="creator-ops-details" open>
+      <summary>Onboarding kontrol</summary>
+      <section class="creator-ops-panel">
+        ${renderOnboardingControlPanel({ compact: true })}
+      </section>
+    </details>
     <details class="creator-ops-details" open>
       <summary>Hvad skal du holde øje med?</summary>
       <section class="creator-ops-panel">
@@ -4199,7 +4296,7 @@ function renderHome() {
       </div>
     </section>
     <section class="home-day-tools screen-section" aria-label="Dagens værktøjer">
-      <div class="screen-section-head"><span>Dagens værktøjer</span><small>De vigtigste knapper først</small></div>
+      <div class="screen-section-head"><span>Dagens værktøjer</span></div>
       <div>
         ${todayActions.map(item => `<button class="${item.primary ? 'primary' : ''}" ${item.chat ? `data-chat="${text(item.chat)}"` : `data-action="${text(item.action)}"`}>
           <span>${icon(item.icon)}</span><b>${text(item.label)}</b><small>${text(item.hint)}</small>
@@ -5522,7 +5619,7 @@ function openAdminModal() {
       <span><b>Chef/admin</b><small>Kan oprette medarbejdere, ændre roller, godkende regelnyt og styre sikkerhedsindstillinger.</small></span>
       <span><b>Privat data</b><small>Logbog er privat. GPS er frivillig. Historik bør slettes efter aftalt periode i online-versionen.</small></span>
     </section>
-    ${canManageEmployees() ? `${renderAdminDashboard()}<div class="admin-actions"><button data-action="new-employee">Registrér kollega</button><button data-action="open-rule-updates">Godkend regelnyt</button><button data-action="open-dispatch">Driftsoverblik</button></div>
+    ${canManageEmployees() ? `${renderAdminDashboard()}${renderOnboardingControlPanel()}<div class="admin-actions"><button data-action="new-employee">Registrér kollega</button><button data-action="open-rule-updates">Godkend regelnyt</button><button data-action="open-dispatch">Driftsoverblik</button></div>
     <form class="core-settings-form">
       <h4>Kernefunktioner</h4>
       <label><span><b>GPS-deling</b><small>Medarbejdere kan dele liveposition frivilligt</small></span><input type="checkbox" name="gps" ${coreSettings.gps ? 'checked' : ''} /></label>
@@ -5534,10 +5631,13 @@ function openAdminModal() {
     </form>
     <section class="admin-employee-list">
       <h4>Medarbejdere</h4>
-      ${employees.map(employee => `<article class="${employee.employmentStatus === 'offboarded' ? 'offboarded' : ''}">
-        <span><b>${text(employee.name)}</b><small>${text(employee.role)} · ${text(accessRoleLabel(employee.accessRole))} · ${text(employee.employmentStatus || 'active')}</small></span>
-        ${employee.id === 'th' ? '<em>Dig</em>' : employee.employmentStatus === 'offboarded' ? `<div class="employee-action-pair"><button class="restore" data-reactivate-employee="${text(employee.id)}">Aktivér igen</button><button class="danger" data-remove-employee="${text(employee.id)}">Slet helt</button></div>` : `<button data-remove-employee="${text(employee.id)}">Deaktivér</button>`}
-      </article>`).join('')}
+      ${employees.map(employee => {
+        const onboarding = employeeOnboardingState(employee);
+        return `<article class="${employee.employmentStatus === 'offboarded' ? 'offboarded' : ''}">
+        <span><b>${text(employee.name)}</b><small>${text(employee.role)} · ${text(accessRoleLabel(employee.accessRole))} · ${text(employee.employmentStatus || 'active')}</small><i class="onboarding-pill ${text(onboarding.tone)}">${text(onboarding.label)}</i></span>
+        ${employee.id === 'th' ? '<em>Dig</em>' : employee.employmentStatus === 'offboarded' ? `<div class="employee-action-pair"><button class="restore" data-reactivate-employee="${text(employee.id)}">Aktivér igen</button><button class="danger" data-remove-employee="${text(employee.id)}">Slet helt</button></div>` : `<div class="employee-action-pair"><button class="restore" data-open-employee-invite="${text(employee.id)}">Invitation</button><button data-remove-employee="${text(employee.id)}">Deaktivér</button></div>`}
+      </article>`;
+      }).join('')}
     </section>` : (DEMO_MODE ? `<button class="save-btn" type="button" data-action="demo-admin">Prøv chefvisning i demo</button>` : '<p class="security-inline-note">Chefvisning kan kun gives af en eksisterende chef/admin.</p>')}
     <section class="admin-audit">
       <b>Chef/admin kan styre drift, ikke læse alt</b>
@@ -5908,6 +6008,7 @@ document.addEventListener('click', async event => {
   const quickPickupDuration = event.target.closest('[data-quick-pickup]')?.dataset.quickPickup;
   const completeDataRequestId = event.target.closest('[data-complete-data-request]')?.dataset.completeDataRequest;
   const resendConfirmationEmail = event.target.closest('[data-resend-confirmation]')?.dataset.resendConfirmation;
+  const openEmployeeInviteId = event.target.closest('[data-open-employee-invite]')?.dataset.openEmployeeInvite;
   const searchResult = event.target.closest('[data-search-target]');
   if (blockInternalAction(action)) return;
   if (searchResult) {
@@ -5941,6 +6042,17 @@ document.addEventListener('click', async event => {
     } catch (error) {
       showToast(`Kunne ikke gensende bekræftelsesmail: ${error.message}`);
     }
+    return;
+  }
+  if (openEmployeeInviteId) {
+    if (!canManageEmployees()) {
+      showToast('Kun chef/admin kan åbne invitationer');
+      return;
+    }
+    const employee = employees.find(item => item.id === openEmployeeInviteId);
+    if (!employee) return;
+    event.target.closest('.modal-backdrop')?.remove();
+    openEmployeeInviteResultModal(employee, employee.invitationId || '');
     return;
   }
   if (completeDataRequestId) {

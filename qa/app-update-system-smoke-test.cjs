@@ -16,8 +16,8 @@ const androidManifest = fs.readFileSync('android/app/src/main/AndroidManifest.xm
 const mainActivity = fs.readFileSync('android/app/src/main/java/dk/xpressbudet/xpressintra/MainActivity.java', 'utf8');
 const updateInstallerPlugin = fs.readFileSync('android/app/src/main/java/dk/xpressbudet/xpressintra/UpdateInstallerPlugin.java', 'utf8');
 
-assert(app.includes("const APP_DISPLAY_VERSION = '1.3.16'"), 'App should expose human APK version');
-assert(app.includes('const APP_VERSION_CODE = 29'), 'App should compare numeric Android version codes');
+assert(app.includes("const APP_DISPLAY_VERSION = '1.3.17'"), 'App should expose human APK version');
+assert(app.includes('const APP_VERSION_CODE = 30'), 'App should compare numeric Android version codes');
 assert(app.includes('window.XPRESSINTRA_UPDATE'), 'App should read update config from app-config');
 assert(app.includes('fetchVersionInfo'), 'App should fetch version.json');
 assert(app.includes('normalizeVersionInfo'), 'App should validate version.json');
@@ -39,12 +39,13 @@ assert(app.includes('appUpdateState.required'), 'App should remember known requi
 assert(styles.includes('.update-summary-card'), 'Update summary should be styled');
 assert(styles.includes('.force-update'), 'Forced update modal should be styled');
 
-assert(version.activeVersion === '1.3.16', 'version.json should expose activeVersion');
-assert(version.activeVersionCode === 29, 'version.json should expose activeVersionCode');
+assert(version.activeVersion === '1.3.17', 'version.json should expose activeVersion');
+assert(version.activeVersionCode === 30, 'version.json should expose activeVersionCode');
 assert(version.forceUpdate === true, 'Test release should force update visibility');
 assert(version.apkDownloadUrl.includes('github.com/stralner2711-a11y/xpresshub'), 'version.json should point to the official GitHub repo');
-assert(version.previousStableVersion === '1.3.15', 'version.json should keep the previous stable version for rollback');
-assert(version.previousStableApkDownloadUrl.includes('/v1.3.15/'), 'version.json should expose previous stable APK for rollback');
+assert(version.previousStableVersion === '1.3.16', 'version.json should keep the previous stable version for rollback');
+assert(version.previousStableApkDownloadUrl.includes('/v1.3.16/'), 'version.json should expose previous stable APK for rollback');
+assert(version.changelog.some(item => item.includes('onboarding-overblik')), 'version.json should explain the onboarding control update');
 
 assert(download.includes('iPhone eller pc'), 'Download page should guide iPhone and PC users to the web app');
 assert(download.includes('Download Android APK'), 'Download page should still have a clear Android APK button');
