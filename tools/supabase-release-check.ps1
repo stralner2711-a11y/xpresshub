@@ -108,7 +108,7 @@ if ($schema -match 'function public\.(is_admin|is_dispatcher_or_admin|is_convers
 if ($fullSetup -notmatch 'drop schema if exists private cascade' -or $fullSetup -notmatch 'function private\.is_admin\(\)') {
   Fail "Fuld Supabase SQL mangler reset/oprettelse af private RLS-hjaelpefunktioner"
 }
-foreach ($requiredText in @('password_reset_required', 'onboarding_method', 'standard_password', 'Din arbejdsmail er ikke oprettet i XpressIntra endnu')) {
+foreach ($requiredText in @('password_reset_required', 'onboarding_method', 'standard_password', 'invitation_id', 'expires_at', 'used_by', 'Din arbejdsmail er ikke oprettet i XpressIntra endnu')) {
   if ($schema -notmatch [regex]::Escape($requiredText)) {
     Fail "schema.sql mangler standardkode-onboarding: $requiredText"
   }

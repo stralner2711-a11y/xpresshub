@@ -64,8 +64,17 @@ assert(schema.includes('grant execute on function public.start_direct_conversati
 assert(schema.includes('cannot_start_direct_conversation_with_self'), 'Direct chat RPC should reject self conversations');
 assert(schema.includes('create table if not exists public.employee_invitations'), 'Schema should support safe employee invitations without exposing service-role keys');
 assert(schema.includes('on public.employee_invitations for all to authenticated using (private.is_admin())'), 'Only admins should manage employee invitations');
+assert(schema.includes("expires_at timestamptz not null default (now() + interval '14 days')"), 'Invitations should expire automatically');
+assert(schema.includes('accepted_at timestamptz'), 'Invitations should record when they are used');
+assert(schema.includes('used_by uuid references public.profiles(id)'), 'Invitations should record which user consumed them');
+assert(schema.includes("and id::text = coalesce(nullif(new.raw_user_meta_data ->> 'invitation_id', ''), 'missing-invitation-id')"), 'Auth trigger should require the exact invitation id from the private link');
+assert(schema.includes('employee_invitations_one_pending_email_idx'), 'Only one pending invitation per email should be allowed');
+assert(schema.includes('employee_invitations_used_by_idx'), 'Invitation used_by foreign key should have a covering index');
+assert(schema.includes('media_attachments_announcement_idx'), 'Announcement media foreign key should have a covering index');
+assert(schema.includes("set status = 'accepted',"), 'Used invitations should be marked accepted');
 assert(schema.includes("new.raw_user_meta_data ->> 'first_personal_password'"), 'Auth trigger should understand first-login personal password onboarding');
 assert(fullBootstrap.includes("new.raw_user_meta_data ->> 'first_personal_password'"), 'Full bootstrap should include first-login personal password onboarding');
+assert(fullBootstrap.includes("new.raw_user_meta_data ->> 'invitation_id'"), 'Full bootstrap should bind signup to an invitation id');
 assert(schema.includes('on public.admin_audit_log for insert to authenticated with check (actor_id = auth.uid() and private.is_admin())'), 'Admins should be able to write explicit audit entries as themselves');
 assert(schema.includes("insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)"), 'Schema should create a private Storage bucket for media');
 assert(schema.includes("public = false"), 'Media bucket should be private');

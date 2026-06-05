@@ -1,10 +1,10 @@
-﻿const CACHE_NAME = 'xpressintra-v78-onboarding-control';
+const CACHE_NAME = 'xpressintra-v80-beta-stabilisering';
 const APP_FILES = [
   './',
-  './indep.html',
+  './index.html',
   './download.html',
   './manifest.webmanifest',
-  './ppressbudet-logo-transparent.png',
+  './xpressbudet-logo-transparent.png',
 ];
 
 function shouldBypassCache(request) {
@@ -62,16 +62,8 @@ self.addEventListener('fetch', event => {
         return response;
       })
       .catch(() => {
-        if (event.request.mode === 'navigate') return caches.match('./indep.html');
+        if (event.request.mode === 'navigate') return caches.match('./index.html');
         return caches.match(event.request);
       })
   );
 });
-
-
-
-
-
-
-
-

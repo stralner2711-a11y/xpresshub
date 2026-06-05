@@ -59,6 +59,9 @@ create table if not exists public.employee_invitations (
   onboarding_method text not null default 'standard_password' check (onboarding_method in ('standard_password', 'manual')),
   password_reset_required boolean not null default true,
   status text not null default 'pending' check (status in ('pending', 'accepted', 'cancelled')),
+  expires_at timestamptz not null default (now() + interval '14 days'),
+  accepted_at timestamptz,
+  used_by uuid references public.profiles(id) on delete set null,
   created_at timestamptz not null default now()
 );
 
@@ -75,7 +78,15 @@ alter table public.profiles
 alter table public.employee_invitations
   alter column role set default 'Chauffor',
   add column if not exists onboarding_method text not null default 'standard_password' check (onboarding_method in ('standard_password', 'manual')),
-  add column if not exists password_reset_required boolean not null default true;
+  add column if not exists password_reset_required boolean not null default true,
+  add column if not exists expires_at timestamptz not null default (now() + interval '14 days'),
+  add column if not exists accepted_at timestamptz,
+  add column if not exists used_by uuid references public.profiles(id) on delete set null;
+
+create unique index if not exists employee_invitations_one_pending_email_idx
+on public.employee_invitations (lower(email))
+where status = 'pending';
+create index if not exists employee_invitations_used_by_idx on public.employee_invitations (used_by);
 
 alter table public.employee_invitations enable row level security;
 alter table public.profile_private_details enable row level security;
@@ -122,6 +133,8 @@ begin
   from public.employee_invitations
   where lower(email) = lower(new.email)
     and status = 'pending'
+    and expires_at > now()
+    and id::text = coalesce(nullif(new.raw_user_meta_data ->> 'invitation_id', ''), 'missing-invitation-id')
   order by created_at desc
   limit 1;
 
@@ -174,7 +187,9 @@ begin
         updated_at = now();
 
     update public.employee_invitations
-    set status = 'accepted'
+    set status = 'accepted',
+        accepted_at = now(),
+        used_by = new.id
     where id = invite.id;
   end if;
 

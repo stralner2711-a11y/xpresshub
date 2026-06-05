@@ -26,9 +26,9 @@
   search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>',
 };
 
-const APP_VERSION = '1.3.18-release-v79';
-const APP_DISPLAY_VERSION = '1.3.18';
-const APP_VERSION_CODE = 31;
+const APP_VERSION = '1.3.19-release-v80';
+const APP_DISPLAY_VERSION = '1.3.19';
+const APP_VERSION_CODE = 32;
 const TEMPORARY_EMPLOYEE_PASSWORD = 'xpress';
 const IMAGE_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
 const PROFILE_PHOTO_MAX_DIMENSION = 512;
@@ -912,6 +912,7 @@ let activeInfoCategory = 'all';
 let infoFavorites = stored('infoFavorites') || [];
 let session = hasSupabaseConfigForMode && !DEMO_MODE ? null : stored('session');
 let pendingStandardSignupEmail = '';
+let pendingStandardSignupInvitationId = '';
 let creatorRoleTester = stored('creatorRoleTester') || { active: false, originalProfile: null, currentRole: null };
 let profile = stored('profile') || (DEMO_MODE ? { name: 'Tommy Hansen', phone: '+45 22 44 18 90', email: 'stralner2711@gmail.com', role: 'Appansvarlig · Lastbilchauffør', accessRole: 'owner', vehicleType: 'truck', truck: 'TR 42 918', department: 'Lastbil', license: 'C/E · EU kvalifikationsbevis', emergencyContact: 'Anne · +45 22 11 90 90', languages: 'Dansk, engelsk, tysk', logbook: true } : clone(productionProfile));
 let location = { sharing: false, demo: false, speed: 0, points: 0, watchId: null, timer: null, coords: null, startedAt: null, expiresAt: null, lastUpdatedAt: null, shareMode: null };
@@ -1352,7 +1353,7 @@ function markCurrentVersionSuspect() {
   const fallbackInfo = {
     activeVersion: APP_DISPLAY_VERSION,
     activeVersionCode: APP_VERSION_CODE,
-    apkDownloadUrl: 'https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.18/xpressintra.apk',
+    apkDownloadUrl: 'https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.19/xpressintra.apk',
   };
   const info = appUpdateState.latest || normalizeVersionInfo(fallbackInfo);
   const defective = new Set([...(info.defectiveVersions || []).map(String), APP_DISPLAY_VERSION, String(APP_VERSION_CODE)]);
@@ -2607,6 +2608,7 @@ async function signUpSupabase(email, password, options = {}) {
       emailRedirectTo: officialAppUrl(),
       data: {
         invited_to_xpressintra: true,
+        invitation_id: String(options.invitationId || '').trim(),
         temporary_password_flow: !options.personalPasswordReady,
         first_personal_password: Boolean(options.personalPasswordReady),
       },
@@ -5127,8 +5129,9 @@ function openEmployeeInviteResultModal(employee, invitationId = '') {
   document.body.append(modal);
 }
 
-function openStandardSignupPasswordModal(email) {
+function openStandardSignupPasswordModal(email, invitationId = '') {
   pendingStandardSignupEmail = String(email || '').trim().toLowerCase();
+  pendingStandardSignupInvitationId = String(invitationId || '').trim();
   if (!pendingStandardSignupEmail) {
     showToast('Skriv arbejdsmailen først');
     return;
@@ -6523,8 +6526,12 @@ document.addEventListener('submit', async event => {
       return;
     }
     try {
-      const message = await signUpSupabase(pendingStandardSignupEmail, nextPassword, { personalPasswordReady: true });
+      const message = await signUpSupabase(pendingStandardSignupEmail, nextPassword, {
+        personalPasswordReady: true,
+        invitationId: pendingStandardSignupInvitationId,
+      });
       pendingStandardSignupEmail = '';
+      pendingStandardSignupInvitationId = '';
       event.target.closest('.modal-backdrop')?.remove();
       render();
       showToast(message);
@@ -6582,7 +6589,7 @@ document.addEventListener('submit', async event => {
             showToast('Skriv standardkoden xpress for at oprette kontoen');
             return;
           }
-          openStandardSignupPasswordModal(email);
+          openStandardSignupPasswordModal(email, inviteContext.invite);
         } else {
           if (String(data.get('password') || '') === TEMPORARY_EMPLOYEE_PASSWORD) {
             showToast('Standardkoden bruges kun via "Opret konto med standardkode"');

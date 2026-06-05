@@ -12,6 +12,7 @@ const docsVersion = JSON.parse(fs.readFileSync('docs/version.json', 'utf8'));
 const rootVersion = JSON.parse(fs.readFileSync('version.json', 'utf8'));
 const download = fs.readFileSync('public/download.html', 'utf8');
 const configExample = fs.readFileSync('public/app-config.example.js', 'utf8');
+const indexHtml = fs.readFileSync('index.html', 'utf8');
 const serviceWorker = fs.readFileSync('public/service-worker.js', 'utf8');
 const rootServiceWorker = fs.readFileSync('service-worker.js', 'utf8');
 const docs = fs.readFileSync('docs/APP_UPDATE_SYSTEM.md', 'utf8');
@@ -19,8 +20,8 @@ const androidManifest = fs.readFileSync('android/app/src/main/AndroidManifest.xm
 const mainActivity = fs.readFileSync('android/app/src/main/java/dk/xpressbudet/xpressintra/MainActivity.java', 'utf8');
 const updateInstallerPlugin = fs.readFileSync('android/app/src/main/java/dk/xpressbudet/xpressintra/UpdateInstallerPlugin.java', 'utf8');
 
-assert(app.includes("const APP_DISPLAY_VERSION = '1.3.18'"), 'App should expose human APK version');
-assert(app.includes('const APP_VERSION_CODE = 31'), 'App should compare numeric Android version codes');
+assert(app.includes("const APP_DISPLAY_VERSION = '1.3.19'"), 'App should expose human APK version');
+assert(app.includes('const APP_VERSION_CODE = 32'), 'App should compare numeric Android version codes');
 assert(app.includes('window.XPRESSINTRA_UPDATE'), 'App should read update config from app-config');
 assert(app.includes('fetchVersionInfo'), 'App should fetch version.json');
 assert(app.includes('normalizeVersionInfo'), 'App should validate version.json');
@@ -47,13 +48,13 @@ assert(updateSystem.includes('globalThis.XpressIntraUpdateSystem'), 'Update modu
 assert(styles.includes('.update-summary-card'), 'Update summary should be styled');
 assert(styles.includes('.force-update'), 'Forced update modal should be styled');
 
-assert(version.activeVersion === '1.3.18', 'version.json should expose activeVersion');
-assert(version.activeVersionCode === 31, 'version.json should expose activeVersionCode');
+assert(version.activeVersion === '1.3.19', 'version.json should expose activeVersion');
+assert(version.activeVersionCode === 32, 'version.json should expose activeVersionCode');
 assert(version.forceUpdate === true, 'Test release should force update visibility');
 assert(version.apkDownloadUrl.includes('github.com/stralner2711-a11y/xpresshub'), 'version.json should point to the official GitHub repo');
-assert(version.previousStableVersion === '1.3.17', 'version.json should keep the previous stable version for rollback');
-assert(version.previousStableApkDownloadUrl.includes('/v1.3.17/'), 'version.json should expose previous stable APK for rollback');
-assert(version.changelog.some(item => item.includes('professionelle moduler')), 'version.json should explain the professional module cleanup update');
+assert(version.previousStableVersion === '1.3.18', 'version.json should keep the previous stable version for rollback');
+assert(version.previousStableApkDownloadUrl.includes('/v1.3.18/'), 'version.json should expose previous stable APK for rollback');
+assert(version.changelog.some(item => item.includes('Beta-stabilisering')), 'version.json should explain the beta stabilization update');
 assert(docsVersion.activeVersion === version.activeVersion, 'docs/version.json should match public version for GitHub Pages');
 assert(docsVersion.activeVersionCode === version.activeVersionCode, 'docs/version.json should match public build code');
 assert(rootVersion.activeVersion === version.activeVersion, 'root version.json should match public version for root-hosted Pages');
@@ -64,14 +65,19 @@ assert(download.includes('Download Android APK'), 'Download page should still ha
 assert(download.includes('Føj til hjemmeskærm'), 'Download page should guide iPhone home screen installation');
 assert(download.includes('Tillad installation fra ukendte kilder'), 'Download page should guide APK installation');
 assert(download.includes('Skriv aldrig adgangskoden andre steder'), 'Download page should include plain safety guidance');
-assert(download.includes('github.com/stralner2711-a11y/xpresshub'), 'Download page should point to the official release page');
+assert(download.includes('/releases/download/v1.3.19/xpressintra.apk'), 'Download page should point directly to the latest APK');
 
 assert(configExample.includes('XPRESSINTRA_UPDATE'), 'Config example should document update config');
 assert(configExample.includes('stralner2711-a11y.github.io/xpresshub/version.json'), 'Config example should show official GitHub Pages version.json URL');
 assert(!serviceWorker.includes("'./version.json'"), 'Service worker should not pre-cache version.json');
 assert(serviceWorker.includes("url.pathname.endsWith('/version.json')"), 'Service worker should bypass version.json cache');
+assert(serviceWorker.includes("'./index.html'"), 'Service worker should pre-cache index.html');
+assert(!serviceWorker.includes('indep.html'), 'Service worker should not reference old indep.html fallback');
+assert(!serviceWorker.includes('ppressbudet'), 'Service worker should not reference misspelled logo file');
+assert(serviceWorker.includes("caches.match('./index.html')"), 'Service worker should use index.html as offline navigation fallback');
 assert(serviceWorker.includes('./download.html'), 'Service worker should cache download page for fallback');
 assert(rootServiceWorker === serviceWorker, 'Root service worker should match public service worker');
+assert((indexHtml.match(/@supabase\/supabase-js@2/g) || []).length === 1, 'Index should only load Supabase CDN once');
 assert(docs.includes('Officielt repository'), 'Docs should document official repository');
 assert(docs.includes('Rollback'), 'Docs should document rollback workflow');
 assert(androidManifest.includes('REQUEST_INSTALL_PACKAGES'), 'Android app should request install packages permission');

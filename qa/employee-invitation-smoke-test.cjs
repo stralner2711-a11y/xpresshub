@@ -32,6 +32,8 @@ assert(source.includes('Åbn dit invitationslink her'), 'Shared invite message s
 assert(source.includes('Invitationslink:'), 'Invite result should show the private invitation link before sending');
 assert(source.includes("onboarding_method: 'standard_password'"), 'Supabase invitations should store the onboarding method');
 assert(source.includes('password_reset_required: true'), 'New employees should be forced to change the temporary password');
+assert(source.includes('pendingStandardSignupInvitationId'), 'Standard signup should remember the exact invitation id from the link');
+assert(source.includes('invitation_id: String(options.invitationId'), 'Signup metadata should bind account creation to the invitation id');
 
 const storage = new Map([['roadlog:session', JSON.stringify({ email: 'demo@xpressintra.local', mode: 'demo' })]]);
 const document = {

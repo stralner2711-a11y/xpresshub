@@ -66,6 +66,9 @@ create table if not exists public.employee_invitations (
   onboarding_method text not null default 'standard_password' check (onboarding_method in ('standard_password', 'manual')),
   password_reset_required boolean not null default true,
   status text not null default 'pending' check (status in ('pending', 'accepted', 'cancelled')),
+  expires_at timestamptz not null default (now() + interval '14 days'),
+  accepted_at timestamptz,
+  used_by uuid references public.profiles(id) on delete set null,
   created_at timestamptz not null default now()
 );
 
@@ -75,7 +78,10 @@ alter table public.profiles
 alter table public.employee_invitations
   alter column role set default 'Chauffør',
   add column if not exists onboarding_method text not null default 'standard_password' check (onboarding_method in ('standard_password', 'manual')),
-  add column if not exists password_reset_required boolean not null default true;
+  add column if not exists password_reset_required boolean not null default true,
+  add column if not exists expires_at timestamptz not null default (now() + interval '14 days'),
+  add column if not exists accepted_at timestamptz,
+  add column if not exists used_by uuid references public.profiles(id) on delete set null;
 
 create table if not exists public.core_settings (
   key text primary key,
@@ -363,6 +369,7 @@ alter table public.regulatory_updates
 create index if not exists messages_conversation_created_idx on public.messages (conversation_id, created_at desc);
 create index if not exists media_attachments_owner_created_idx on public.media_attachments (owner_id, created_at desc);
 create index if not exists media_attachments_message_idx on public.media_attachments (message_id);
+create index if not exists media_attachments_announcement_idx on public.media_attachments (announcement_id);
 create index if not exists private_log_entries_user_created_idx on public.private_log_entries (user_id, created_at desc);
 create index if not exists private_log_entries_user_source_idx on public.private_log_entries (user_id, source, created_at desc);
 create index if not exists location_shares_shared_at_idx on public.location_shares (shared_at desc);
@@ -376,6 +383,8 @@ create index if not exists regulatory_updates_status_detected_idx on public.regu
 create index if not exists profiles_access_role_idx on public.profiles (access_role);
 create index if not exists admin_audit_log_created_idx on public.admin_audit_log (created_at desc);
 create index if not exists employee_invitations_status_created_idx on public.employee_invitations (status, created_at desc);
+create unique index if not exists employee_invitations_one_pending_email_idx on public.employee_invitations (lower(email)) where status = 'pending';
+create index if not exists employee_invitations_used_by_idx on public.employee_invitations (used_by);
 
 alter table public.profiles enable row level security;
 alter table public.profile_private_details enable row level security;
@@ -994,6 +1003,8 @@ begin
   from public.employee_invitations
   where lower(email) = lower(new.email)
     and status = 'pending'
+    and expires_at > now()
+    and id::text = coalesce(nullif(new.raw_user_meta_data ->> 'invitation_id', ''), 'missing-invitation-id')
   order by created_at desc
   limit 1;
 
@@ -1045,7 +1056,9 @@ begin
     set emergency_contact = excluded.emergency_contact;
 
     update public.employee_invitations
-    set status = 'accepted'
+    set status = 'accepted',
+        accepted_at = now(),
+        used_by = new.id
     where id = invite.id;
   end if;
 
