@@ -11,7 +11,7 @@ const manifest = fs.readFileSync('android/app/src/main/AndroidManifest.xml', 'ut
 const version = JSON.parse(fs.readFileSync('public/version.json', 'utf8'));
 
 for (const source of [worker, rootWorker]) {
-  assert(source.includes("CACHE_NAME = 'xpressintra-v82-centralized-qa'"), 'Service worker cache version should be bumped');
+  assert(source.includes("CACHE_NAME = 'xpressintra-v84-install-permissions'"), 'Service worker cache version should be bumped');
   assert(source.includes("'./index.html'"), 'Service worker should precache index.html');
   assert(!source.includes('indep.html'), 'Service worker should not reference old indep.html fallback');
   assert(!source.includes('ppressbudet'), 'Service worker should not reference misspelled logo file');
@@ -27,12 +27,13 @@ for (const source of [worker, rootWorker]) {
 
 assert(manifest.includes('android:allowBackup="false"'), 'Android backup should be disabled for private app data');
 assert(manifest.includes('android:fullBackupContent="false"'), 'Android full backup content should be disabled');
+assert(manifest.includes('android.permission.POST_NOTIFICATIONS'), 'Android should request notification permission for Android 13+');
 assert(manifest.includes('android.hardware.location.gps" android:required="false"'), 'GPS hardware should not be required for installation');
 assert(manifest.includes('android.hardware.camera" android:required="false"'), 'Camera hardware should not be required for installation');
 assert(!manifest.includes('READ_EXTERNAL_STORAGE'), 'Legacy broad external storage permission should not be requested');
 assert(!manifest.includes('WRITE_EXTERNAL_STORAGE'), 'Legacy write storage permission should not be requested');
 
-assert(app.includes(`const APP_VERSION = '${version.activeVersion}-release-v82'`), 'App version should be visible in code');
+assert(app.includes(`const APP_VERSION = '${version.activeVersion}-release-v84'`), 'App version should be visible in code');
 assert(app.includes(`const APP_DISPLAY_VERSION = '${version.activeVersion}'`), 'APK display version should be visible in code');
 assert(app.includes(`const APP_VERSION_CODE = ${version.activeVersionCode}`), 'APK version code should be visible in code');
 assert(app.includes('!hasSupabaseConfigForMode && storedSessionForMode'), 'Demo mode should not override a configured production backend');

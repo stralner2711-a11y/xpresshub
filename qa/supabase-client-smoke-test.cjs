@@ -209,6 +209,7 @@ function assert(condition, message) {
   await harness.run("signInSupabase('driver@example.com', 'secret123')");
   assert(harness.run('chats.some(chat => chat.community && chat.preview === "Velkommen online")'), 'Supabase conversations and messages should load into chat');
   assert(harness.subscriptions.some(item => item.filter?.table === 'messages'), 'Chat should subscribe to realtime message inserts');
+  assert(harness.subscriptions.some(item => item.filter?.table === 'notifications'), 'App should subscribe to realtime notification inserts');
 
   harness.run("activeChat = '00000000-0000-4000-8000-000000000001'");
   await harness.document.dispatchEvent({

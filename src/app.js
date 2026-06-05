@@ -26,9 +26,9 @@
   search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>',
 };
 
-const APP_VERSION = '1.3.21-release-v82';
-const APP_DISPLAY_VERSION = '1.3.21';
-const APP_VERSION_CODE = 34;
+const APP_VERSION = '1.3.23-release-v84';
+const APP_DISPLAY_VERSION = '1.3.23';
+const APP_VERSION_CODE = 36;
 const TEMPORARY_EMPLOYEE_PASSWORD = 'xpress';
 const IMAGE_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
 const PROFILE_PHOTO_MAX_DIMENSION = 512;
@@ -94,7 +94,7 @@ const seedNotifications = [
   { id: 'rule-van-2026', type: 'Regelnyt', title: 'Varebilkrav fra 1. juli 2026', body: 'Takograf og køre-/hviletid bliver relevant for internationale varebiler over 2,5 ton.', time: '31. maj', level: 'rule', unread: false },
 ];
 
-const defaultNotificationPrefs = { office: true, rules: true, chat: true, dailyBrief: true, quietHours: true };
+const defaultNotificationPrefs = { office: true, rules: true, chat: true, dailyBrief: true, quietHours: true, system: false };
 const productionProfile = { name: 'Medarbejder', phone: '', email: '', role: 'Chauffør', accessRole: 'employee', vehicleType: 'truck', truck: '', department: '', license: '', emergencyContact: '', languages: '', logbook: true };
 
 const seedChats = [
@@ -369,6 +369,7 @@ let supabaseClientInstance = null;
 let supabaseChatSubscription = null;
 let supabaseLocationSubscription = null;
 let supabasePickupSubscription = null;
+let supabaseNotificationSubscription = null;
 let supabaseSchemaState = { missingLocationShares: false, locationWarningShown: false };
 let deferredPwaInstallPrompt = null;
 let pwaInstallAvailable = false;
@@ -410,6 +411,7 @@ async function installPwaApp() {
   if (choice?.outcome === 'accepted') {
     pwaInstalled = true;
     showToast('IntraBudet er installeret og klar');
+    if (systemNotificationPermission() === 'default') await requestSystemNotifications();
   } else {
     showToast('Installationen blev ikke gennemført endnu');
   }
@@ -1063,6 +1065,104 @@ function showToast(text) {
   setTimeout(() => toast.classList.remove('show'), 2200);
 }
 
+function systemNotificationPermission() {
+  if (typeof Notification === 'undefined') return 'unsupported';
+  return Notification.permission || 'default';
+}
+
+function systemNotificationStatus() {
+  const permission = systemNotificationPermission();
+  if (permission === 'granted' && notificationPrefs.system) return { label: 'Til', detail: 'Telefonen kan vise beskeder fra XpressIntra.' };
+  if (permission === 'granted') return { label: 'Klar', detail: 'Tilladelse er givet. Slå systembeskeder til herunder.' };
+  if (permission === 'denied') return { label: 'Blokeret', detail: 'Tilladelse er blokeret i telefonens eller browserens indstillinger.' };
+  if (permission === 'unsupported') return { label: 'Ikke understøttet', detail: 'Denne browser kan ikke vise systembeskeder.' };
+  return { label: 'Ikke aktiveret', detail: 'Tryk aktiver for at få besked ved nye chatbeskeder.' };
+}
+
+function isQuietHoursNow() {
+  const hour = new Date().getHours();
+  return hour >= 19 || hour < 6;
+}
+
+function shouldShowSystemNotification(notification = {}) {
+  if (!notificationPrefs.system || !workdayPrivacy.notifications) return false;
+  if (systemNotificationPermission() !== 'granted') return false;
+  if (!shouldKeepNotification(notification)) return false;
+  if (notificationPrefs.quietHours && isQuietHoursNow() && notification.level !== 'urgent') return false;
+  return true;
+}
+
+function safeSystemNotificationBody(notification = {}) {
+  if (notificationCategory(notification) === 'chat') return 'Åbn XpressIntra for at læse beskeden.';
+  return notification.body || 'Åbn XpressIntra for detaljer.';
+}
+
+function notificationTargetUrl(notification = {}) {
+  const tab = notification.chatId ? 'chat' : 'more';
+  const url = new URL('./', window.location.href);
+  url.searchParams.set('tab', tab);
+  if (notification.chatId) url.searchParams.set('chat', notification.chatId);
+  return url.toString();
+}
+
+async function showSystemNotification(notification = {}) {
+  if (!shouldShowSystemNotification(notification)) return false;
+  const title = notification.title || 'Ny besked i XpressIntra';
+  const options = {
+    body: safeSystemNotificationBody(notification),
+    badge: './xpressbudet-logo-transparent.png',
+    icon: './xpressbudet-logo-transparent.png',
+    tag: notification.tag || notification.chatId || notification.id || 'xpressintra',
+    renotify: Boolean(notification.level === 'urgent'),
+    data: { url: notificationTargetUrl(notification) },
+  };
+  try {
+    const registration = await navigator.serviceWorker?.ready;
+    if (registration?.showNotification) {
+      await registration.showNotification(title, options);
+      return true;
+    }
+  } catch {}
+  try {
+    if (typeof Notification !== 'undefined') {
+      const systemNotice = new Notification(title, options);
+      systemNotice.onclick = () => window.focus?.();
+      return true;
+    }
+  } catch {}
+  return false;
+}
+
+async function requestSystemNotifications() {
+  if (typeof Notification === 'undefined') {
+    showToast('Denne browser kan ikke vise systembeskeder');
+    return false;
+  }
+  const permission = Notification.permission === 'default'
+    ? await Notification.requestPermission()
+    : Notification.permission;
+  if (permission !== 'granted') {
+    notificationPrefs.system = false;
+    save('notificationPrefs', notificationPrefs);
+    showToast(permission === 'denied' ? 'Systembeskeder er blokeret i telefonen' : 'Systembeskeder blev ikke aktiveret');
+    return false;
+  }
+  notificationPrefs.system = true;
+  save('notificationPrefs', notificationPrefs);
+  if (onlineBackendActive()) {
+    syncSupabaseNotificationPrefs().catch(error => showToast(`Valget er gemt lokalt, men ikke online: ${error.message}`));
+  }
+  showToast('Systembeskeder er slået til');
+  await showSystemNotification({
+    id: 'notification-test',
+    type: 'XpressIntra',
+    title: 'Systembeskeder er klar',
+    body: 'Du får nu besked ved nye chatbeskeder, når appen er åben eller ligger i baggrunden.',
+    level: 'office',
+  });
+  return true;
+}
+
 function saveAppUpdateState() {
   save(UPDATE_CONFIG_KEY, appUpdateState);
 }
@@ -1353,7 +1453,7 @@ function markCurrentVersionSuspect() {
   const fallbackInfo = {
     activeVersion: APP_DISPLAY_VERSION,
     activeVersionCode: APP_VERSION_CODE,
-    apkDownloadUrl: 'https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.21/xpressintra.apk',
+    apkDownloadUrl: 'https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.23/xpressintra.apk',
   };
   const info = appUpdateState.latest || normalizeVersionInfo(fallbackInfo);
   const defective = new Set([...(info.defectiveVersions || []).map(String), APP_DISPLAY_VERSION, String(APP_VERSION_CODE)]);
@@ -2350,6 +2450,19 @@ function handleSupabasePickupTask(payload) {
   if (activeTab === 'home' || activeTab === 'map') render({ preserveScroll: activeTab === 'map' });
 }
 
+function notificationFromSupabase(row = {}) {
+  return {
+    id: row.id,
+    type: row.type,
+    title: row.title,
+    body: row.body,
+    time: row.created_at ? new Date(row.created_at).toLocaleString('da-DK', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Nu',
+    level: row.level,
+    priority: row.priority,
+    unread: !row.read_at,
+  };
+}
+
 async function handleSupabaseMessage(row) {
   if (!row?.conversation_id || messages[row.conversation_id]?.some(message => message.id === row.id)) return;
   const rows = await attachSignedMediaUrls([row]);
@@ -2362,9 +2475,29 @@ async function handleSupabaseMessage(row) {
     chat.time = nextMessage.time;
     if (activeChat !== row.conversation_id && nextMessage.side !== 'me') chat.unread = (chat.unread || 0) + 1;
   }
+  if (nextMessage.side !== 'me' && activeChat !== row.conversation_id) {
+    const heading = chat ? conversationHeading(chat) : { title: 'Besked' };
+    addNotification({
+      type: 'Chatbesked',
+      title: `${nextMessage.senderName || 'Kollega'} skrev`,
+      body: `${heading.title || 'Samtale'} · ${nextMessage.body || 'Ny besked'}`,
+      level: 'message',
+      chatId: row.conversation_id,
+      tag: `chat-${row.conversation_id}`,
+    }, { system: true });
+  }
   save('messages', messages);
   save('chats', chats);
-  if (activeTab === 'chat') render();
+  if (activeTab === 'chat' || activeTab === 'home' || activeTab === 'more') render({ preserveScroll: activeTab !== 'chat' });
+}
+
+function handleSupabaseNotification(row) {
+  if (!row?.id || (row.user_id && row.user_id !== session?.userId)) return;
+  if (notifications.some(item => String(item.id) === String(row.id))) return;
+  const item = notificationFromSupabase(row);
+  if (!item.unread) return;
+  addNotification(item, { system: true });
+  if (activeTab === 'home' || activeTab === 'more') render({ preserveScroll: true });
 }
 
 function subscribeSupabaseChat() {
@@ -2373,6 +2506,15 @@ function subscribeSupabaseChat() {
   supabaseChatSubscription = client
     .channel('xpressintra-chat')
     .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => handleSupabaseMessage(payload.new))
+    .subscribe();
+}
+
+function subscribeSupabaseNotifications() {
+  const client = getSupabaseClient();
+  if (!client?.channel || supabaseNotificationSubscription) return;
+  supabaseNotificationSubscription = client
+    .channel('xpressintra-notifications')
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' }, payload => handleSupabaseNotification(payload.new))
     .subscribe();
 }
 
@@ -2449,16 +2591,7 @@ async function loadSupabaseData(authSession) {
     save('vehicles', vehicles);
   }
   if (notificationsResult.data) {
-    notifications = notificationsResult.data.map(row => ({
-      id: row.id,
-      type: row.type,
-      title: row.title,
-      body: row.body,
-      time: row.created_at ? new Date(row.created_at).toLocaleString('da-DK', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : '',
-      level: row.level,
-      priority: row.priority,
-      unread: !row.read_at,
-    }));
+    notifications = notificationsResult.data.map(notificationFromSupabase);
     save('notifications', notifications);
   }
   if (notificationPrefsResult.data) {
@@ -2468,6 +2601,7 @@ async function loadSupabaseData(authSession) {
       chat: notificationPrefsResult.data.chat,
       dailyBrief: notificationPrefsResult.data.daily_brief,
       quietHours: notificationPrefsResult.data.quiet_hours,
+      system: Boolean(notificationPrefs.system),
     };
     save('notificationPrefs', notificationPrefs);
   }
@@ -2543,6 +2677,7 @@ async function applySupabaseSession(authSession) {
   await loadSupabaseData(authSession);
   sanitizeCreatorRoleTester();
   subscribeSupabaseChat();
+  subscribeSupabaseNotifications();
   subscribeSupabaseLocations();
   subscribeSupabasePickupTasks();
   render();
@@ -2694,6 +2829,10 @@ async function signOut() {
   if (client && supabaseChatSubscription) {
     client.removeChannel?.(supabaseChatSubscription);
     supabaseChatSubscription = null;
+  }
+  if (client && supabaseNotificationSubscription) {
+    client.removeChannel?.(supabaseNotificationSubscription);
+    supabaseNotificationSubscription = null;
   }
   if (client && supabaseLocationSubscription) {
     client.removeChannel?.(supabaseLocationSubscription);
@@ -3920,16 +4059,19 @@ async function addPickupLiveNote(note) {
   showToast('Live note er tilføjet');
 }
 
-function addNotification(notification) {
+function addNotification(notification, options = {}) {
   if (!shouldKeepNotification(notification)) return;
-  notifications.unshift({
+  const item = {
     id: `notification-${Date.now()}`,
     time: 'Nu',
     unread: true,
     priority: notification.level === 'urgent' ? 'high' : notification.level === 'rule' ? 'medium' : 'normal',
     ...notification,
-  });
+  };
+  notifications.unshift(item);
   save('notifications', notifications);
+  if (options.system) showSystemNotification(item);
+  return item;
 }
 
 function notificationCategory(notification) {
@@ -5522,6 +5664,7 @@ function openNewChatModal() {
 function openSettingsModal() {
   const config = supabaseConfig();
   const backend = supabaseStatus();
+  const systemStatus = systemNotificationStatus();
   const backendSettings = isCreatorOwner() ? `<section class="backend-settings ${backend.ready ? 'online' : 'demo'}">
       <b>Online backend: ${text(backend.label)}</b>
       <small>${text(backend.detail)}</small>
@@ -5551,9 +5694,11 @@ function openSettingsModal() {
       <label><span><b>Kontoropslag</b><small>Vigtige beskeder fra driften</small></span><input type="checkbox" name="office" ${notificationPrefs.office ? 'checked' : ''} /></label>
       <label><span><b>Regelnyt</b><small>Godkendte ændringer til din kørsel</small></span><input type="checkbox" name="rules" ${notificationPrefs.rules ? 'checked' : ''} /></label>
       <label><span><b>Chatbeskeder</b><small>Direkte beskeder og dine kanaler</small></span><input type="checkbox" name="chat" ${notificationPrefs.chat ? 'checked' : ''} /></label>
+      <label><span><b>Systembeskeder på telefonen</b><small>${text(systemStatus.label)} · ${text(systemStatus.detail)}</small></span><input type="checkbox" name="system" ${notificationPrefs.system ? 'checked' : ''} /></label>
       <label><span><b>Daglige påmindelser</b><small>Dagens tjekliste på forsiden</small></span><input type="checkbox" name="dailyBrief" ${notificationPrefs.dailyBrief ? 'checked' : ''} /></label>
       <label><span><b>Stille tid</b><small>Kun vigtige beskeder efter kl. 19.00</small></span><input type="checkbox" name="quietHours" ${notificationPrefs.quietHours ? 'checked' : ''} /></label>
     </div>
+    <button type="button" class="ghost-btn" data-action="request-system-notifications">Aktivér systembeskeder</button>
     <p class="settings-help">Når Supabase forbindes, kan login, beskeder og profiler deles sikkert mellem medarbejderne.</p>
     <button class="save-btn">Gem indstillinger</button>
   </form>`;
@@ -5744,6 +5889,7 @@ function openVehiclesModal() {
 
 function openNotificationsModal() {
   const summary = notificationSummary();
+  const systemStatus = systemNotificationStatus();
   const priorityNotifications = notifications.filter(item => item.level === 'urgent' || item.priority === 'high');
   const unread = notifications.filter(item => item.unread);
   const modal = document.createElement('div');
@@ -5757,6 +5903,11 @@ function openNotificationsModal() {
       <span><b>${summary.urgent}</b><small>haster</small></span>
       <span><b>${notificationPrefs.quietHours ? 'Til' : 'Fra'}</b><small>Stille tid</small></span>
     </div>
+    <article class="notification-permission-card">
+      <b>Systembeskeder: ${text(systemStatus.label)}</b>
+      <span>${text(systemStatus.detail)}</span>
+      <button type="button" data-action="request-system-notifications">Aktivér på telefonen</button>
+    </article>
     <div class="section-title"><h3>Prioritet</h3><button data-action="mark-notifications-read">Marker alt som læst</button></div>
     ${priorityNotifications.length ? `<div class="notification-list priority">${priorityNotifications.map(item => `<article class="${text(item.level)}"><small>${text(item.type)} · ${text(item.time)}</small><b>${text(item.title)}</b><span>${text(item.body)}</span></article>`).join('')}</div>` : '<p class="empty-state">Ingen hastebeskeder lige nu.</p>'}
     <div class="section-title"><h3>Ulæst</h3><span>${unread.length} stk.</span></div>
@@ -6536,6 +6687,7 @@ document.addEventListener('click', async event => {
     'open-notifications',
     'open-support-request',
     'open-task-overview',
+    'request-system-notifications',
     'new-chat',
     'open-settings',
     'test-supabase',
@@ -6576,6 +6728,11 @@ document.addEventListener('click', async event => {
   }
   if (action === 'new-chat') openNewChatModal();
   if (action === 'open-settings') openSettingsModal();
+  if (action === 'request-system-notifications') {
+    await requestSystemNotifications();
+    event.target.closest('.modal-backdrop')?.remove();
+    openSettingsModal();
+  }
   if (action === 'test-supabase') openSupabaseDiagnosticsModal();
   if (action === 'check-update') await checkForAppUpdate({ manual: true });
   if (action === 'show-update-status') openUpdateStatusModal();
@@ -7010,8 +7167,9 @@ document.addEventListener('submit', async event => {
       showStatus: data.has('showStatus'),
     };
     save('workdayPrivacy', workdayPrivacy);
-    notificationPrefs = { office: data.has('office'), rules: data.has('rules'), chat: data.has('chat'), dailyBrief: data.has('dailyBrief'), quietHours: data.has('quietHours') };
+    notificationPrefs = { office: data.has('office'), rules: data.has('rules'), chat: data.has('chat'), dailyBrief: data.has('dailyBrief'), quietHours: data.has('quietHours'), system: data.has('system') && systemNotificationPermission() === 'granted' };
     save('notificationPrefs', notificationPrefs);
+    if (data.has('system') && systemNotificationPermission() === 'default') await requestSystemNotifications();
     const nextDesktopViewMode = String(data.get('desktopViewMode') || 'full');
     save('desktopViewMode', DESKTOP_VIEW_MODES.has(nextDesktopViewMode) ? nextDesktopViewMode : 'full');
     save('workdayPrivacy', workdayPrivacy);
@@ -7121,7 +7279,9 @@ window.addEventListener('appinstalled', () => {
   deferredPwaInstallPrompt = null;
   pwaInstallAvailable = false;
   pwaInstalled = true;
-  showToast('IntraBudet er installeret og klar');
+  showToast(systemNotificationPermission() === 'granted'
+    ? 'IntraBudet er installeret og beskeder er klar'
+    : 'IntraBudet er installeret. Aktivér beskeder i Indstillinger.');
   render();
 });
 setTimeout(() => {

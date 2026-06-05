@@ -60,7 +60,7 @@ Nuværende vigtige permissions:
 | `CAMERA` | Bruges | Relevant hvis appen kan tage/uploade billeder. Skal forklares. |
 | `READ_MEDIA_IMAGES` | Bruges | Relevant til billedvalg på nyere Android. Skal forklares. |
 | `ACCESS_BACKGROUND_LOCATION` | Ikke brugt | Godt. Appen bør ikke bruge baggrundslokation før der er meget stærk grund. |
-| `POST_NOTIFICATIONS` | Ikke brugt | Godt, hvis appen ikke bruger push endnu. Tilføjes først når push er bygget korrekt. |
+| `POST_NOTIFICATIONS` | Bruges til frivillige systembeskeder | Android spørger ved første start efter installation på Android 13+. Brugeren kan slå beskeder fra i appens indstillinger. |
 | `RECORD_AUDIO` | Ikke brugt | Godt. Appen bør ikke bruge mikrofon. |
 
 ## Google Play-vurdering

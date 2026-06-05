@@ -1,4 +1,4 @@
-const CACHE_NAME = 'xpressintra-v82-centralized-qa';
+const CACHE_NAME = 'xpressintra-v84-install-permissions';
 const APP_FILES = [
   './',
   './index.html',
@@ -65,5 +65,22 @@ self.addEventListener('fetch', event => {
         if (event.request.mode === 'navigate') return caches.match('./index.html');
         return caches.match(event.request);
       })
+  );
+});
+
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  const targetUrl = event.notification.data?.url || './?tab=chat';
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
+      for (const client of clientList) {
+        if ('focus' in client) {
+          client.navigate?.(targetUrl);
+          return client.focus();
+        }
+      }
+      if (clients.openWindow) return clients.openWindow(targetUrl);
+      return null;
+    })
   );
 });
