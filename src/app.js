@@ -26,9 +26,9 @@
   search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>',
 };
 
-const APP_VERSION = '1.3.17-release-v78';
-const APP_DISPLAY_VERSION = '1.3.17';
-const APP_VERSION_CODE = 30;
+const APP_VERSION = '1.3.18-release-v79';
+const APP_DISPLAY_VERSION = '1.3.18';
+const APP_VERSION_CODE = 31;
 const TEMPORARY_EMPLOYEE_PASSWORD = 'xpress';
 const IMAGE_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
 const PROFILE_PHOTO_MAX_DIMENSION = 512;
@@ -198,7 +198,7 @@ const infoChecklists = [
   { title: 'Ved levering', items: ['Parker sikkert', 'Tjek gods', 'Tag billede ved afvigelse', 'Meld status'] },
 ];
 
-const emojiChoices = ['ðŸ‘', 'ðŸ˜‚', 'ðŸšš', 'ðŸ“¦', 'â˜•', 'âœ…', 'ðŸ™', 'âš ï¸'];
+const emojiChoices = ['👍', '😂', '🚚', '📦', '☕', '✅', '🙏', '⚠️'];
 
 const infoSections = [
   { id: 'operations', icon: 'alert', title: 'Akut & drift', subtitle: 'Kontakter, terminal og hjælp til alle' },
@@ -287,14 +287,14 @@ const infoDetails = {
   },
 };
 
-const infoLinks = Object.entries(infoDetails).flatMap(([category, section]) =>
+const fallbackBuildInfoLinks = (details = infoDetails, sections = infoSections) => Object.entries(details).flatMap(([category, section]) =>
   section.rows.map(([title, description, href]) => ({
     id: `${category}-${title.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '-')}`,
     category,
     title,
     description,
     href,
-    icon: infoSections.find(item => item.id === category)?.icon || 'info',
+    icon: sections.find(item => item.id === category)?.icon || 'info',
     source: href?.includes('fstyr.dk') ? 'Færdselsstyrelsen'
       : href?.includes('miljoezoner.dk') ? 'Miljøzoner'
       : href?.includes('vejafgifter.dk') ? 'Vejafgifter'
@@ -308,6 +308,9 @@ const infoLinks = Object.entries(infoDetails).flatMap(([category, section]) =>
       : 'Intern',
   }))
 );
+const infoLinks = globalThis.XpressIntraInfoCenter?.buildInfoLinks
+  ? globalThis.XpressIntraInfoCenter.buildInfoLinks(infoDetails, infoSections)
+  : fallbackBuildInfoLinks(infoDetails, infoSections);
 
 const WORKDAY_TIMEZONE = 'Europe/Copenhagen';
 const GDPR_POLICY_VERSION = '2026-06-02';
@@ -434,6 +437,13 @@ function openPwaInstallHelpModal() {
 function supabaseConfig() {
   const injected = typeof window !== 'undefined' ? (window.XPRESSINTRA_SUPABASE || {}) : {};
   const local = stored(SUPABASE_CONFIG_KEY) || {};
+  if (globalThis.XpressIntraSupabaseClient?.resolveSupabaseConfig) {
+    return globalThis.XpressIntraSupabaseClient.resolveSupabaseConfig({
+      injected,
+      local,
+      defaults: defaultSupabaseConfig,
+    });
+  }
   return {
     url: String(injected.url || local.url || defaultSupabaseConfig.url || '').trim(),
     anonKey: String(injected.anonKey || injected.key || local.anonKey || local.key || defaultSupabaseConfig.anonKey || '').trim(),
@@ -442,6 +452,9 @@ function supabaseConfig() {
 
 function supabaseStatus() {
   const config = supabaseConfig();
+  if (globalThis.XpressIntraSupabaseClient?.supabaseStatusFromConfig) {
+    return globalThis.XpressIntraSupabaseClient.supabaseStatusFromConfig(config, Boolean(window.supabase?.createClient));
+  }
   if (!config.url || !config.anonKey) return { ready: false, label: 'Demo', detail: 'Supabase mangler URL og offentlig anon key' };
   if (!window.supabase?.createClient) return { ready: true, label: 'Online', detail: 'Klar via indbygget Supabase-login' };
   return { ready: true, label: 'Online', detail: 'Klar til Supabase Auth og database' };
@@ -735,11 +748,17 @@ function onlineBackendActive() {
 }
 
 function isSupportedImageFile(file) {
+  if (globalThis.XpressIntraMedia?.isSupportedImageFile) {
+    return globalThis.XpressIntraMedia.isSupportedImageFile(file, SUPPORTED_IMAGE_TYPES);
+  }
   if (!file || !file.type?.startsWith('image/')) return false;
   return SUPPORTED_IMAGE_TYPES.includes(file.type);
 }
 
 function fileToDataUrl(file) {
+  if (globalThis.XpressIntraMedia?.fileToDataUrl) {
+    return globalThis.XpressIntraMedia.fileToDataUrl(file);
+  }
   return new Promise(resolve => {
     const reader = new FileReader();
     reader.addEventListener('load', () => resolve({ src: reader.result, name: file.name, type: file.type, size: file.size }));
@@ -749,6 +768,13 @@ function fileToDataUrl(file) {
 }
 
 function resizeImageFile(file, options = {}) {
+  if (globalThis.XpressIntraMedia?.resizeImageFile) {
+    return globalThis.XpressIntraMedia.resizeImageFile(file, {
+      maxDimension: PROFILE_PHOTO_MAX_DIMENSION,
+      quality: PROFILE_PHOTO_QUALITY,
+      ...options,
+    });
+  }
   if (typeof Image === 'undefined' || typeof document?.createElement !== 'function') return fileToDataUrl(file);
   if (file.type === 'image/gif') return fileToDataUrl(file);
   return new Promise(resolve => {
@@ -1050,6 +1076,13 @@ function isPlaceholderUpdateConfig() {
 }
 
 function isAllowedUpdateUrl(url) {
+  if (globalThis.XpressIntraUpdateSystem?.isAllowedUpdateUrl) {
+    return globalThis.XpressIntraUpdateSystem.isAllowedUpdateUrl(url, {
+      currentHref: window.location.href,
+      currentOrigin: window.location.origin,
+      officialRepo: appUpdateConfig.officialRepo || defaultUpdateConfig.officialRepo,
+    });
+  }
   try {
     const parsed = new URL(url, window.location.href);
     if (parsed.origin === window.location.origin) return true;
@@ -1070,6 +1103,13 @@ function isAllowedUpdateUrl(url) {
 }
 
 function normalizeVersionInfo(raw) {
+  if (globalThis.XpressIntraUpdateSystem?.normalizeVersionInfo) {
+    return globalThis.XpressIntraUpdateSystem.normalizeVersionInfo(raw, {
+      currentHref: window.location.href,
+      currentOrigin: window.location.origin,
+      officialRepo: appUpdateConfig.officialRepo || defaultUpdateConfig.officialRepo,
+    });
+  }
   if (!raw || typeof raw !== 'object') throw new Error('version.json er ikke gyldig');
   const activeVersionCode = Number(raw.activeVersionCode);
   if (!Number.isFinite(activeVersionCode) || activeVersionCode <= 0) throw new Error('activeVersionCode mangler');
@@ -1100,6 +1140,12 @@ function normalizeVersionInfo(raw) {
 }
 
 function stableRollbackUrl(info = appUpdateState.latest) {
+  if (globalThis.XpressIntraUpdateSystem?.stableRollbackUrl) {
+    return globalThis.XpressIntraUpdateSystem.stableRollbackUrl(info, {
+      appVersionCode: APP_VERSION_CODE,
+      isAllowedUpdateUrl,
+    });
+  }
   if (!info) return '';
   const candidates = [
     info.stableApkDownloadUrl,
@@ -1110,6 +1156,13 @@ function stableRollbackUrl(info = appUpdateState.latest) {
 }
 
 function rollbackReadiness(info = appUpdateState.latest) {
+  if (globalThis.XpressIntraUpdateSystem?.rollbackReadiness) {
+    return globalThis.XpressIntraUpdateSystem.rollbackReadiness(info, {
+      appVersionCode: APP_VERSION_CODE,
+      appDisplayVersion: APP_DISPLAY_VERSION,
+      isAllowedUpdateUrl,
+    });
+  }
   const stableUrl = stableRollbackUrl(info);
   const hasPrevious = Boolean(info?.previousStableVersion || info?.stableVersion);
   const currentMarked = Array.isArray(info?.defectiveVersions)
@@ -1128,6 +1181,11 @@ function rollbackReadiness(info = appUpdateState.latest) {
 }
 
 function updateStatusLabel(info = appUpdateState.latest) {
+  if (globalThis.XpressIntraUpdateSystem?.updateStatusLabel) {
+    return globalThis.XpressIntraUpdateSystem.updateStatusLabel(info, {
+      appVersionCode: APP_VERSION_CODE,
+    });
+  }
   if (!info) return 'Ikke tjekket endnu';
   if (info.activeVersionCode > APP_VERSION_CODE) return info.forceUpdate ? 'Kritisk opdatering' : 'Ny opdatering';
   if (info.activeVersionCode < APP_VERSION_CODE) return 'Rollback anbefalet';
@@ -1135,6 +1193,13 @@ function updateStatusLabel(info = appUpdateState.latest) {
 }
 
 function shouldShowUpdate(info, manual = false) {
+  if (globalThis.XpressIntraUpdateSystem?.shouldShowUpdate) {
+    return globalThis.XpressIntraUpdateSystem.shouldShowUpdate(info, {
+      appVersionCode: APP_VERSION_CODE,
+      dismissedVersionCode: appUpdateState.dismissedVersionCode,
+      manual,
+    });
+  }
   if (!info) return false;
   if (info.forceUpdate && info.activeVersionCode !== APP_VERSION_CODE) return true;
   if (info.activeVersionCode > APP_VERSION_CODE) return manual || appUpdateState.dismissedVersionCode !== info.activeVersionCode;
@@ -1287,7 +1352,7 @@ function markCurrentVersionSuspect() {
   const fallbackInfo = {
     activeVersion: APP_DISPLAY_VERSION,
     activeVersionCode: APP_VERSION_CODE,
-    apkDownloadUrl: 'https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.17/xpressintra.apk',
+    apkDownloadUrl: 'https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.18/xpressintra.apk',
   };
   const info = appUpdateState.latest || normalizeVersionInfo(fallbackInfo);
   const defective = new Set([...(info.defectiveVersions || []).map(String), APP_DISPLAY_VERSION, String(APP_VERSION_CODE)]);
@@ -1520,6 +1585,9 @@ async function copyTextToClipboard(value, successMessage = 'Kopieret') {
 }
 
 function canAccessChat(chat) {
+  if (globalThis.XpressIntraChat?.canAccessChat) {
+    return globalThis.XpressIntraChat.canAccessChat(chat, profile, { searchable });
+  }
   if (!chat?.channel) return true;
   return hasChannelAccess(chat.channel);
 }
@@ -1529,6 +1597,9 @@ function visibleChats() {
 }
 
 function hasChannelAccess(channel) {
+  if (globalThis.XpressIntraChat?.hasChannelAccess) {
+    return globalThis.XpressIntraChat.hasChannelAccess(channel, profile, { searchable });
+  }
   const profileText = searchable(`${profile.role || ''} ${profile.department || ''} ${profile.license || ''} ${profile.truck || ''}`);
   if (channel === 'truck') return profile.vehicleType === 'truck' || profileText.includes('lastbil') || profileText.includes('c/e');
   if (channel === 'van') return profile.vehicleType === 'van' || profileText.includes('varebil');
@@ -1536,6 +1607,9 @@ function hasChannelAccess(channel) {
 }
 
 function canReadAudience(audience = 'Alle medarbejdere') {
+  if (globalThis.XpressIntraChat?.canReadAudience) {
+    return globalThis.XpressIntraChat.canReadAudience(audience, profile, { searchable });
+  }
   const normalized = audience.toLowerCase();
   if (normalized === 'all' || normalized.includes('alle')) return true;
   if (normalized === 'truck' || normalized.includes('lastbil')) return hasChannelAccess('truck');
@@ -1640,6 +1714,9 @@ function profileGreetingName() {
 }
 
 function profileFromSupabase(row, user, privateDetails) {
+  if (globalThis.XpressIntraSupabaseClient?.profileFromSupabaseRow) {
+    return globalThis.XpressIntraSupabaseClient.profileFromSupabaseRow(row, user, privateDetails, profile);
+  }
   return {
     name: row?.full_name || profile.name || '',
     phone: row?.phone || profile.phone || '',
@@ -1658,6 +1735,9 @@ function profileFromSupabase(row, user, privateDetails) {
 }
 
 function employeeFromSupabase(row, userId) {
+  if (globalThis.XpressIntraSupabaseClient?.employeeFromSupabaseRow) {
+    return globalThis.XpressIntraSupabaseClient.employeeFromSupabaseRow(row, userId, initialsFromName);
+  }
   return {
     id: row.id,
     name: row.full_name || row.email || 'Medarbejder',
@@ -1681,6 +1761,9 @@ function employeeFromSupabase(row, userId) {
 }
 
 function chatFromConversation(row, latestMessage = null) {
+  if (globalThis.XpressIntraChat?.chatFromConversationRow) {
+    return globalThis.XpressIntraChat.chatFromConversationRow(row, latestMessage, { initialsFromName });
+  }
   const isAll = row.channel_type === 'all';
   const isTruck = row.channel_type === 'truck';
   const isVan = row.channel_type === 'van';
@@ -1704,6 +1787,13 @@ function supabaseAuthSession() {
 }
 
 function messageFromSupabase(row, userId) {
+  if (globalThis.XpressIntraChat?.messageFromSupabaseRow) {
+    return globalThis.XpressIntraChat.messageFromSupabaseRow(row, userId, {
+      employeeById,
+      currentEmployee,
+      initialsFromName,
+    });
+  }
   const attachment = Array.isArray(row.media_attachments) ? row.media_attachments[0] : null;
   const sender = employeeById(row.sender_id) || (row.sender_id === userId ? currentEmployee() : null);
   return {
@@ -2972,7 +3062,7 @@ function adminDashboardAlerts(stats = adminDashboardStats()) {
     alerts.push({
       tone: activePickup.status === 'blocked' ? 'urgent' : 'task',
       title: `Afhentning: ${pickupStatusLabel(activePickup.status)}`,
-      body: `${helper?.name || 'Kollega'} · ${activePickup.pickupPlace || 'sted mangler'} â†’ ${activePickup.dropoffPlace || 'aflevering mangler'}`,
+      body: `${helper?.name || 'Kollega'} · ${activePickup.pickupPlace || 'sted mangler'} → ${activePickup.dropoffPlace || 'aflevering mangler'}`,
       action: 'open-pickup',
     });
   }
@@ -3227,7 +3317,7 @@ function renderGdprGoLivePanel({ compact = false } = {}) {
       <p>${readiness.done}/${readiness.total} punkter markeret klar. Juridisk godkendelse skal stadig ske i virksomheden.</p>
     </div>
     <div class="gdpr-check-grid">
-      ${readiness.items.map(item => `<span class="${item.done ? 'done' : 'todo'}"><b>${item.done ? 'âœ“' : 'â—‹'} ${text(item.title)}</b><small>${text(item.body)}</small></span>`).join('')}
+      ${readiness.items.map(item => `<span class="${item.done ? 'done' : 'todo'}"><b>${item.done ? '✓' : '○'} ${text(item.title)}</b><small>${text(item.body)}</small></span>`).join('')}
     </div>
   </section>`;
 }
@@ -3523,10 +3613,21 @@ function vehicleLabel(vehicleType) {
 }
 
 function cleanPhone(phone = '') {
+  if (globalThis.XpressIntraInfoCenter?.cleanPhone) {
+    return globalThis.XpressIntraInfoCenter.cleanPhone(phone);
+  }
   return String(phone).replace(/[^\d+]/g, '');
 }
 
 function contactDirectoryEntries() {
+  if (globalThis.XpressIntraInfoCenter?.contactDirectoryEntries) {
+    return globalThis.XpressIntraInfoCenter.contactDirectoryEntries({
+      companyContacts,
+      employees,
+      vehicleLabel,
+      initialsFromName,
+    });
+  }
   const employeeContacts = employees
     .filter(employee => employee.employmentStatus !== 'offboarded')
     .map(employee => ({
@@ -3744,6 +3845,9 @@ function zonedTimeToDate(year, month, day, hour, minute, timeZone = WORKDAY_TIME
 }
 
 function workdayEndTime(date = new Date()) {
+  if (globalThis.XpressIntraWorkdayLogbook?.workdayEndTime) {
+    return globalThis.XpressIntraWorkdayLogbook.workdayEndTime(date, WORKDAY_TIMEZONE);
+  }
   const today = zonedParts(date, WORKDAY_TIMEZONE);
   let end = zonedTimeToDate(today.year, today.month, today.day, 19, 0, WORKDAY_TIMEZONE);
   if (date >= end) {
@@ -3754,6 +3858,14 @@ function workdayEndTime(date = new Date()) {
 }
 
 function workdayPermissions() {
+  if (globalThis.XpressIntraWorkdayLogbook?.workdayPermissions) {
+    return globalThis.XpressIntraWorkdayLogbook.workdayPermissions({
+      coreSettings,
+      profile,
+      workdayPrivacy,
+      notificationPrefs,
+    });
+  }
   return {
     gps: Boolean(coreSettings.gps && workdayPrivacy.gps && workdayPrivacy.audience !== 'none'),
     logbook: Boolean(coreSettings.logbook && profile.logbook && workdayPrivacy.logbook),
@@ -3813,6 +3925,9 @@ function enforceWorkdayExpiry(now = new Date()) {
 }
 
 function logbookStats() {
+  if (globalThis.XpressIntraWorkdayLogbook?.logbookStats) {
+    return globalThis.XpressIntraWorkdayLogbook.logbookStats(logEntries);
+  }
   const places = new Set(logEntries.map(entry => entry.place).filter(Boolean));
   return {
     total: logEntries.length,
@@ -3825,6 +3940,9 @@ function logbookStats() {
 
 function currentLogbookPlace() {
   const employee = currentEmployee();
+  if (globalThis.XpressIntraWorkdayLogbook?.currentLogbookPlace) {
+    return globalThis.XpressIntraWorkdayLogbook.currentLogbookPlace({ employee, profile, location });
+  }
   const place = location.sharing
     ? employee.location || 'Aktuel GPS-position'
     : employee.location || profile.department || 'Min lokation';
@@ -3832,6 +3950,18 @@ function currentLogbookPlace() {
 }
 
 function logbookSuggestions() {
+  if (globalThis.XpressIntraWorkdayLogbook?.logbookSuggestions) {
+    return globalThis.XpressIntraWorkdayLogbook.logbookSuggestions({
+      logbookAutomation,
+      employee: currentEmployee(),
+      profile,
+      location,
+      activePickup,
+      employees,
+      vehicles,
+      pickupStatusLabel,
+    });
+  }
   if (!logbookAutomation.smartLogbook) return [];
   const employee = currentEmployee();
   const suggestions = [];
@@ -3883,6 +4013,9 @@ function logbookSuggestions() {
 }
 
 function draftId(kind, place) {
+  if (globalThis.XpressIntraWorkdayLogbook?.draftId) {
+    return globalThis.XpressIntraWorkdayLogbook.draftId(kind, place);
+  }
   return `${kind}-${String(place || 'sted').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '-')}`;
 }
 
@@ -3892,14 +4025,17 @@ function syncLogbookDrafts() {
   for (const suggestion of logbookSuggestions()) {
     const id = draftId(suggestion.kind, suggestion.place);
     if (existingIds.has(id)) continue;
-    logbookDrafts.unshift({
-      id,
-      ...suggestion,
-      date: 'I dag',
-      category: suggestion.kind === 'pause-stop' ? 'Pause' : suggestion.kind === 'pickup-task' ? 'Afhentning' : suggestion.kind === 'vehicle-day' ? 'Køretøj' : 'Automatik',
-      status: 'draft',
-      createdAt: new Date().toISOString(),
-    });
+    const draft = globalThis.XpressIntraWorkdayLogbook?.draftFromSuggestion
+      ? globalThis.XpressIntraWorkdayLogbook.draftFromSuggestion(suggestion)
+      : {
+        id,
+        ...suggestion,
+        date: 'I dag',
+        category: suggestion.kind === 'pause-stop' ? 'Pause' : suggestion.kind === 'pickup-task' ? 'Afhentning' : suggestion.kind === 'vehicle-day' ? 'Køretøj' : 'Automatik',
+        status: 'draft',
+        createdAt: new Date().toISOString(),
+      };
+    logbookDrafts.unshift(draft);
   }
   save('logbookDrafts', logbookDrafts);
   return logbookDrafts;
@@ -4373,7 +4509,7 @@ function renderPickupCard() {
       <span><b>Reference</b><small>${text(activePickup.reference || 'Ingen reference')}</small></span>
       <span><b>Prioritet</b><small>${text(activePickup.priority || 'Normal')}</small></span>
     </div>
-    <div class="pickup-checklist"><b>Tjekliste</b>${checklist.map(item => `<button class="${item.done ? 'done' : ''}" data-pickup-check="${text(item.id)}">${item.done ? 'âœ“' : 'â—‹'} ${text(item.label)}</button>`).join('')}</div>
+    <div class="pickup-checklist"><b>Tjekliste</b>${checklist.map(item => `<button class="${item.done ? 'done' : ''}" data-pickup-check="${text(item.id)}">${item.done ? '✓' : '○'} ${text(item.label)}</button>`).join('')}</div>
     <div class="pickup-live-notes"><b>Live noter</b>
       ${liveNotes.length ? liveNotes.slice(-5).map(step => `<span><strong>${text(step.authorName || 'Kollega')}</strong><small>${new Date(step.at).toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' })}</small>${text(step.note)}</span>`).join('') : '<span>Ingen noter endnu. Begge parter kan skrive korte opdateringer her.</span>'}
       <form class="pickup-note-form"><input name="note" placeholder="Skriv live note..." autocomplete="off" /><button>Send</button></form>
@@ -4713,16 +4849,26 @@ function renderMore() {
 
 function renderInfo() {
   const query = searchable(infoQuery.trim());
-  const filteredLinks = infoLinks.filter(item =>
-    (activeInfoCategory === 'all' || item.category === activeInfoCategory || (activeInfoCategory === 'favorites' && infoFavorites.includes(item.id)))
-    && searchable(`${item.title} ${item.description} ${item.source} ${item.category}`).includes(query)
-  );
+  const filteredLinks = globalThis.XpressIntraInfoCenter?.filterInfoLinks
+    ? globalThis.XpressIntraInfoCenter.filterInfoLinks({
+      links: infoLinks,
+      activeCategory: activeInfoCategory,
+      query: infoQuery,
+      favorites: infoFavorites,
+      searchable,
+    })
+    : infoLinks.filter(item =>
+      (activeInfoCategory === 'all' || item.category === activeInfoCategory || (activeInfoCategory === 'favorites' && infoFavorites.includes(item.id)))
+      && searchable(`${item.title} ${item.description} ${item.source} ${item.category}`).includes(query)
+    );
   const favoriteLinks = infoLinks.filter(item => infoFavorites.includes(item.id));
   const isDefaultInfo = !query && activeInfoCategory === 'all';
   const visibleLinks = isDefaultInfo ? [] : filteredLinks;
-  const resultTitle = activeInfoCategory === 'favorites' ? 'Dine favoritter'
-    : activeInfoCategory === 'all' ? 'Søgeresultater'
-      : infoSections.find(section => section.id === activeInfoCategory)?.title || 'Resultater';
+  const resultTitle = globalThis.XpressIntraInfoCenter?.resultTitle
+    ? globalThis.XpressIntraInfoCenter.resultTitle(activeInfoCategory, infoSections)
+    : activeInfoCategory === 'favorites' ? 'Dine favoritter'
+      : activeInfoCategory === 'all' ? 'Søgeresultater'
+        : infoSections.find(section => section.id === activeInfoCategory)?.title || 'Resultater';
   const featuredSections = [
     { id: 'operations', label: 'Akut og drift', hint: 'Ring, forsinkelse, skade' },
     { id: 'trucks', label: 'Lastbil', hint: 'Køre-/hviletid, vejafgift' },
@@ -5291,7 +5437,7 @@ async function openSupabaseDiagnosticsModal() {
   const list = modal.querySelector('.diagnostic-list');
   try {
     const checks = await runSupabaseDiagnostics();
-    list.innerHTML = checks.map(check => `<article class="${check.ok ? 'ok' : 'fail'}"><b>${check.ok ? 'âœ“' : '!' } ${text(check.name)}</b><small>${text(check.detail)}</small></article>`).join('');
+    list.innerHTML = checks.map(check => `<article class="${check.ok ? 'ok' : 'fail'}"><b>${check.ok ? '✓' : '!' } ${text(check.name)}</b><small>${text(check.detail)}</small></article>`).join('');
   } catch (error) {
     list.innerHTML = `<article class="fail"><b>! Test fejlede</b><small>${text(error.message)}</small></article>`;
   }
@@ -5662,7 +5808,7 @@ function openLaunchChecklistModal() {
     </section>
     <div class="launch-checklist">
       ${readiness.items.map(item => `<article class="${item.done ? 'done' : ''}">
-        <b>${item.done ? 'âœ“' : 'â—‹'} ${text(item.title)}</b>
+        <b>${item.done ? '✓' : '○'} ${text(item.title)}</b>
         <small>${text(item.body)}</small>
       </article>`).join('')}
     </div>
@@ -5746,7 +5892,7 @@ function openSecurityCenterModal() {
     </section>
     <section class="security-check-list">
       ${readiness.items.map(item => `<article class="${item.done ? 'done' : 'todo'}">
-        <b>${item.done ? 'âœ“' : 'â€¢'} ${text(item.title)}</b>
+        <b>${item.done ? '✓' : '•'} ${text(item.title)}</b>
         <small>${text(item.body)}</small>
       </article>`).join('')}
     </section>

@@ -138,7 +138,9 @@ assert(styles.includes('.contact-directory'), 'Styles should include the informa
 assert(styles.includes('.info-command-card'), 'Styles should include the rebuilt information command card');
 assert(styles.includes('.info-choice-grid'), 'Styles should include senior-friendly information choice cards');
 assert(styles.includes('.info-topic-list'), 'Styles should include a calm topic list for information');
-assert(styles.includes('min-height: 44px'), 'Tap targets should be enlarged for mobile use');
+assert(styles.includes('--tap-size: 48px'), 'Tap targets should be enlarged for mobile use');
+assert(styles.includes('--radius-md'), 'Styles should define shared radius tokens');
+assert(styles.includes('--surface-gradient'), 'Styles should define shared surface tokens');
 
 console.log('UI redesign smoke test passed');
 

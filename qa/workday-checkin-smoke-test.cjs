@@ -90,7 +90,7 @@ function assert(condition, message) {
   harness.run('openSettingsModal();');
   const settingsModal = harness.modalNodes.find(node => node.innerHTML.includes('Indstillinger'));
   assert(settingsModal.innerHTML.includes('Når jeg møder ind') || settingsModal.innerHTML.includes('Når jeg møder ind'), 'Settings should expose workday permissions');
-  assert(settingsModal.innerHTML.includes('Hvem mÃƒÂ¥ se min position?') || settingsModal.innerHTML.includes('Hvem må se min position?'), 'Settings should expose location audience');
+  assert(settingsModal.innerHTML.includes('Hvem må se min position?'), 'Settings should expose location audience');
   assert(settingsModal.innerHTML.includes('Vis fart'), 'Settings should let users decide if speed is visible');
 
   harness.run("workdayPrivacy = { ...workdayPrivacy, gps: false }; save('workdayPrivacy', workdayPrivacy);");

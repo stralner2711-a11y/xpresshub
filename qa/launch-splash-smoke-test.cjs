@@ -17,7 +17,7 @@ assert(app.includes('}, 5000);'), 'Launch splash should stay visible for 5 secon
 assert(app.includes('XpressBudet præsenterer'), 'Launch splash should keep Danish æ correctly');
 assert(app.includes('Indlæser ruter, køretøjer og dagens drift'), 'Launch splash should keep Danish æ/ø correctly');
 assert(app.includes('<span>Chauffører</span>'), 'Launch splash should keep Danish ø correctly');
-assert(!app.match(/pr(&aelig;|Ãƒ|Ã‚).*senterer|Indl(&aelig;|Ãƒ|Ã‚)/), 'Launch splash should not contain mojibake or HTML entities for Danish text');
+assert(!app.match(/pr(&aelig;|\u00C3|\u00C2).*senterer|Indl(&aelig;|\u00C3|\u00C2)/), 'Launch splash should not contain mojibake or HTML entities for Danish text');
 
 assert(css.includes('.launch-vehicle'), 'Launch vehicle styling should exist');
 assert(css.includes('@keyframes launchDriveOut'), 'Vehicle drive-out animation should exist');

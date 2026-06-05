@@ -27,9 +27,9 @@ assert(manifest.includes('android.hardware.camera" android:required="false"'), '
 assert(!manifest.includes('READ_EXTERNAL_STORAGE'), 'Legacy broad external storage permission should not be requested');
 assert(!manifest.includes('WRITE_EXTERNAL_STORAGE'), 'Legacy write storage permission should not be requested');
 
-assert(app.includes("const APP_VERSION = '1.3.17-release-v78'"), 'App version should be visible in code');
-assert(app.includes("const APP_DISPLAY_VERSION = '1.3.17'"), 'APK display version should be visible in code');
-assert(app.includes('const APP_VERSION_CODE = 30'), 'APK version code should be visible in code');
+assert(app.includes("const APP_VERSION = '1.3.18-release-v79'"), 'App version should be visible in code');
+assert(app.includes("const APP_DISPLAY_VERSION = '1.3.18'"), 'APK display version should be visible in code');
+assert(app.includes('const APP_VERSION_CODE = 31'), 'APK version code should be visible in code');
 assert(app.includes('!hasSupabaseConfigForMode && storedSessionForMode'), 'Demo mode should not override a configured production backend');
 
 console.log('Professional readiness smoke test passed');

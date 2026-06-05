@@ -1,6 +1,6 @@
-﻿# Apple review-info kladde
+# Apple review-info kladde
 
-Denne tekst kan bruges som udgangspunkt i App Store Connect, nÃ¥r den fÃ¸rste TestFlight/App Store-build uploades.
+Denne tekst kan bruges som udgangspunkt i App Store Connect, hvis XpressIntra senere sendes til TestFlight eller App Store.
 
 ## Appnavn
 
@@ -12,7 +12,7 @@ XpressIntra
 
 ## Version
 
-`1.3.16` / build `29`
+`1.3.18` / build `31`
 
 ## Review notes
 
@@ -22,7 +22,7 @@ The app requires login. Please use the provided test account during review. Loca
 
 ## Testbruger
 
-Udfyld fÃ¸r upload:
+Udfyld før upload:
 
 - Email:
 - Password:
@@ -30,7 +30,7 @@ Udfyld fÃ¸r upload:
 
 ## Privacy policy URL
 
-Udfyld fÃ¸r upload:
+Udfyld før upload:
 
 - URL:
 
@@ -41,12 +41,4 @@ Udfyld fÃ¸r upload:
 - User Content: chat, opslag, billeder, logbog og opgaver.
 - Identifiers: Supabase Auth-bruger og interne profil-id'er.
 - Usage Data: kun det der faktisk gemmes om opgaver, arbejdsdag og appbrug.
-- Diagnostics: kun hvis der senere tilfÃ¸jes egentlig crash/diagnostiksporing.
-
-
-
-
-
-
-
-
+- Diagnostics: kun hvis der senere tilføjes egentlig crash- eller diagnostiksporing.

@@ -3,6 +3,7 @@ const vm = require('vm');
 
 function createHarness() {
   const code = fs.readFileSync('src/app.js', 'utf8');
+  const supabaseModule = fs.readFileSync('src/modules/supabase-client.js', 'utf8');
   const storage = new Map([
     ['roadlog:supabaseConfig', JSON.stringify({ url: 'https://demo.supabase.co', anonKey: 'public-anon-key' })],
   ]);
@@ -186,6 +187,14 @@ function assert(condition, message) {
 }
 
 (async () => {
+  const app = fs.readFileSync('src/app.js', 'utf8');
+  const supabaseModule = fs.readFileSync('src/modules/supabase-client.js', 'utf8');
+  assert(app.includes('XpressIntraSupabaseClient?.resolveSupabaseConfig'), 'App should delegate Supabase config resolution to the module when loaded');
+  assert(app.includes('XpressIntraSupabaseClient?.profileFromSupabaseRow'), 'App should delegate Supabase profile mapping to the module when loaded');
+  assert(supabaseModule.includes('export function resolveSupabaseConfig'), 'Supabase module should export config resolution');
+  assert(supabaseModule.includes('export function profileFromSupabaseRow'), 'Supabase module should export profile mapping');
+  assert(supabaseModule.includes('globalThis.XpressIntraSupabaseClient'), 'Supabase module should expose a browser global for the app wrapper');
+
   const harness = createHarness();
 
   assert(harness.run('supabaseStatus().ready') === true, 'Supabase should be ready when URL and anon key are configured');

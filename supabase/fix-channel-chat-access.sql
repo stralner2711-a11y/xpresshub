@@ -1,6 +1,6 @@
 ﻿-- Run this in Supabase SQL Editor if the database already exists.
 -- It lets channel chat access follow work function, not only access_role.
--- Example: a chef/admin with role "LastbilchauffÃ¸r", vehicle_type "truck",
+-- Example: a chef/admin with role "Lastbilchauffør", vehicle_type "truck",
 -- or C/E in license_summary can read Lastbilchat.
 
 create or replace function private.can_read_conversation(target_conversation uuid)
