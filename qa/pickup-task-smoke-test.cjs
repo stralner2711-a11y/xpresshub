@@ -77,6 +77,13 @@ function assert(condition, message) {
 
 const harness = createHarness();
 
+harness.run(`
+employees = [
+  { id: 'th', name: 'Test Mig', initials: 'TM', role: 'Chauffør', accessRole: 'employee', vehicleType: 'truck', location: 'Hasselager', employmentStatus: 'active', online: true },
+  { id: 'ma', name: 'Test Kollega', initials: 'TK', role: 'Chauffør', accessRole: 'employee', vehicleType: 'van', location: 'Kolding', employmentStatus: 'active', online: true },
+];
+`);
+
 harness.run('openPickupModal();');
 const pickupModal = harness.modalNodes.find(node => node.innerHTML.includes('Hent for en kollega'));
 assert(pickupModal, 'Pickup modal should open');

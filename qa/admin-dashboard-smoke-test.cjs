@@ -76,7 +76,16 @@ function assert(condition, message) {
 
 const harness = createHarness();
 
-harness.run("profile = { ...profile, role: 'Chef', accessRole: 'admin', vehicleType: 'dispatch', truck: 'Ledelse' }; activePickup = { employeeId: 'ma', status: 'blocked', pickupPlace: 'Kolding', dropoffPlace: 'Hasselager', note: 'Hent CMR', checklist: [], steps: [] }; recordAdminAudit('Testhandling', 'Admin ændrede en kernefunktion'); openAdminModal();");
+harness.run(`
+profile = { ...profile, role: 'Chef', accessRole: 'admin', vehicleType: 'dispatch', truck: 'Ledelse' };
+employees = [
+  { id: 'ma', name: 'Test Medarbejder', initials: 'TM', role: 'Chauffør', accessRole: 'employee', vehicleType: 'van', truck: 'Testbil', employmentStatus: 'active', status: 'Aktiv', online: true, sharing: false },
+  { id: 'lb', name: 'Lastbil Test', initials: 'LT', role: 'Lastbilchauffør', accessRole: 'employee', vehicleType: 'truck', truck: 'Testlastbil', employmentStatus: 'active', status: 'Aktiv', online: false, sharing: false },
+];
+activePickup = { employeeId: 'ma', status: 'blocked', pickupPlace: 'Kolding', dropoffPlace: 'Hasselager', note: 'Hent CMR', checklist: [], steps: [] };
+recordAdminAudit('Testhandling', 'Admin ændrede en kernefunktion');
+openAdminModal();
+`);
 const modal = harness.modalNodes.at(-1);
 
 assert(modal.innerHTML.includes('Chef-dashboard'), 'Admin modal should include the chef dashboard');

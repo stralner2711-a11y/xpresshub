@@ -26,9 +26,9 @@ const icons = {
   search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>',
 };
 
-const APP_VERSION = '1.3.28-release-v89';
-const APP_DISPLAY_VERSION = '1.3.28';
-const APP_VERSION_CODE = 41;
+const APP_VERSION = '1.3.29-release-v90';
+const APP_DISPLAY_VERSION = '1.3.29';
+const APP_VERSION_CODE = 42;
 const TEMPORARY_EMPLOYEE_PASSWORD = 'xpress';
 const IMAGE_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
 const PROFILE_PHOTO_MAX_DIMENSION = 512;
@@ -75,45 +75,19 @@ const SUPABASE_PUBLIC_CHATS = {
   vans: '00000000-0000-4000-8000-000000000003',
 };
 
-const seedEmployees = [
-  { id: 'th', name: 'Tommy Hansen', initials: 'TH', role: 'Appansvarlig · Lastbilchauffør', accessRole: 'owner', vehicleType: 'truck', truck: 'TR 42 918', status: 'Appansvarlig · tester appen', location: 'Flensburg', phone: '+45 22 44 18 90', email: 'stralner2711@gmail.com', department: 'Lastbil', license: 'C/E · EU kvalifikationsbevis', emergencyContact: 'Anne · +45 22 11 90 90', languages: 'Dansk, engelsk, tysk', employmentStatus: 'active', online: true, sharing: false, coords: [54.7833, 9.4333] },
-  { id: 'ma', name: 'Mads Andersen', initials: 'MA', role: 'Chauffør', accessRole: 'employee', vehicleType: 'van', truck: 'VB 51 204', status: 'Pause til 14:10', location: 'Kolding', phone: '+45 20 11 40 44', email: 'mads@xpressbudet.local', department: 'Varebil', license: 'B · varebilsuddannelse', emergencyContact: 'Sofie · +45 20 20 20 20', languages: 'Dansk, engelsk', employmentStatus: 'active', online: true, sharing: true, coords: [55.4904, 9.4722] },
-  { id: 'ls', name: 'Line Sørensen', initials: 'LS', role: 'Disponent', accessRole: 'dispatcher', vehicleType: 'dispatch', truck: 'Kontoret', status: 'Tilgængelig', location: 'Hasselager', phone: '+45 40 55 31 31', email: 'line@xpressbudet.local', department: 'Drift', license: 'Kontor', emergencyContact: 'Kontoret', languages: 'Dansk, engelsk, tysk', employmentStatus: 'active', online: true, sharing: false, coords: [56.1055, 10.0065] },
-  { id: 'hb', name: 'Henrik Bossen', initials: 'HB', role: 'Chef', accessRole: 'admin', vehicleType: 'dispatch', truck: 'Ledelse', status: 'Admin · kan styre roller', location: 'Hasselager', phone: '+45 40 87 31 31', email: 'chef@xpressbudet.local', department: 'Ledelse', license: 'Administrator', emergencyContact: 'Kontoret', languages: 'Dansk, engelsk', employmentStatus: 'active', online: true, sharing: false, coords: [56.1055, 10.0065] },
-  { id: 'pn', name: 'Peter Nielsen', initials: 'PN', role: 'Chauffør', accessRole: 'employee', vehicleType: 'truck', truck: 'TR 38 771', status: 'Levering afsluttet', location: 'Bremen', phone: '+45 23 44 55 66', email: 'peter@xpressbudet.local', department: 'Lastbil', license: 'C/E · EU kvalifikationsbevis', emergencyContact: 'Mette · +45 23 23 23 23', languages: 'Dansk, tysk', employmentStatus: 'active', online: false, sharing: true, coords: [53.0793, 8.8017] },
-  { id: 'jk', name: 'Julie Kristensen', initials: 'JK', role: 'Chauffør', accessRole: 'employee', vehicleType: 'van', truck: 'VB 20 447', status: 'Klar til ny opgave', location: 'Odense', phone: '+45 24 55 66 77', email: 'julie@xpressbudet.local', department: 'Varebil', license: 'B · varebilsuddannelse', emergencyContact: 'Jonas · +45 24 24 24 24', languages: 'Dansk, engelsk', employmentStatus: 'active', online: true, sharing: true, coords: [55.4038, 10.4024] },
-];
+const seedEmployees = [];
 
-const seedVehicles = [
-  { id: 'tr-42918', unit: 'TR 42 918', type: 'Lastbil', plate: 'TR42918', driverId: 'th', status: 'På tur', equipment: 'Trækker · pallegods', nextCheck: 'Syn tjekkes 18. juni' },
-  { id: 'vb-51204', unit: 'VB 51 204', type: 'Varebil', plate: 'VB51204', driverId: 'ma', status: 'Pause', equipment: 'Varebil · ekspres', nextCheck: 'Service om 2.400 km' },
-  { id: 'tr-38771', unit: 'TR 38 771', type: 'Lastbil', plate: 'TR38771', driverId: 'pn', status: 'Ledig efter levering', equipment: 'Liftbil · stykgods', nextCheck: 'Udstyr OK' },
-  { id: 'vb-20447', unit: 'VB 20 447', type: 'Varebil', plate: 'VB20447', driverId: 'jk', status: 'Klar', equipment: 'Varebil · bydistribution', nextCheck: 'Dæk tjekkes fredag' },
-  { id: 'fleet-spare', unit: 'Reserve', type: 'Køretøj', plate: 'Ikke tildelt', driverId: null, status: 'På værksted', equipment: 'Reserveenhed', nextCheck: 'Afventer service' },
-];
+const seedVehicles = [];
 
-const seedNotifications = [
-  { id: 'direct-line', type: 'Direkte besked', title: 'Line har skrevet til dig', body: 'Ring når du er tom i Hamburg.', time: '13:04', level: 'message', unread: true },
-  { id: 'office-docs', type: 'Kontoropslag', title: 'Husk dokumentation', body: 'CMR-billede kræves på udvalgte internationale leveringer.', time: 'I går', level: 'office', unread: true },
-  { id: 'rule-van-2026', type: 'Regelnyt', title: 'Varebilkrav fra 1. juli 2026', body: 'Takograf og køre-/hviletid bliver relevant for internationale varebiler over 2,5 ton.', time: '31. maj', level: 'rule', unread: false },
-];
+const seedNotifications = [];
 
 const defaultNotificationPrefs = { office: true, rules: true, chat: true, dailyBrief: true, quietHours: true, system: false };
 const productionProfile = { name: 'Medarbejder', phone: '', email: '', role: 'Chauffør', accessRole: 'employee', vehicleType: 'truck', truck: '', department: '', license: '', emergencyContact: '', languages: '', logbook: true };
+const emptyLocalProfile = { name: 'Medarbejder', phone: '', email: '', role: 'Chauffør', accessRole: 'employee', vehicleType: 'truck', truck: '', department: '', license: '', emergencyContact: '', languages: '', logbook: true };
 
-const seedChats = [
-  { id: 'dispatch', name: 'Drift og planlægning', initials: 'DP', preview: 'Line: Ring når du er tom i Hamburg.', time: '13:04', unread: 2 },
-  { id: 'ma', name: 'Mads Andersen', initials: 'MA', preview: 'Jeg holder ved Cirkle K i Kolding.', time: '12:42', unread: 0 },
-  { id: 'all', name: 'Fælleschat · Alle medarbejdere', initials: 'FC', preview: 'Peter: Kø ved Bremen, vælg A1.', time: '11:18', unread: 1, community: true },
-  { id: 'trucks', name: 'Lastbilchat', initials: 'LB', preview: 'Peter: Kø ved Bremen, vælg A1.', time: '11:18', unread: 1, channel: 'truck' },
-  { id: 'vans', name: 'Varebilchat', initials: 'VB', preview: 'Julie: Jeg er fri i Odense om 20 min.', time: '12:56', unread: 2, channel: 'van' },
-];
+const seedChats = [];
 
-const seedAnnouncements = [
-  { id: 'bremen', title: 'Vejarbejde ved Bremen', body: 'Forvent ekstra kø i eftermiddag. Brug A1 hvis ruten tillader det.', time: 'I dag · 11:18', tone: 'amber', kind: 'office', author: 'Kontoret', initials: 'XB', audience: 'Alle medarbejdere', pinned: true, likes: 6, comments: ['Tak for info', 'A1 glider fint lige nu.'] },
-  { id: 'documentation', title: 'Husk dokumentation', body: 'Send et billede af CMR efter levering, når opgaven kræver det.', time: 'I går · Line', tone: 'green', kind: 'office', author: 'Line · Kontoret', initials: 'LS', audience: 'Alle medarbejdere', likes: 4, comments: [] },
-  { id: 'kolding', title: 'God holdeplads ved Kolding', body: 'Der er plads ved Circle K lige nu, hvis nogen mangler en hurtig pause.', time: 'I dag · 12:42', tone: 'green', kind: 'colleague', author: 'Mads Andersen', initials: 'MA', audience: 'Kollegaer', likes: 9, comments: ['Tak Mads, jeg er der om 20 min.'] },
-];
+const seedAnnouncements = [];
 
 const ruleUpdates = [
   {
@@ -343,30 +317,7 @@ const legalMaintenancePlan = [
   { title: 'Medarbejderbesked', cadence: 'Ved opdatering', body: 'Når vilkår eller privatlivstekst ændres væsentligt, skal medarbejderen acceptere den nye version i appen.' },
 ];
 
-const seedMessages = {
-  dispatch: [
-    ['them', 'Godmorgen Tommy. Din næste aflæsning er port 4.', '08:12'],
-    ['me', 'Modtaget. Jeg er fremme omkring 16:40.', '08:15'],
-    ['them', 'Perfekt. Ring når du er tom i Hamburg.', '13:04'],
-  ],
-  ma: [
-    ['them', 'Hvordan ser trafikken ud sydpå?', '12:30'],
-    ['me', 'Den glider fint ved grænsen lige nu.', '12:35'],
-    ['them', 'Super. Jeg holder ved Circle K i Kolding.', '12:42'],
-  ],
-  all: [
-    ['them', 'Husk vejarbejde ved Bremen i eftermiddag.', '10:44'],
-    ['them', 'Kø ved Bremen, vælg A1 hvis I kan.', '11:18'],
-  ],
-  trucks: [
-    ['them', 'Peter: Kø ved Bremen, vælg A1 hvis I kan.', '11:18'],
-    ['them', 'Line: Husk CMR-billede på internationale leveringer.', '11:32'],
-  ],
-  vans: [
-    ['them', 'Julie: Jeg er fri i Odense om 20 min.', '12:56'],
-    ['them', 'Line: Er der nogen tæt på Kolding?', '13:01'],
-  ],
-};
+const seedMessages = {};
 
 const stored = key => {
   try { return JSON.parse(localStorage.getItem(`roadlog:${key}`)); } catch { return null; }
@@ -468,7 +419,7 @@ function supabaseStatus() {
   if (globalThis.XpressIntraSupabaseClient?.supabaseStatusFromConfig) {
     return globalThis.XpressIntraSupabaseClient.supabaseStatusFromConfig(config, Boolean(window.supabase?.createClient));
   }
-  if (!config.url || !config.anonKey) return { ready: false, label: 'Demo', detail: 'Supabase mangler URL og offentlig anon key' };
+  if (!config.url || !config.anonKey) return { ready: false, label: 'Ikke online', detail: 'Supabase mangler URL og offentlig anon key' };
   if (!window.supabase?.createClient) return { ready: true, label: 'Online', detail: 'Klar via indbygget Supabase-login' };
   return { ready: true, label: 'Online', detail: 'Klar til Supabase Auth og database' };
 }
@@ -826,7 +777,7 @@ function legacyReadImageFile(file) {
   }
   if (!file || !file.type?.startsWith('image/')) return Promise.resolve(null);
   if (file.size > 2 * 1024 * 1024) {
-    showToast('Billedet er for stort i demoen. Vælg max 2 MB.');
+    showToast('Billedet er for stort til denne enhed. Vælg max 2 MB.');
     return Promise.resolve(null);
   }
   return new Promise(resolve => {
@@ -931,16 +882,13 @@ let session = hasSupabaseConfigForMode && !DEMO_MODE ? null : stored('session');
 let pendingStandardSignupEmail = '';
 let pendingStandardSignupInvitationId = '';
 let creatorRoleTester = stored('creatorRoleTester') || { active: false, originalProfile: null, currentRole: null };
-let profile = stored('profile') || (DEMO_MODE ? { name: 'Tommy Hansen', phone: '+45 22 44 18 90', email: 'stralner2711@gmail.com', role: 'Appansvarlig · Lastbilchauffør', accessRole: 'owner', vehicleType: 'truck', truck: 'TR 42 918', department: 'Lastbil', license: 'C/E · EU kvalifikationsbevis', emergencyContact: 'Anne · +45 22 11 90 90', languages: 'Dansk, engelsk, tysk', logbook: true } : clone(productionProfile));
+let profile = stored('profile') || (DEMO_MODE ? clone(emptyLocalProfile) : clone(productionProfile));
 let location = { sharing: false, demo: false, speed: 0, points: 0, watchId: null, timer: null, coords: null, startedAt: null, expiresAt: null, lastUpdatedAt: null, shareMode: null };
 let activePickup = stored('activePickup');
 let pickupHistory = stored('pickupHistory') || [];
 let mapZoom = 1;
 let mapFilter = stored('mapFilter') || 'all';
-let logEntries = stored('logEntries') || (DEMO_MODE ? [
-  { place: 'Flensburg', note: 'God kaffe og en rolig pause ved grænsen.', date: '28. maj' },
-  { place: 'Hamburg', note: 'Solnedgang ved havnen efter aflæsning.', date: '25. maj' },
-] : []);
+let logEntries = stored('logEntries') || [];
 let logbookDrafts = stored('logbookDrafts') || [];
 let logbookAutomation = {
   smartLogbook: true,
@@ -973,14 +921,14 @@ if (DEMO_MODE) {
 }
 if (!profile.vehicleType) profile.vehicleType = 'truck';
 if (!profile.accessRole) profile.accessRole = 'employee';
-if ((profile.email === 'stralner2711@gmail.com' || (DEMO_MODE && profile.name === 'Tommy Hansen')) && !creatorRoleTester.active) {
+if (profile.email === 'stralner2711@gmail.com' && !creatorRoleTester.active) {
   profile = {
     ...profile,
     email: 'stralner2711@gmail.com',
     role: 'Appansvarlig · Lastbilchauffør',
     accessRole: 'owner',
     vehicleType: 'truck',
-    truck: profile.truck && profile.truck !== 'Ledelse' && profile.truck !== 'Kontoret' ? profile.truck : 'TR 42 918',
+    truck: profile.truck && profile.truck !== 'Ledelse' && profile.truck !== 'Kontoret' ? profile.truck : 'Lastbil',
     department: 'Lastbil',
     license: profile.license || 'C/E · EU kvalifikationsbevis',
   };
@@ -2983,8 +2931,8 @@ function blockInternalAction(action) {
 }
 
 const creatorRolePresets = {
-  creator: { label: 'Appansvarlig', role: 'Appansvarlig · Lastbilchauffør', accessRole: 'owner', vehicleType: 'truck', truck: 'TR 42 918', department: 'Lastbil', license: 'C/E · EU kvalifikationsbevis' },
-  truck: { label: 'Lastbilchauffor', role: 'Lastbilchauffor', accessRole: 'employee', vehicleType: 'truck', truck: 'TR 42 918', department: 'Lastbil', license: 'C/E - EU kvalifikation' },
+  creator: { label: 'Appansvarlig', role: 'Appansvarlig · Lastbilchauffør', accessRole: 'owner', vehicleType: 'truck', truck: 'Lastbil', department: 'Lastbil', license: 'C/E · EU kvalifikationsbevis' },
+  truck: { label: 'Lastbilchauffor', role: 'Lastbilchauffor', accessRole: 'employee', vehicleType: 'truck', truck: 'Lastbil', department: 'Lastbil', license: 'C/E - EU kvalifikation' },
   van: { label: 'Varebilchauffor', role: 'Varebilchauffor', accessRole: 'employee', vehicleType: 'van', truck: 'VB 51 204', department: 'Varebil', license: 'B - varebil' },
   dispatcher: { label: 'Disponent', role: 'Disponent', accessRole: 'dispatcher', vehicleType: 'dispatch', truck: 'Kontoret', department: 'Drift', license: 'Kontor' },
   admin: { label: 'Chef/admin', role: 'Chef', accessRole: 'admin', vehicleType: 'dispatch', truck: 'Ledelse', department: 'Ledelse', license: 'Administrator' },
@@ -3936,7 +3884,7 @@ function renderAdminDashboard() {
     </section>
     <section class="admin-audit-list">
       <h4>Seneste adminhandlinger</h4>
-      ${latestAudit.length ? latestAudit.map(item => `<span><b>${text(item.title)}</b><small>${text(item.time)} · ${text(item.actor)} · ${text(item.body)}</small></span>`).join('') : '<p class="empty-state">Ingen adminhandlinger i demoen endnu.</p>'}
+      ${latestAudit.length ? latestAudit.map(item => `<span><b>${text(item.title)}</b><small>${text(item.time)} · ${text(item.actor)} · ${text(item.body)}</small></span>`).join('') : '<p class="empty-state">Ingen adminhandlinger endnu.</p>'}
     </section>
   </section>`;
 }
@@ -4251,9 +4199,9 @@ function myDataSummary() {
     ['Rettighed', accessRoleLabel(profile.accessRole), vehicleLabel(profile.vehicleType)],
     ['Arbejdsdag', workday.active ? 'Mødt ind' : 'Ikke aktiv', workday.active ? 'Slukker automatisk kl. 19.00' : 'Tryk Mød ind på forsiden'],
     ['GPS', location.sharing ? 'Deler live' : 'Skjult', location.sharing ? `${location.speed} km/t vises lokalt` : 'Ingen live-deling'],
-    ['Logbog', profile.logbook ? 'Aktiv og privat' : 'Fravalgt', `${logEntries.length} private indlæg i demoen`],
+    ['Logbog', profile.logbook ? 'Aktiv og privat' : 'Fravalgt', `${logEntries.length} private indlæg`],
     ['Billeder', coreSettings.media ? 'Tilladt' : 'Slået fra', 'Profil, chat, opslag og logbog'],
-    ['Dataanmodninger', `${dataRequests.length} i demoen`, 'Indsigt, rettelse, sletning eller eksport'],
+    ['Dataanmodninger', `${dataRequests.length} registreret`, 'Indsigt, rettelse, sletning eller eksport'],
   ];
 }
 
@@ -4577,7 +4525,9 @@ function visibleMapPeople() {
         }] : []),
       ]
     : sharedPeople;
-  return people.filter(person => mapFilter === 'all' || mapFilter === 'sharing' || person.vehicleType === mapFilter);
+  return people
+    .map(person => ({ ...person, coords: Array.isArray(person.coords) ? person.coords : null }))
+    .filter(person => person.coords && (mapFilter === 'all' || mapFilter === 'sharing' || person.vehicleType === mapFilter));
 }
 
 function formatClock(isoValue) {
@@ -4595,7 +4545,7 @@ function locationExpiryText() {
 function mapPersonStatus(person) {
   if ((person.id === currentEmployee().id || person.id === session?.userId) && location.sharing) {
     if (location.speed > 5) return 'Kører';
-    if (location.demo) return 'Demo GPS';
+    if (location.demo) return 'Lokal GPS-test';
     return 'Deler';
   }
   if (!person.online) return 'Offline';
@@ -5102,7 +5052,7 @@ function renderMap() {
     ${teamMap(true)}
     <section class="map-actions">
       <p class="map-expiry-line">${locationExpiryText()}</p>
-      <div><b>${location.sharing ? 'Din position er synlig' : 'Du er skjult på kortet'}</b><span>${location.sharing ? (location.demo ? 'Demo-position bruges i denne prototype' : 'Opdateres automatisk fra din GPS') : 'Du bestemmer selv, hvornår kollegaerne kan se dig'}</span></div>
+      <div><b>${location.sharing ? 'Din position er synlig' : 'Du er skjult på kortet'}</b><span>${location.sharing ? (location.demo ? 'Lokal GPS-test bruges, fordi rigtig GPS ikke er tilgængelig' : 'Opdateres automatisk fra din GPS') : 'Du bestemmer selv, hvornår kollegaerne kan se dig'}</span></div>
       <button data-action="toggle-location">${location.sharing ? 'Stop deling' : 'Del position'}</button>
       <small class="map-person-legend">Status · Sidst opdateret</small>
     </section>
@@ -5263,7 +5213,7 @@ function renderMore() {
         ${canManageEmployees() || isCreatorOwner() ? `<button class="utility-row" data-action="open-admin"><span class="utility-icon">${icon('settings')}</span><span><b>${isCreatorOwner() ? 'Appens drift' : 'Chef/admin'}</b><small>${isCreatorOwner() ? 'Status, sikkerhed, Supabase og vigtige styringer' : 'Rettigheder, sikkerhed og medarbejdere'}</small></span>${icon('arrow', 'row-arrow')}</button>` : ''}
         ${canManageEmployees() ? `<button class="utility-row" data-action="open-launch-checklist"><span class="utility-icon">${icon('check')}</span><span><b>Klar til drift</b><small>Supabase, første admin, telefon-test og jura</small></span>${icon('arrow', 'row-arrow')}</button>` : ''}
         ${renderCreatorRoleTester()}
-        ${DEMO_MODE ? `<button class="utility-row" data-action="reset-demo"><span class="utility-icon">${icon('settings')}</span><span><b>Nulstil demo</b><small>Gendan de oprindelige eksempeldata</small></span>${icon('arrow', 'row-arrow')}</button>` : ''}
+        ${DEMO_MODE ? `<button class="utility-row" data-action="reset-demo"><span class="utility-icon">${icon('settings')}</span><span><b>Ryd lokal testtilstand</b><small>Fjern lokale testdata på denne enhed</small></span>${icon('arrow', 'row-arrow')}</button>` : ''}
         <button class="utility-row" data-action="logout"><span class="utility-icon">${icon('close')}</span><span><b>Log ud</b><small>Afslut din session på denne enhed</small></span>${icon('arrow', 'row-arrow')}</button>
       </details>
     </section>`;
@@ -5895,7 +5845,7 @@ function openMyDataModal() {
     </form>
     <div class="request-list">
       <h4>Tidligere anmodninger</h4>
-      ${dataRequests.length ? dataRequests.map(request => `<span><b>${text(request.label)}</b><small>${text(request.message)} · ${text(request.status)} · ${text(request.createdAt)}</small></span>`).join('') : '<p class="empty-state">Ingen dataanmodninger i demoen endnu.</p>'}
+      ${dataRequests.length ? dataRequests.map(request => `<span><b>${text(request.label)}</b><small>${text(request.message)} · ${text(request.status)} · ${text(request.createdAt)}</small></span>`).join('') : '<p class="empty-state">Ingen dataanmodninger endnu.</p>'}
     </div>
   </section>`;
   document.body.append(modal);
@@ -5984,7 +5934,7 @@ function openVehiclesModal() {
   modal.innerHTML = `<section class="profile-modal vehicles-modal">
     <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
     <p class="eyebrow">Flåde og status</p><h3>Køretøjsregister</h3>
-    <p class="info-intro">Demo-register over biler og enheder. I online-versionen bør det kobles til rigtige køretøjsdata, service, skade og chaufførtilknytning.</p>
+    <p class="info-intro">Register over biler og enheder. I online drift bør det kobles til rigtige køretøjsdata, service, skade og chaufførtilknytning.</p>
     <div class="vehicle-list">
       ${vehicles.map(vehicle => {
         const driver = vehicleDriver(vehicle);
@@ -6384,7 +6334,7 @@ function openLegalModal() {
     <p class="eyebrow">Intern politik</p><h3>Sikkerhed, privatliv & brugsvilkår</h3>
     <section class="legal-status-card">
       <b>${text(legalStatusText())}</b>
-      <span>Alle medarbejdere bør gennemgå denne side før rigtig drift. Demo-accept gemmes kun lokalt.</span>
+      <span>Alle medarbejdere bør gennemgå denne side før rigtig drift. Accept gemmes på brugerens adgang, når onlineforbindelsen er aktiv.</span>
     </section>
     ${renderGdprGoLivePanel({ compact: true })}
     ${renderLegalMaintenancePanel({ compact: true })}
@@ -6472,8 +6422,8 @@ function removeEmployee(employeeId) {
     employees = employees.filter(item => item.id !== employeeId);
     chats = chats.filter(chat => chat.id !== employeeId);
     delete messages[employeeId];
-    recordAdminAudit('Medarbejder fjernet', `${employee.name} blev fjernet fra demoen`);
-    showToast('Medarbejderen er fjernet fra demoen');
+    recordAdminAudit('Medarbejder fjernet', `${employee.name} blev fjernet lokalt`);
+    showToast('Medarbejderen er fjernet lokalt');
   } else {
     employee.employmentStatus = 'offboarded';
     employee.online = false;
@@ -6517,54 +6467,51 @@ function reactivateEmployee(employeeId) {
 
 function enableDemoAdmin() {
   if (!DEMO_MODE) {
-    showToast('Demo-admin er slået fra i denne version');
+    showToast('Lokal test-admin er slået fra i denne version');
     return;
   }
   profile = { ...profile, role: 'Chef', accessRole: 'admin', vehicleType: 'dispatch', truck: 'Ledelse' };
   if (!employees.length) employees.unshift(currentEmployee());
-  employees[0] = { ...employees[0], role: 'Chef', accessRole: 'admin', vehicleType: 'dispatch', truck: 'Ledelse', status: 'Demo: chef/admin' };
+  employees[0] = { ...employees[0], role: 'Chef', accessRole: 'admin', vehicleType: 'dispatch', truck: 'Ledelse', status: 'Lokal test: chef/admin' };
   save('profile', profile);
   save('employees', employees);
   document.querySelector('.modal-backdrop')?.remove();
   render();
-  showToast('Demoen viser nu chef/admin-rettigheder');
+  showToast('Lokal test viser nu chef/admin-rettigheder');
 }
 
 function resetDemo() {
   if (!DEMO_MODE) {
-    showToast('Demo-data er slået fra i produktionsappen');
+    showToast('Lokal testdata er slået fra i produktionsappen');
     return;
   }
   navigator.geolocation?.clearWatch(location.watchId);
   clearInterval(location.timer);
   location = { sharing: false, demo: false, speed: 0, points: 0, watchId: null, timer: null, coords: null, startedAt: null, expiresAt: null, lastUpdatedAt: null, shareMode: null };
   Object.keys(localStorage).filter(key => key.startsWith('roadlog:') && key !== 'roadlog:session').forEach(key => localStorage.removeItem(key));
-  employees = clone(seedEmployees);
-  chats = clone(seedChats);
-  messages = clone(seedMessages);
-  announcements = clone(seedAnnouncements);
+  employees = [];
+  chats = [];
+  messages = {};
+  announcements = [];
   feedLikes = {};
   infoFavorites = [];
   notificationPrefs = { ...defaultNotificationPrefs };
   workdayPrivacy = { gps: true, logbook: true, notifications: true, audience: 'all', showSpeed: false, showVehicle: true, showStatus: true };
   coreSettings = { gps: true, logbook: true, media: true, employeePosts: true, ruleApproval: true };
   workday = { active: false, startedAt: null, endsAt: null, permissions: { gps: true, logbook: true, notifications: true } };
-  vehicles = clone(seedVehicles);
-  notifications = clone(seedNotifications);
+  vehicles = [];
+  notifications = [];
   dataRequests = [];
   adminAuditEvents = [];
   activePickup = null;
   pickupHistory = [];
   creatorRoleTester = { active: false, originalProfile: null, currentRole: null };
-  profile = { name: 'Tommy Hansen', phone: '+45 22 44 18 90', email: 'stralner2711@gmail.com', role: 'Appansvarlig · Lastbilchauffør', accessRole: 'owner', vehicleType: 'truck', truck: 'TR 42 918', department: 'Lastbil', license: 'C/E · EU kvalifikationsbevis', emergencyContact: 'Anne · +45 22 11 90 90', languages: 'Dansk, engelsk, tysk', logbook: true };
-  logEntries = [
-    { place: 'Flensburg', note: 'God kaffe og en rolig pause ved grænsen.', date: '28. maj' },
-    { place: 'Hamburg', note: 'Solnedgang ved havnen efter aflæsning.', date: '25. maj' },
-  ];
+  profile = clone(emptyLocalProfile);
+  logEntries = [];
   logbookDrafts = [];
   logbookAutomation = { smartLogbook: true, autoDrafts: true, autoPlace: true, autoStops: true, autoPickup: true, autoVehicle: true, autoMilestones: false };
   render();
-  showToast('Demoen er nulstillet');
+  showToast('Lokal testtilstand er ryddet');
 }
 
 function currentScrollState() {
@@ -7218,10 +7165,10 @@ document.addEventListener('submit', async event => {
         showToast(`Dataanmodningen er gemt lokalt, men ikke online: ${error.message}`);
       }
     }
-    addNotification({ type: 'Persondata', title: 'Dataanmodning sendt', body: `${labels[requestType] || 'Dataanmodning'} er registreret i demoen.`, level: 'privacy' });
+    addNotification({ type: 'Persondata', title: 'Dataanmodning sendt', body: `${labels[requestType] || 'Dataanmodning'} er registreret lokalt.`, level: 'privacy' });
     event.target.closest('.modal-backdrop').remove();
     render();
-    showToast('Dataanmodningen er gemt i demoen');
+    showToast('Dataanmodningen er gemt lokalt');
     return;
   }
   if (event.target.matches('.support-request-form')) {

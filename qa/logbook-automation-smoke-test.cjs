@@ -76,6 +76,7 @@ function assert(condition, message) {
 }
 
 const harness = createHarness();
+harness.run("profile = { ...profile, department: 'Flensburg' };");
 
 harness.run('openLogbookModal();');
 const logbookModal = harness.modalNodes.find(node => node.innerHTML.includes('Personlig logbog'));

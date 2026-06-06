@@ -77,6 +77,13 @@ function assert(condition, message) {
 
 const harness = createHarness();
 
+harness.run(`
+notifications = [
+  { id: 'message-test', type: 'Direkte besked', title: 'Testbesked', body: 'Test', time: '10:00', level: 'message', unread: true },
+  { id: 'office-test', type: 'Kontoropslag', title: 'Kontortest', body: 'Test', time: '10:01', level: 'office', unread: false },
+];
+`);
+
 harness.run("activeTab = 'home'; render();");
 assert(!harness.appElement.innerHTML.includes('Husk i dag'), 'Home should not show the full daily reminder panel');
 assert(harness.appElement.innerHTML.includes('Ulæst'), 'Home should keep a simple unread notification shortcut');

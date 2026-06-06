@@ -83,6 +83,7 @@ function assert(condition, message) {
 
 const { context, modalNodes, run } = createHarness();
 
+run("profile = { ...profile, name: 'Tommy Hansen', email: 'stralner2711@gmail.com', role: 'Appansvarlig · Lastbilchauffør', accessRole: 'owner', vehicleType: 'truck' };");
 context.openGdprGoLiveModal();
 const modal = modalNodes.at(-1);
 assert(modal.innerHTML.includes('GDPR go-live'), 'GDPR modal should open');

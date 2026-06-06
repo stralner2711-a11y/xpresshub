@@ -48,13 +48,13 @@ assert(updateSystem.includes('globalThis.XpressIntraUpdateSystem'), 'Update modu
 assert(styles.includes('.update-summary-card'), 'Update summary should be styled');
 assert(styles.includes('.force-update'), 'Forced update modal should be styled');
 
-assert(version.activeVersion === '1.3.28', 'version.json should expose activeVersion');
-assert(version.activeVersionCode === 41, 'version.json should expose activeVersionCode');
+assert(version.activeVersion === '1.3.29', 'version.json should expose activeVersion');
+assert(version.activeVersionCode === 42, 'version.json should expose activeVersionCode');
 assert(version.forceUpdate === true, 'Test release should force update visibility');
 assert(version.apkDownloadUrl.includes('github.com/stralner2711-a11y/xpresshub'), 'version.json should point to the official GitHub repo');
-assert(version.previousStableVersion === '1.3.27', 'version.json should keep the previous stable version for rollback');
-assert(version.previousStableApkDownloadUrl.includes('/v1.3.27/'), 'version.json should expose previous stable APK for rollback');
-assert(version.changelog.some(item => item.includes('Login-beskyttelse')), 'version.json should explain the practical security update');
+assert(version.previousStableVersion === '1.3.28', 'version.json should keep the previous stable version for rollback');
+assert(version.previousStableApkDownloadUrl.includes('/v1.3.28/'), 'version.json should expose previous stable APK for rollback');
+assert(version.changelog.some(item => item.includes('Demodata')), 'version.json should explain the practical security update');
 assert(docsVersion.activeVersion === version.activeVersion, 'docs/version.json should match public version for GitHub Pages');
 assert(docsVersion.activeVersionCode === version.activeVersionCode, 'docs/version.json should match public build code');
 assert(rootVersion.activeVersion === version.activeVersion, 'root version.json should match public version for root-hosted Pages');

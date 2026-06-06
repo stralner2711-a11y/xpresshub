@@ -222,7 +222,7 @@ function assert(condition, message) {
   });
   assert(harness.insertedRows.some(item => item.table === 'messages' && item.row.body === 'Hej online'), 'Sending chat should insert a Supabase message');
 
-  await harness.run("employees.push({ id: 'target-user-1', name: 'Mads Andersen', initials: 'MA', employmentStatus: 'active' }); startSupabaseDirectChat(employees.find(item => item.id === 'target-user-1'), 'Direkte hej')");
+  await harness.run("employees.push({ id: 'target-user-1', name: 'Test Medarbejder', initials: 'TM', employmentStatus: 'active' }); startSupabaseDirectChat(employees.find(item => item.id === 'target-user-1'), 'Direkte hej')");
   assert(harness.rpcCalls.some(item => item.name === 'start_direct_conversation' && item.args.target_user_id === 'target-user-1'), 'Direct chats should be created through the safe Supabase RPC');
   assert(harness.insertedRows.some(item => item.table === 'messages' && item.row.conversation_id === 'direct-conversation-1' && item.row.body === 'Direkte hej'), 'Starting a direct chat should send the first message online');
 
@@ -269,7 +269,7 @@ function assert(condition, message) {
   assert(harness.subscriptions.some(item => item.filter?.table === 'pickup_tasks'), 'Pickup tasks should subscribe to realtime changes');
 
   harness.run("profile = { ...profile, name: 'Chef Test', role: 'Chef', accessRole: 'admin', vehicleType: 'dispatch' }");
-  await harness.run("updateSupabaseEmployeeProfile({ id: 'target-user-1', name: 'Mads Andersen', phone: '+45 20 11 40 44', email: 'mads@example.com', department: 'Varebil', license: 'B', languages: 'Dansk', role: 'Chauffør', accessRole: 'employee', vehicleType: 'van', truck: 'VB 51 204', employmentStatus: 'offboarded', logbook: true, emergencyContact: 'Sofie' })");
+  await harness.run("updateSupabaseEmployeeProfile({ id: 'target-user-1', name: 'Test Medarbejder', phone: '+45 20 11 40 44', email: 'test@example.com', department: 'Varebil', license: 'B', languages: 'Dansk', role: 'Chauffør', accessRole: 'employee', vehicleType: 'van', truck: 'Testbil', employmentStatus: 'offboarded', logbook: true, emergencyContact: 'Test kontakt' })");
   assert(harness.updates.some(item => item.table === 'profiles' && item.row.employment_status === 'offboarded' && item.row.access_role === 'employee'), 'Admin profile changes should update Supabase profiles');
   assert(harness.upserts.some(item => item.table === 'profile_private_details' && item.row.user_id === 'target-user-1'), 'Admin profile changes should upsert private profile details separately');
   await harness.run("coreSettings = { gps: false, media: true, logbook: true, employeePosts: false, ruleApproval: true }; syncSupabaseCoreSettings()");

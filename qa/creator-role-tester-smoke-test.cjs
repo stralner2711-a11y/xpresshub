@@ -54,9 +54,18 @@ function assert(condition, message) {
 
 const harness = createHarness();
 
-harness.run("activeTab = 'more'; render();");
-assert(harness.run("profile.accessRole") === 'owner', 'Demo creator should start with owner access');
-assert(harness.appElement.innerHTML.includes('Creator test'), 'Demo creator should see role tester immediately');
+harness.run(`
+chats = [
+  { id: 'all', name: 'Fælleschat · Alle medarbejdere', initials: 'FC', preview: '', time: '', unread: 0, community: true },
+  { id: 'trucks', name: 'Lastbilchat', initials: 'LB', preview: '', time: '', unread: 0, channel: 'truck' },
+  { id: 'vans', name: 'Varebilchat', initials: 'VB', preview: '', time: '', unread: 0, channel: 'van' },
+];
+messages = { all: [], trucks: [], vans: [] };
+`);
+
+harness.run("profile = { ...profile, email: 'stralner2711@gmail.com', accessRole: 'owner', role: 'Appansvarlig · Lastbilchauffør', vehicleType: 'truck' }; activeTab = 'more'; render();");
+assert(harness.run("profile.accessRole") === 'owner', 'Creator should start with owner access when the creator profile is active');
+assert(harness.appElement.innerHTML.includes('Creator test'), 'Creator should see role tester immediately');
 
 harness.run("profile = { ...profile, email: 'almindelig@example.com', accessRole: 'employee' }; activeTab = 'more'; render();");
 assert(!harness.appElement.innerHTML.includes('Creator test'), 'Normal employees should not see creator role tester');

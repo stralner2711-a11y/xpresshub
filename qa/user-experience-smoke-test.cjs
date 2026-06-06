@@ -75,6 +75,21 @@ function assert(condition, message) {
 
 const harness = createHarness();
 
+harness.run(`
+employees = [
+  { id: 'driver-1', name: 'Test Chauffør', initials: 'TC', role: 'Lastbilchauffør', accessRole: 'employee', vehicleType: 'truck', truck: 'Testbil', employmentStatus: 'active' },
+  { id: 'office-1', name: 'Kontor Test', initials: 'KT', role: 'Kontor', accessRole: 'dispatcher', vehicleType: 'dispatch', truck: 'Kontor', employmentStatus: 'active' },
+];
+chats = [
+  { id: 'trucks', name: 'Lastbilchat', initials: 'LB', preview: 'Test Chauffør: klar', time: '10:15', unread: 0, channel: 'truck' },
+];
+messages = {
+  trucks: [
+    { side: 'them', body: 'Klar til test', time: '10:15', senderId: 'driver-1', senderName: 'Test Chauffør', senderInitials: 'TC', senderRole: 'Lastbilchauffør' },
+  ],
+};
+`);
+
 harness.run("activeTab = 'home'; render();");
 assert(!harness.appElement.innerHTML.includes('Dagens assistent'), 'Home should not show the removed daily assistant');
 assert(!harness.appElement.innerHTML.includes('Næste handling'), 'Home should not show the removed assistant action');
@@ -88,7 +103,7 @@ assert(!harness.appElement.innerHTML.includes('announcement-section'), 'Chat sho
 
 harness.run("activeTab = 'chat'; activeChat = 'trucks'; render();");
 assert(harness.appElement.innerHTML.includes('message-row'), 'Conversation should render structured message rows');
-assert(harness.appElement.innerHTML.includes('Peter Nielsen') || harness.appElement.innerHTML.includes('Line Sørensen'), 'Messages should show sender profile names');
+assert(harness.appElement.innerHTML.includes('Test Chauffør'), 'Messages should show sender profile names');
 assert(harness.appElement.innerHTML.includes('Lastbilchat'), 'Conversation header should show channel name');
 
 harness.run("activeTab = 'map'; render();");

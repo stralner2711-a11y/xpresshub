@@ -77,6 +77,19 @@ function assert(condition, message) {
 
 const harness = createHarness();
 
+harness.run(`
+employees = [
+  { id: 'ma', name: 'Test Medarbejder', initials: 'TM', role: 'Chauffør', accessRole: 'employee', vehicleType: 'van', employmentStatus: 'active' },
+];
+vehicles = [
+  { id: 'truck-test', unit: 'TEST LASTBIL', type: 'Lastbil', plate: 'TEST01', driverId: null, status: 'Klar', equipment: 'Test', nextCheck: 'Ikke sat' },
+  { id: 'van-test', unit: 'TEST VAREBIL', type: 'Varebil', plate: 'TEST02', driverId: null, status: 'Klar', equipment: 'Test', nextCheck: 'Ikke sat' },
+];
+notifications = [
+  { id: 'direct-test', type: 'Direkte besked', title: 'Testbesked', body: 'Test', time: '10:00', level: 'message', unread: true },
+];
+`);
+
 harness.run("activeTab = 'more'; render();");
 assert(harness.appElement.innerHTML.includes('Mine data'), 'More page should expose Mine data');
 assert(harness.appElement.innerHTML.includes('Køretøjer'), 'More page should expose vehicle registry');
@@ -92,8 +105,8 @@ assert(myDataModal.innerHTML.includes('Eksport'), 'Mine data should include expo
 harness.run('openVehiclesModal();');
 const vehiclesModal = harness.modalNodes.find(node => node.innerHTML.includes('Køretøjsregister'));
 assert(vehiclesModal, 'Vehicle registry modal should open');
-assert(vehiclesModal.innerHTML.includes('TR 42 918'), 'Vehicle registry should list truck TR 42 918');
-assert(vehiclesModal.innerHTML.includes('VB 51 204'), 'Vehicle registry should list van VB 51 204');
+assert(vehiclesModal.innerHTML.includes('TEST LASTBIL'), 'Vehicle registry should list a truck from app data');
+assert(vehiclesModal.innerHTML.includes('TEST VAREBIL'), 'Vehicle registry should list a van from app data');
 
 harness.run("activeTab = 'home'; activePickup = { employeeId: 'ma', note: 'Test afhentning', duration: '30', status: 'started', steps: [], startedAt: new Date().toISOString(), startedLocationSharing: false }; save('activePickup', activePickup); render();");
 assert(harness.appElement.innerHTML.includes('Startet'), 'Pickup card should show started status');

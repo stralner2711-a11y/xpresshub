@@ -72,6 +72,13 @@ function assert(condition, message) {
 const styles = fs.readFileSync('src/styles.css', 'utf8');
 const harness = createHarness();
 
+harness.run(`
+chats = [
+  { id: 'all', name: 'Fælleschat · Alle medarbejdere', initials: 'FC', preview: 'Test', time: '10:00', unread: 0, community: true },
+];
+messages = { all: [{ side: 'them', body: 'Testbesked', time: '10:00', senderName: 'Test Kollega', senderInitials: 'TK', senderRole: 'Chauffør' }] };
+`);
+
 harness.run("activeTab = 'home'; render();");
 assert(harness.appElement.innerHTML.includes('screen-guide'), 'Every main screen should show a simple guide');
 assert(harness.appElement.innerHTML.includes('Start her'), 'Home guide should explain the screen');
@@ -81,7 +88,7 @@ assert(harness.appElement.innerHTML.includes('Kontor og fællesskab'), 'Home sho
 assert(!harness.appElement.innerHTML.includes('Opgaver og kladder'), 'Home should not duplicate tasks and drafts from Work');
 assert(harness.appElement.innerHTML.includes('Åbn chat'), 'Home should still offer quick access to social content');
 
-harness.run("activeTab = 'more'; render();");
+harness.run("profile = { ...profile, name: 'Tommy Hansen', email: 'stralner2711@gmail.com', accessRole: 'owner', role: 'Appansvarlig · Lastbilchauffør', vehicleType: 'truck' }; activeTab = 'more'; render();");
 assert(harness.appElement.innerHTML.includes('Styr appen professionelt'), 'Creator control guide should explain professional app management');
 assert(harness.appElement.innerHTML.includes('Kontrolcenter'), 'More should be renamed to Kontrolcenter');
 assert(harness.appElement.innerHTML.includes('Daglig brug'), 'Control center should group daily tools');

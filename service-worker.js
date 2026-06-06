@@ -1,4 +1,4 @@
-﻿const CACHE_NAME = 'xpressintra-v89-practical-security';
+const CACHE_NAME = 'xpressintra-v90-production-cleanup';
 const APP_FILES = [
   './',
   './index.html',

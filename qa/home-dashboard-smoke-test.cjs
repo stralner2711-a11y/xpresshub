@@ -95,7 +95,7 @@ assert(!/home-day-tools[\s\S]*<b>Hent for kollega<\/b>/.test(harness.appElement.
 assert(!harness.appElement.innerHTML.includes('Gem pause eller stop'), 'Home should not surface private logbook draft title');
 assert(harness.appElement.innerHTML.indexOf('Dagens værktøjer') < harness.appElement.innerHTML.indexOf('Kontor og fællesskab'), 'Driver tools should appear before the compact community hint');
 
-harness.run("activePickup = null; workday = { ...workday, active: true }; notifications = notifications.map((item, index) => ({ ...item, unread: index === 0 })); render();");
+harness.run("activePickup = null; workday = { ...workday, active: true }; notifications = [{ id: 'message-test', type: 'Direkte besked', title: 'Testbesked', body: 'Test', time: '10:00', level: 'message', unread: true }]; render();");
 assert(harness.appElement.innerHTML.includes('<b>Tjek beskeder</b>'), 'Home should promote messages as the next action when unread items exist');
 assert(!/home-driver-tools[\s\S]*<b>Beskeder<\/b>/.test(harness.appElement.innerHTML), 'Home driver tools should not duplicate messages when messages are already the top action');
 
