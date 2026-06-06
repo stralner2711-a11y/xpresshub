@@ -26,9 +26,9 @@ const icons = {
   search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>',
 };
 
-const APP_VERSION = '1.3.30-release-v91';
-const APP_DISPLAY_VERSION = '1.3.30';
-const APP_VERSION_CODE = 43;
+const APP_VERSION = '1.3.31-release-v92';
+const APP_DISPLAY_VERSION = '1.3.31';
+const APP_VERSION_CODE = 44;
 const TEMPORARY_EMPLOYEE_PASSWORD = 'xpress';
 const IMAGE_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
 const PROFILE_PHOTO_MAX_DIMENSION = 512;
