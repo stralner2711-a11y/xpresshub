@@ -171,7 +171,9 @@ h3 { margin-bottom: 0; font-family: Manrope, sans-serif; font-size: 15px; }
 .home-office-board small { color: var(--amber); font-size: 9px; font-weight: 900; letter-spacing: .3px; text-transform: uppercase; }
 .home-office-board span { color: #c7d6d2; font-size: 11px; line-height: 1.4; }
 .home-compact-board { padding-top: 2px; }
-.home-compact-board > button { min-height: 72px; border-radius: 17px; }
+.home-compact-board > button, .home-compact-board > .home-office-highlight { min-height: 72px; border-radius: 17px; }
+.home-office-actions { justify-content: flex-start; margin-top: 6px; }
+.home-office-actions button { background: rgba(244,166,65,.12); }
 .home-community-row { display: grid; grid-template-columns: repeat(2,1fr); gap: 9px; }
 .home-community-row button { grid-template-columns: 38px 1fr; align-items: center; min-height: 74px; }
 .home-community-row button > span:first-child { grid-row: span 2; display: grid; width: 38px; height: 38px; place-items: center; border-radius: 50%; background: rgba(244,166,65,.16); color: var(--amber); }

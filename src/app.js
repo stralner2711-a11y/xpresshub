@@ -176,7 +176,7 @@ const infoChecklists = [
   { title: 'Ved levering', items: ['Parker sikkert', 'Tjek gods', 'Tag billede ved afvigelse', 'Meld status'] },
 ];
 
-const emojiChoices = ['??', '??', '??', '??', '?', '?', '??', '??'];
+const emojiChoices = ['\u{1F44D}', '\u{1F44C}', '\u{1F60A}', '\u{1F602}', '\u{2705}', '\u{1F69A}', '\u{1F4CD}', '\u{1F64F}'];
 
 const infoSections = [
   { id: 'operations', icon: 'alert', title: 'Akut & drift', subtitle: 'Kontakter, terminal og hjælp til alle' },
@@ -4903,6 +4903,9 @@ function renderHome() {
   const communityHint = unreadNotifications
     ? `${unreadNotifications} ulæste beskeder eller opslag`
     : `${onlineEmployees.length} kollegaer online`;
+  const officeCardActions = officeItem && canManageAnnouncement(officeItem)
+    ? `<nav class="post-admin-actions home-office-actions" aria-label="Opslagshandlinger"><button data-action="edit-announcement" data-post="${text(officeItem.id)}">Ret</button><button data-action="delete-announcement" data-post="${text(officeItem.id)}">Slet</button></nav>`
+    : '';
   return `
     <section class="home-clean-hero home-makeover surface-card">
       <div>
@@ -4932,11 +4935,12 @@ function renderHome() {
     ${renderPickupCard()}
     <section class="home-office-board home-compact-board screen-section">
       <div class="screen-section-head"><span>Kontor og fællesskab</span><small>${text(communityHint)}</small>${canPublishOfficePosts() ? '<button data-action="new-announcement">Nyt opslag</button>' : ''}</div>
-      <button data-action="open-notifications">
+      <article class="home-office-highlight" data-action="open-notifications">
         <b>${text(officeItem?.title || feed[0]?.title || 'Ingen vigtige opslag lige nu')}</b>
         <small>${text(officeItem ? `${officeItem.time} · ${officeItem.author}` : 'Rolig dag')}</small>
         <span>${text(officeItem?.body || feed[0]?.body || 'Når kontoret eller kollegaer har noget vigtigt, vises det kort her.')}</span>
-      </button>
+        ${officeCardActions}
+      </article>
       <div class="home-community-row">
         <button data-chat="all"><span>${icon('chat')}</span><b>Åbn chat</b><small>Fælles og direkte beskeder</small></button>
         <button data-tab="team"><span>${icon('users')}</span><b>Kollegaer</b><small>${onlineEmployees.length} online</small></button>
@@ -5261,7 +5265,7 @@ function renderConversation() {
       <div class="message-compose">
         <label class="image-picker" title="Tilføj billede">${icon('image')}<input name="image" type="file" accept="image/*" /></label>
         <input name="message" autocomplete="off" placeholder="Skriv en besked eller emoji..." />
-        <button aria-label="Send besked">${icon('send')}</button>
+        <button type="submit" aria-label="Send besked">${icon('send')}</button>
       </div>
     </form>`;
 }

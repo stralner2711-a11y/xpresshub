@@ -100,6 +100,11 @@ run(`announcements = [{ id: 'post-admin', authorId: 'office-1', author: 'Kontore
 assert(modalNodes.at(-1).innerHTML.includes('Rediger opslag'), 'Edit modal should open with edit title');
 assert(modalNodes.at(-1).innerHTML.includes('Gem ændringer'), 'Edit modal should save changes instead of sharing a new post');
 
+run(`activeTab = 'home'; render();`);
+assert(appElement.innerHTML.includes('home-office-highlight'), 'Home should render office post as a manageable highlight');
+assert(appElement.innerHTML.includes('edit-announcement'), 'Admin should be able to edit office posts directly from the home office card');
+assert(appElement.innerHTML.includes('delete-announcement'), 'Admin should be able to delete office posts directly from the home office card');
+
 const schema = fs.readFileSync('supabase/schema.sql', 'utf8');
 const fullSetup = fs.readFileSync('supabase/RUN_THIS_FROM_SCRATCH_IN_SUPABASE.sql', 'utf8');
 assert(schema.includes('authors and admins can update announcements'), 'Schema should allow only authors/admins to update announcements');
