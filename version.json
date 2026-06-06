@@ -1,27 +1,27 @@
 {
-    "latestVersion":  "1.3.29",
-    "stableVersion":  "1.3.29",
-    "activeVersion":  "1.3.29",
-    "previousStableVersion":  "1.3.28",
-    "latestVersionCode":  42,
-    "stableVersionCode":  42,
-    "activeVersionCode":  42,
-    "apkDownloadUrl":  "https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.29/xpressintra.apk",
-    "stableApkDownloadUrl":  "https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.29/xpressintra.apk",
-    "previousStableApkDownloadUrl":  "https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.28/xpressintra.apk",
-    "releasePageUrl":  "https://github.com/stralner2711-a11y/xpresshub/releases/tag/v1.3.29",
-    "stableReleasePageUrl":  "https://github.com/stralner2711-a11y/xpresshub/releases/tag/v1.3.29",
-    "downloadPageUrl":  "https://stralner2711-a11y.github.io/xpresshub/download.html",
-    "changelog":  [
-                      "Demodata er fjernet fra den rigtige app, så produktion starter rent uden eksempelpersoner, biler, chats og opslag",
-                      "Lokal testtilstand er ryddet op og må ikke længere ligne rigtig drift",
-                      "Livekortet håndterer nu manglende koordinater uden at fejle",
-                      "QA-testene bruger nu egne neutrale testdata i stedet for app-indbyggede demodata"
-                  ],
-    "forceUpdate":  true,
-    "rollbackReason":  "",
-    "defectiveVersions":  [
-
-                          ],
-    "updatedAt":  "2026-06-06"
+  "latestVersion": "1.3.30",
+  "stableVersion": "1.3.30",
+  "activeVersion": "1.3.30",
+  "previousStableVersion": "1.3.29",
+  "latestVersionCode": 43,
+  "stableVersionCode": 43,
+  "activeVersionCode": 43,
+  "apkDownloadUrl": "https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.30/xpressintra.apk",
+  "stableApkDownloadUrl": "https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.30/xpressintra.apk",
+  "previousStableApkDownloadUrl": "https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.29/xpressintra.apk",
+  "releasePageUrl": "https://github.com/stralner2711-a11y/xpresshub/releases/tag/v1.3.30",
+  "stableReleasePageUrl": "https://github.com/stralner2711-a11y/xpresshub/releases/tag/v1.3.30",
+  "downloadPageUrl": "https://stralner2711-a11y.github.io/xpresshub/download.html",
+  "changelog": [
+    "Invitation og første login er gjort mere enkelt med tydelig standardkode-besked og downloadlink",
+    "Creator driftspanel viser nu fejl/ønsker, onboarding og appstatus mere handlingsklart",
+    "Fejlcenter kan gemme og kopiere rapport med side, bruger og appversion",
+    "Kontrolcenter er ryddet, så lokationsdeling styres fra Arbejde, Live-kort og Indstillinger",
+    "Opretter, chef/admin og creator kan nu redigere og slette relevante opslag",
+    "Supabase SQL har ekstra vagt mod at medarbejdere kan ændre egen rolle eller adminfelter direkte"
+  ],
+  "forceUpdate": true,
+  "rollbackReason": "",
+  "defectiveVersions": [],
+  "updatedAt": "2026-06-06"
 }

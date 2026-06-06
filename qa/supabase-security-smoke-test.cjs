@@ -69,6 +69,8 @@ assert(schema.includes('grant execute on function public.start_direct_conversati
 assert(schema.includes('cannot_start_direct_conversation_with_self'), 'Direct chat RPC should reject self conversations');
 assert(schema.includes('create table if not exists public.employee_invitations'), 'Schema should support safe employee invitations without exposing service-role keys');
 assert(schema.includes('on public.employee_invitations for all to authenticated using (private.is_admin())'), 'Only admins should manage employee invitations');
+assert(schema.includes('prevent_profile_privilege_escalation'), 'Profiles should have a database trigger against role escalation');
+assert(schema.includes('role_or_admin_fields_locked'), 'Employees should not be able to update role/admin fields directly in Supabase');
 assert(schema.includes("expires_at timestamptz not null default (now() + interval '14 days')"), 'Invitations should expire automatically');
 assert(schema.includes('accepted_at timestamptz'), 'Invitations should record when they are used');
 assert(schema.includes('used_by uuid references public.profiles(id)'), 'Invitations should record which user consumed them');

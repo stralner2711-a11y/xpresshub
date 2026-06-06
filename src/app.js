@@ -26,9 +26,9 @@ const icons = {
   search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>',
 };
 
-const APP_VERSION = '1.3.29-release-v90';
-const APP_DISPLAY_VERSION = '1.3.29';
-const APP_VERSION_CODE = 42;
+const APP_VERSION = '1.3.30-release-v91';
+const APP_DISPLAY_VERSION = '1.3.30';
+const APP_VERSION_CODE = 43;
 const TEMPORARY_EMPLOYEE_PASSWORD = 'xpress';
 const IMAGE_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
 const PROFILE_PHOTO_MAX_DIMENSION = 512;
@@ -856,6 +856,15 @@ let workdayPrivacy = {
 };
 let coreSettings = stored('coreSettings') || { gps: true, logbook: true, media: true, employeePosts: true, ruleApproval: true };
 let legalAcceptance = stored('legalAcceptance') || null;
+
+window.addEventListener('error', event => {
+  recordRuntimeIssue(event.message || 'Ukendt fejl', 'JavaScript');
+});
+
+window.addEventListener('unhandledrejection', event => {
+  recordRuntimeIssue(event.reason?.message || String(event.reason || 'Ukendt baggrundsfejl'), 'Baggrundsproces');
+});
+
 let workday = stored('workday') || {
   active: false,
   startedAt: null,
@@ -1026,6 +1035,42 @@ function showToast(text) {
   toast.textContent = text;
   toast.classList.add('show');
   setTimeout(() => toast.classList.remove('show'), 2200);
+}
+
+function supportRequestSummary(request) {
+  if (!request) return '';
+  return [
+    `Type: ${supportRequestTypeLabel(request.type)}`,
+    `Område: ${request.areaLabel || tabLabel(request.area)}`,
+    `Bruger: ${request.userName || 'Ukendt'} <${request.userEmail || 'mail mangler'}>`,
+    `Version: ${request.version || `${APP_DISPLAY_VERSION} · build ${APP_VERSION_CODE}`}`,
+    `Tid: ${request.createdAt || 'ukendt'}`,
+    `Status: ${request.status || 'lokal'}`,
+    `Side: ${request.route || activeTab}`,
+    `Besked: ${request.message || ''}`,
+  ].join('\n');
+}
+
+function recordRuntimeIssue(message, source = 'Appen') {
+  if (!message) return;
+  const last = supportRequests[0];
+  if (last?.type === 'bug' && last?.message === message && Date.now() - Date.parse(last.rawCreatedAt || 0) < 60000) return;
+  supportRequests.unshift({
+    id: `runtime-${Date.now()}`,
+    type: 'bug',
+    area: activeTab,
+    areaLabel: tabLabel(activeTab),
+    message: `${source}: ${String(message).slice(0, 220)}`,
+    userName: profile.name,
+    userEmail: profile.email,
+    version: `${APP_DISPLAY_VERSION} · build ${APP_VERSION_CODE}`,
+    createdAt: new Date().toLocaleString('da-DK', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }),
+    rawCreatedAt: new Date().toISOString(),
+    route: activeTab,
+    status: 'automatisk lokal fejlrapport',
+  });
+  supportRequests = supportRequests.slice(0, 50);
+  save('supportRequests', supportRequests);
 }
 
 function normalizeLoginGuardEmail(email) {
@@ -1644,7 +1689,7 @@ function inviteMessage(employee, invitationId = '') {
     subject: 'XpressIntra konto',
     invitationUrl,
     downloadUrl,
-    body: `Hej ${employee?.name || ''}\n\nDin XpressIntra-konto er klar.\n\nÅbn dit invitationslink her:\n${invitationUrl}\n\nDownloadside ved behov:\n${downloadUrl}\n\n1. Åbn invitationslinket.\n2. Brug standardkoden ${TEMPORARY_EMPLOYEE_PASSWORD}.\n3. Lav din egen personlige kode med det samme.\n\nHilsen XpressBudet`,
+    body: `Hej ${employee?.name || ''}\n\nDu er oprettet til XpressIntra.\n\n1. Åbn dette personlige invitationslink:\n${invitationUrl}\n\n2. Skriv standardkoden: ${TEMPORARY_EMPLOYEE_PASSWORD}\n\n3. Vælg din egen personlige kode med det samme.\n\nHvis appen ikke er installeret endnu, kan du bruge downloadsiden her:\n${downloadUrl}\n\nVigtigt: linket og standardkoden er kun til første oprettelse.\n\nHilsen XpressBudet`,
   };
 }
 
@@ -2052,6 +2097,7 @@ function announcementFromSupabase(row) {
     time: row.created_at ? new Date(row.created_at).toLocaleString('da-DK', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Nu',
     tone: row.kind === 'office' ? 'amber' : 'green',
     kind: row.kind,
+    authorId: row.author_id,
     author: row.kind === 'office' ? 'Kontoret' : 'Kollega',
     initials: row.kind === 'office' ? 'XB' : 'KO',
     audience: audienceFromSupabase(row.audience),
@@ -2114,6 +2160,32 @@ async function createSupabaseAnnouncement(post, file = null) {
   if (file && data?.id) post.image = await uploadSupabaseAnnouncementImage(file, data.id);
   if (data?.id) post.id = String(data.id);
   return data;
+}
+
+async function updateSupabaseAnnouncement(post, file = null) {
+  const client = getSupabaseClient();
+  if (!client || !session?.userId || !/^\d+$/.test(String(post.id))) return null;
+  const { data, error } = await client.from('announcements')
+    .update({
+      title: post.title,
+      body: post.body,
+      audience: audienceToSupabase(post.audience),
+      pinned: Boolean(post.pinned),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', Number(post.id))
+    .select('*')
+    .maybeSingle();
+  if (error) throw error;
+  if (file && data?.id) post.image = await uploadSupabaseAnnouncementImage(file, data.id);
+  return data;
+}
+
+async function deleteSupabaseAnnouncement(postId) {
+  const client = getSupabaseClient();
+  if (!client || !session?.userId || !/^\d+$/.test(String(postId))) return;
+  const { error } = await client.from('announcements').delete().eq('id', Number(postId));
+  if (error) throw error;
 }
 
 async function syncSupabaseAnnouncementReaction(postId, liked) {
@@ -2896,6 +2968,11 @@ function canPublishOfficePosts() {
   return isDispatcher();
 }
 
+function canManageAnnouncement(post = {}) {
+  if (isAdmin()) return true;
+  return Boolean(session?.userId && post.authorId && String(post.authorId) === String(session.userId));
+}
+
 function canUseInternalAction(action) {
   if (!action) return true;
   const creatorOnlyActions = new Set([
@@ -3402,6 +3479,7 @@ function creatorOperationsStats() {
   const unreadNotifications = notifications.filter(item => item.unread).length;
   const disabledCore = Object.entries(coreSettings).filter(([, enabled]) => !enabled).length;
   const pendingDataRequests = dataRequests.filter(request => !/closed|done|afsluttet/i.test(request.status || '')).length;
+  const openSupportRequests = supportRequests.filter(request => !/closed|done|afsluttet/i.test(request.status || '')).length;
   const security = securityReadiness();
   const managedDataAreas = [employees, chats, notifications, vehicles, ruleUpdates, announcements, dataRequests]
     .filter(list => Array.isArray(list) && list.length).length;
@@ -3412,6 +3490,7 @@ function creatorOperationsStats() {
     !legalAcceptance,
     disabledCore > 0,
     pendingDataRequests > 0,
+    openSupportRequests > 0,
     appUpdateState.required,
     isPlaceholderUpdateConfig(),
   ].filter(Boolean).length;
@@ -3428,6 +3507,8 @@ function creatorOperationsStats() {
     unreadNotifications,
     disabledCore,
     pendingDataRequests,
+    openSupportRequests,
+    latestSupportRequest: supportRequests[0] || null,
     security,
     managedDataAreas,
     risks,
@@ -3445,6 +3526,7 @@ function creatorOperationsActionItems(stats = creatorOperationsStats()) {
   if (!legalAcceptance) items.push({ tone: 'risk', title: 'Jura og persondata mangler', body: 'Godkend interne regler for GPS, billeder, chat, logbog og slettefrister.', action: 'open-legal' });
   if (stats.disabledCore) items.push({ tone: 'warn', title: 'Kernefunktioner er slukket', body: `${stats.disabledCore} funktion(er) er midlertidigt lukket for medarbejderne.`, action: 'open-admin' });
   if (stats.pendingDataRequests) items.push({ tone: 'warn', title: 'Persondata skal behandles', body: `${stats.pendingDataRequests} dataanmodning(er) ligger aabne.`, action: 'open-my-data' });
+  if (stats.openSupportRequests) items.push({ tone: 'warn', title: 'Fejl/ønsker skal kigges igennem', body: `${stats.openSupportRequests} melding(er) ligger lokalt i fejlcenteret.`, action: 'open-support-request' });
   if (!items.length) items.push({ tone: 'good', title: 'Ingen akutte driftspunkter', body: 'Appen ser rolig ud lige nu. Hold stadig oeje med go-live og telefon-test.', action: 'open-launch-checklist' });
   return items.slice(0, 5);
 }
@@ -3749,6 +3831,7 @@ function renderCreatorOperationsDashboard() {
       <span><b>${stats.unreadNotifications}</b><small>Ulaeste beskeder</small></span>
       <span><b>${stats.disabledCore}</b><small>Funktioner slukket</small></span>
       <span><b>${stats.pendingDataRequests}</b><small>Dataanmodninger</small></span>
+      <span><b>${stats.openSupportRequests}</b><small>Fejl/onsker</small></span>
       <span><b>${stats.security.percent}%</b><small>Sikkerhed</small></span>
     </div>
     <div class="creator-ops-actions">
@@ -3758,6 +3841,7 @@ function renderCreatorOperationsDashboard() {
       <button type="button" data-action="open-rollback-center">Backup</button>
       <button type="button" data-action="open-launch-checklist">Go-live tjek</button>
       <button type="button" data-action="open-security-center">Sikkerhed</button>
+      <button type="button" data-action="open-support-request">Fejlcenter</button>
       <button type="button" data-action="open-settings">Backend</button>
     </div>
     ${renderUpdateSummary()}
@@ -3769,6 +3853,7 @@ function renderCreatorOperationsDashboard() {
       <span class="${legalAcceptance ? 'ok' : 'warn'}"><b>Jura</b><small>${text(legalStatusText())}</small></span>
       <span class="${stats.disabledCore ? 'warn' : 'ok'}"><b>Kernefunktioner</b><small>${stats.disabledCore ? `${stats.disabledCore} funktion(er) er slaaet fra` : 'Alle kernefunktioner er aabne'}</small></span>
       <span class="${stats.pendingDataRequests ? 'warn' : 'ok'}"><b>Persondata</b><small>${stats.pendingDataRequests ? `${stats.pendingDataRequests} anmodning(er) boer behandles` : 'Ingen aabne dataanmodninger'}</small></span>
+      <span class="${stats.openSupportRequests ? 'warn' : 'ok'}"><b>Fejlmeldinger</b><small>${stats.openSupportRequests ? `${stats.openSupportRequests} melding(er) ligger klar til gennemgang` : 'Ingen lokale fejlmeldinger lige nu'}</small></span>
     </section>
     <details class="creator-ops-details" open>
       <summary>Onboarding kontrol</summary>
@@ -3780,6 +3865,14 @@ function renderCreatorOperationsDashboard() {
       <summary>Hvad skal du holde øje med?</summary>
       <section class="creator-ops-panel">
       ${actionItems.map(item => `<button type="button" class="${text(item.tone)}" data-action="${text(item.action)}"><b>${text(item.title)}</b><small>${text(item.body)}</small></button>`).join('')}
+      </section>
+    </details>
+    <details class="creator-ops-details" ${stats.openSupportRequests ? 'open' : ''}>
+      <summary>Fejl og meldinger</summary>
+      <section class="creator-ops-panel">
+        <p>Seneste lokale fejl, ønsker og automatiske fejlrapporter. Panelet viser ikke private chats eller logbøger.</p>
+        ${supportRequests.length ? supportRequests.slice(0, 4).map(request => `<button type="button" class="${request.type === 'bug' ? 'warn' : 'good'}" data-action="copy-support-report" data-support-report="${text(request.id)}"><b>${text(supportRequestTypeLabel(request.type))} · ${text(request.areaLabel || tabLabel(request.area))}</b><small>${text(request.message)} · ${text(request.createdAt)} · tryk for at kopiere rapport</small></button>`).join('') : '<p class="empty-state">Ingen fejl eller ønsker er registreret lokalt.</p>'}
+        <button type="button" data-action="open-support-request"><b>Åbn fejlcenter</b><small>Opret eller gennemgå en melding fra appen.</small></button>
       </section>
     </details>
     <details class="creator-ops-details" open>
@@ -4186,6 +4279,28 @@ function markAllNotificationsRead() {
   }
 }
 
+function notificationLabel(notification = {}) {
+  const category = notificationCategory(notification);
+  if (notification.level === 'urgent') return 'Vigtig besked';
+  if (category === 'chat') return 'Chat';
+  if (category === 'rules') return 'Regelnyt';
+  return 'Kontoropslag';
+}
+
+function notificationStatusText(notification = {}) {
+  return notification.unread ? 'ulæst' : 'læst';
+}
+
+function renderNotificationCard(notification = {}, options = {}) {
+  const featuredClass = options.featured ? ' featured' : '';
+  const unreadClass = notification.unread ? ' unread-item' : '';
+  return `<article class="${text(notification.level || 'office')}${featuredClass}${unreadClass}">
+    <small>${text(notificationLabel(notification))} · ${text(notification.time || 'Nu')} · ${text(notificationStatusText(notification))}</small>
+    <b>${text(notification.title || 'Besked')}</b>
+    <span>${text(notification.body || 'Åbn beskeden for flere detaljer.')}</span>
+  </article>`;
+}
+
 function toggleInfoFavorite(id) {
   infoFavorites = infoFavorites.includes(id)
     ? infoFavorites.filter(item => item !== id)
@@ -4581,8 +4696,9 @@ function postAvatar(item) {
 function renderFeedPost(item) {
   const liked = Boolean(feedLikes[item.id]);
   const likeCount = Number(item.likes || 0) + (liked ? 1 : 0);
+  const canEditPost = canManageAnnouncement(item);
   return `<article class="social-post ${item.kind === 'rule' ? 'rule-post' : ''}">
-    <header>${postAvatar(item)}<div><b>${text(item.author)}</b><span>${text(item.time)} · ${text(item.audience)}</span></div>${item.pinned ? '<em>Fastgjort</em>' : ''}</header>
+    <header>${postAvatar(item)}<div><b>${text(item.author)}</b><span>${text(item.time)} · ${text(item.audience)}</span></div>${item.pinned ? '<em>Fastgjort</em>' : ''}${canEditPost ? `<nav class="post-admin-actions" aria-label="Opslagshandlinger"><button data-action="edit-announcement" data-post="${text(item.id)}">Ret</button><button data-action="delete-announcement" data-post="${text(item.id)}">Slet</button></nav>` : ''}</header>
     <div class="social-post-body">${item.title ? `<h3>${text(item.title)}</h3>` : ''}<p>${text(item.body)}</p>
       ${item.image ? `<figure class="post-image"><img src="${text(item.image.src)}" alt="${text(item.image.name || item.title || 'Opslagsbillede')}" /><a href="${text(item.image.src)}" download="${text(mediaName(item.image.name))}">${icon('download')} Download</a></figure>` : ''}
       ${item.kind === 'rule' ? `<button class="source-link" data-action="open-rule-updates">${text(item.source)} · Se officiel kilde</button>` : ''}
@@ -4806,7 +4922,7 @@ function renderHome() {
       </div>
     </section>
     <section class="home-day-tools screen-section" aria-label="Dagens værktøjer">
-      <div class="screen-section-head"><span>Dagens værktøjer</span><small>Store genveje</small></div>
+      <div class="screen-section-head"><span>Dagens værktøjer</span></div>
       <div class="home-driver-tools">
         ${driverTools.map(item => `<button ${item.tab ? `data-tab="${text(item.tab)}"` : item.chat ? `data-chat="${text(item.chat)}"` : `data-action="${text(item.action)}"`}>
           <span>${icon(item.icon)}</span><b>${text(item.label)}</b><small>${text(item.hint)}</small>
@@ -5204,7 +5320,6 @@ function renderMore() {
         <summary>Sikkerhed og privatliv</summary>
         <button class="utility-row" data-action="open-my-data"><span class="utility-icon">${icon('document')}</span><span><b>Mine data</b><small>Indsigt, eksport, sletning og privatlivsvalg</small></span>${icon('arrow', 'row-arrow')}</button>
         <button class="utility-row" data-action="open-legal"><span class="utility-icon">${icon('alert')}</span><span><b>Sikkerhed & jura</b><small>Privatliv, GPS, billeder og slettefrister</small></span>${icon('arrow', 'row-arrow')}</button>
-        <button class="utility-row" data-action="toggle-location"><span class="utility-icon">${icon('pin')}</span><span><b>Lokationsdeling</b><small>${location.sharing ? 'Aktiv · tryk for at stoppe' : 'Slået fra · tryk for at dele'}</small></span>${icon('arrow', 'row-arrow')}</button>
         <button class="utility-row" data-action="open-settings"><span class="utility-icon">${icon('settings')}</span><span><b>Indstillinger</b><small>Notifikationer og privatliv</small></span>${icon('arrow', 'row-arrow')}</button>
       </details>
       <details class="control-detail-group">
@@ -5871,6 +5986,12 @@ function openSupportRequestModal() {
     <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
     <p class="eyebrow">Hjælp appen frem</p><h3>Meld fejl eller ønske</h3>
     <p class="info-intro">Skriv kort hvad der driller, eller hvad du mangler. Meldingen gemmes med side, appversion og tidspunkt, så creator kan følge op uden lange forklaringer.</p>
+    <section class="support-report-status">
+      <span><b>${recent.length}</b><small>Lokale meldinger</small></span>
+      <span><b>${APP_DISPLAY_VERSION}</b><small>Appversion</small></span>
+      <span><b>${text(tabLabel(activeTab))}</b><small>Nuværende side</small></span>
+      ${recent[0] ? `<button type="button" data-action="copy-support-report" data-support-report="${text(recent[0].id)}">Kopiér seneste rapport</button>` : ''}
+    </section>
     <form class="support-request-form">
       <label>Hvad handler det om?<select name="type">
         <option value="bug">Noget virker ikke</option>
@@ -5918,7 +6039,9 @@ function saveSupportRequest(data) {
     userEmail: profile.email,
     version: `${APP_DISPLAY_VERSION} · build ${APP_VERSION_CODE}`,
     createdAt: new Date().toLocaleString('da-DK', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }),
-    status: 'local',
+    rawCreatedAt: new Date().toISOString(),
+    route: activeTab,
+    status: 'lokal - afventer gennemgang',
   };
   if (!request.message) return false;
   supportRequests.unshift(request);
@@ -5955,34 +6078,33 @@ function openNotificationsModal() {
   const systemStatus = systemNotificationStatus();
   const priorityNotifications = notifications.filter(item => item.level === 'urgent' || item.priority === 'high');
   const unread = notifications.filter(item => item.unread);
+  const latest = unread[0] || priorityNotifications[0] || notifications[0];
+  const hasNotifications = notifications.length > 0;
+  const showSystemAction = systemNotificationPermission() !== 'unsupported';
   const modal = document.createElement('div');
   modal.className = 'modal-backdrop';
   modal.innerHTML = `<section class="profile-modal notifications-modal">
     <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
-    <p class="eyebrow">Rolige beskeder</p><h3>Notifikationer</h3>
-    <p class="info-intro">Rolige standarder: vigtige beskeder prioriteres, stille tid kan være slået til, og du vælger selv hvilke typer der må larme.</p>
+    <p class="eyebrow">Indbakke</p><h3>Opslag og beskeder</h3>
+    <p class="info-intro">Kontoropslag, chat og vigtige driftsting samlet ét sted. Det vigtigste vises først, og resten ligger roligt nedenunder.</p>
+    <div class="notification-hero-card ${latest ? '' : 'quiet'}">
+      <small>${latest ? text(notificationLabel(latest)) : 'Ingen nye beskeder'}</small>
+      <b>${latest ? text(latest.title) : 'Du er ajour'}</b>
+      <span>${latest ? text(latest.body) : 'Når kontoret eller en kollega sender noget vigtigt, kommer det frem her.'}</span>
+      ${latest ? `<em>${text(latest.time || 'Nu')} · ${text(notificationStatusText(latest))}</em>` : ''}
+    </div>
     <div class="notification-digest">
       <span><b>${summary.unread}</b><small>ulæste</small></span>
       <span><b>${summary.urgent}</b><small>haster</small></span>
       <span><b>${notificationPrefs.quietHours ? 'Til' : 'Fra'}</b><small>Stille tid</small></span>
     </div>
-    <article class="notification-permission-card">
-      <b>Systembeskeder: ${text(systemStatus.label)}</b>
-      <span>${text(systemStatus.detail)}</span>
-      <button type="button" data-action="request-system-notifications">Aktivér på telefonen</button>
-    </article>
-    <div class="section-title"><h3>Prioritet</h3><button data-action="mark-notifications-read">Marker alt som læst</button></div>
-    ${priorityNotifications.length ? `<div class="notification-list priority">${priorityNotifications.map(item => `<article class="${text(item.level)}"><small>${text(item.type)} · ${text(item.time)}</small><b>${text(item.title)}</b><span>${text(item.body)}</span></article>`).join('')}</div>` : '<p class="empty-state">Ingen hastebeskeder lige nu.</p>'}
-    <div class="section-title"><h3>Ulæst</h3><span>${unread.length} stk.</span></div>
-    ${unread.length ? `<div class="notification-list unread">${unread.map(item => `<article class="${text(item.level)}"><small>${text(item.type)} · ${text(item.time)}</small><b>${text(item.title)}</b><span>${text(item.body)}</span></article>`).join('')}</div>` : '<p class="empty-state">Du er ajour.</p>'}
-    <div class="section-title"><h3>Alle beskeder</h3><span>${notifications.length} total</span></div>
-    <div class="notification-list">
-      ${notifications.map(item => `<article class="${text(item.level)}">
-        <small>${text(item.type)} · ${text(item.time)}</small>
-        <b>${text(item.title)}</b>
-        <span>${text(item.body)}</span>
-      </article>`).join('')}
+    <div class="notification-system-row">
+      <span><b>Telefonbeskeder</b><small>${text(systemStatus.label)} · ${text(systemStatus.detail)}</small></span>
+      ${showSystemAction ? '<button type="button" data-action="request-system-notifications">Aktivér</button>' : ''}
     </div>
+    ${unread.length ? `<div class="section-title"><h3>Ulæst</h3><button data-action="mark-notifications-read">Marker alt som læst</button></div><div class="notification-list unread">${unread.map(item => renderNotificationCard(item)).join('')}</div>` : ''}
+    ${priorityNotifications.length ? `<div class="section-title"><h3>Prioritet</h3><span>${priorityNotifications.length} stk.</span></div><div class="notification-list priority">${priorityNotifications.map(item => renderNotificationCard(item)).join('')}</div>` : ''}
+    ${hasNotifications ? `<div class="section-title"><h3>Alle beskeder</h3><span>${notifications.length} total</span></div><div class="notification-list">${notifications.map(item => renderNotificationCard(item)).join('')}</div>` : '<div class="notification-empty-card"><b>Ingen beskeder endnu</b><span>Når kontoret sender et opslag, eller du får chatbeskeder, lander de her i en enkel liste.</span></div>'}
   </section>`;
   document.body.append(modal);
 }
@@ -6086,21 +6208,27 @@ function openRuleUpdatesModal() {
   document.body.append(modal);
 }
 
-function openAnnouncementModal() {
+function openAnnouncementModal(postId = null) {
   if (!coreSettings.employeePosts && !canPublishOfficePosts()) {
     showToast('Kollegaopslag er midlertidigt slået fra');
     return;
   }
+  const existing = postId ? announcements.find(item => String(item.id) === String(postId)) : null;
+  if (existing && !canManageAnnouncement(existing)) {
+    showToast('Kun opretter, chef/admin eller creator kan redigere opslaget');
+    return;
+  }
+  const isEdit = Boolean(existing);
   const modal = document.createElement('div');
   modal.className = 'modal-backdrop';
-  modal.innerHTML = `<form class="profile-modal announcement-form">
+  modal.innerHTML = `<form class="profile-modal announcement-form" ${isEdit ? `data-edit-post="${text(existing.id)}"` : ''}>
     <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
-    <p class="eyebrow">Internt opslag</p><h3>Del med holdet</h3>
-    <label>Overskrift<input name="title" placeholder="Hvad skal holdet vide?" required /></label>
-    <label>Besked<input name="body" placeholder="Skriv en kort besked..." required /></label>
-    <label>Billede<input name="image" type="file" accept="image/*" /></label>
-    <label>Vis til<select name="audience"><option>Alle medarbejdere</option><option>Lastbilchauffører</option><option>Varebilschauffører</option></select></label>
-    <button class="save-btn">Del opslag</button>
+    <p class="eyebrow">Internt opslag</p><h3>${isEdit ? 'Rediger opslag' : 'Del med holdet'}</h3>
+    <label>Overskrift<input name="title" placeholder="Hvad skal holdet vide?" value="${text(existing?.title || '')}" required /></label>
+    <label>Besked<input name="body" placeholder="Skriv en kort besked..." value="${text(existing?.body || '')}" required /></label>
+    <label>Billede<input name="image" type="file" accept="image/*" /><small>${isEdit ? 'Valgfrit: vælg kun et nyt billede, hvis opslaget skal have nyt billede.' : 'Valgfrit billede til opslaget.'}</small></label>
+    <label>Vis til<select name="audience"><option ${existing?.audience === 'Alle medarbejdere' ? 'selected' : ''}>Alle medarbejdere</option><option ${existing?.audience === 'Lastbilchauffører' ? 'selected' : ''}>Lastbilchauffører</option><option ${existing?.audience === 'Varebilschauffører' ? 'selected' : ''}>Varebilschauffører</option></select></label>
+    <button class="save-btn">${isEdit ? 'Gem ændringer' : 'Del opslag'}</button>
   </form>`;
   document.body.append(modal);
 }
@@ -6792,6 +6920,10 @@ document.addEventListener('click', async event => {
   if (action === 'open-vehicles') openVehiclesModal();
   if (action === 'open-notifications') openNotificationsModal();
   if (action === 'open-support-request') openSupportRequestModal();
+  if (action === 'copy-support-report') {
+    const request = supportRequests.find(item => item.id === event.target.closest('[data-support-report]')?.dataset.supportReport);
+    await copyTextToClipboard(supportRequestSummary(request), 'Fejlrapport kopieret');
+  }
   if (action === 'open-task-overview') openTaskOverviewModal();
   if (action === 'open-map') { activeTab = 'map'; activeChat = null; render(); }
   if (action === 'mark-notifications-read') {
@@ -6901,6 +7033,36 @@ document.addEventListener('click', async event => {
     showToast('Private kladder er ryddet');
   }
   if (action === 'open-comments') openCommentsModal(postId);
+  if (action === 'edit-announcement' && postId) {
+    const post = announcements.find(item => String(item.id) === String(postId));
+    if (!post || !canManageAnnouncement(post)) {
+      showToast('Kun opretter, chef/admin eller creator kan redigere opslaget');
+      return;
+    }
+    openAnnouncementModal(postId);
+    return;
+  }
+  if (action === 'delete-announcement' && postId) {
+    const post = announcements.find(item => String(item.id) === String(postId));
+    if (!post || !canManageAnnouncement(post)) {
+      showToast('Kun opretter, chef/admin eller creator kan slette opslaget');
+      return;
+    }
+    if (typeof window.confirm === 'function' && !window.confirm(`Slet opslaget "${post.title}"?`)) return;
+    announcements = announcements.filter(item => String(item.id) !== String(postId));
+    delete feedLikes[postId];
+    save('announcements', announcements);
+    save('feedLikes', feedLikes);
+    if (onlineBackendActive()) {
+      deleteSupabaseAnnouncement(postId)
+        .then(() => recordAdminAudit('Opslag slettet', post.title))
+        .catch(error => showToast(`Opslaget er slettet lokalt, men ikke online: ${error.message}`));
+    }
+    event.target.closest('.modal-backdrop')?.remove();
+    render();
+    showToast('Opslaget er slettet');
+    return;
+  }
   if (action === 'toggle-like' && postId) {
     feedLikes[postId] = !feedLikes[postId];
     save('feedLikes', feedLikes);
@@ -7188,7 +7350,33 @@ document.addEventListener('submit', async event => {
     const data = new FormData(event.target);
     const imageFile = data.get('image');
     const image = await readImageFile(imageFile);
-    const post = { id: `post-${Date.now()}`, title: data.get('title'), body: data.get('body'), image, time: 'Nu', tone: 'green', kind: canPublishOfficePosts() ? 'office' : 'colleague', author: profile.name, initials: currentEmployee().initials, audience: data.get('audience'), likes: 0, comments: [] };
+    const editPostId = event.target.dataset.editPost;
+    if (editPostId) {
+      const post = announcements.find(item => String(item.id) === String(editPostId));
+      if (!post || !canManageAnnouncement(post)) {
+        showToast('Du har ikke adgang til at redigere dette opslag');
+        return;
+      }
+      post.title = data.get('title');
+      post.body = data.get('body');
+      post.audience = data.get('audience');
+      post.updatedAt = new Date().toISOString();
+      if (image) post.image = image;
+      if (onlineBackendActive()) {
+        try {
+          await updateSupabaseAnnouncement(post, imageFile);
+          recordAdminAudit('Opslag redigeret', post.title);
+        } catch (error) {
+          showToast(`Opslaget er rettet lokalt, men ikke online: ${error.message}`);
+        }
+      }
+      save('announcements', announcements);
+      event.target.closest('.modal-backdrop').remove();
+      render();
+      showToast('Opslaget er opdateret');
+      return;
+    }
+    const post = { id: `post-${Date.now()}`, title: data.get('title'), body: data.get('body'), image, time: 'Nu', tone: 'green', kind: canPublishOfficePosts() ? 'office' : 'colleague', authorId: session?.userId || currentEmployee().id, author: profile.name, initials: currentEmployee().initials, audience: data.get('audience'), likes: 0, comments: [] };
     if (onlineBackendActive()) {
       try {
         await createSupabaseAnnouncement(post, imageFile);

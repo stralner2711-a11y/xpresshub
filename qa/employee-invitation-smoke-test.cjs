@@ -28,7 +28,7 @@ assert(source.includes("type: 'signup'"), 'Resent confirmations should use Supab
 assert(source.includes('emailRedirectTo: officialAppUrl()'), 'Signup should ask Supabase to generate confirmation email back to XpressIntra');
 assert(source.includes('openEmailConfirmationModal(normalizedEmail)'), 'Signup without session should show a confirmation email helper');
 assert(source.includes('resend-pending-confirmation'), 'Pending users should be able to resend their own confirmation email');
-assert(source.includes('Åbn dit invitationslink her'), 'Shared invite message should include the private invitation link');
+assert(source.includes('Åbn dette personlige invitationslink'), 'Shared invite message should include the private invitation link');
 assert(source.includes('Invitationslink:'), 'Invite result should show the private invitation link before sending');
 assert(source.includes("onboarding_method: 'standard_password'"), 'Supabase invitations should store the onboarding method');
 assert(source.includes('password_reset_required: true'), 'New employees should be forced to change the temporary password');
@@ -116,7 +116,7 @@ assert(link.includes('email=ny.kollega%40xpressbudet.dk'), 'Invite link should i
 
 const message = vm.runInContext("inviteMessage({ name: 'Test Chauffør', email: 'ny@example.com', invitationId: 'abc-123' }, 'abc-123')", context);
 assert(message.invitationUrl.startsWith('https://xpresshub-seven.vercel.app/'), 'Invite message should include the working app URL');
-assert(message.body.includes('Åbn dit invitationslink her'), 'Invite message should explain where to click');
-assert(message.body.includes('Downloadside ved behov'), 'Invite message should keep the download page as fallback only');
+assert(message.body.includes('Åbn dette personlige invitationslink'), 'Invite message should explain where to click');
+assert(message.body.includes('downloadsiden her'), 'Invite message should keep the download page as fallback only');
 
 console.log('Employee invitation smoke test passed');

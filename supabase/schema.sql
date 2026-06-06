@@ -259,12 +259,16 @@ create table if not exists public.announcements (
   kind text not null default 'colleague' check (kind in ('office', 'colleague')),
   audience text not null default 'all' check (audience in ('all', 'van', 'truck')),
   pinned boolean not null default false,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  updated_at timestamptz
 );
 
 alter table public.announcements
   add column if not exists audience text not null default 'all'
   check (audience in ('all', 'van', 'truck'));
+
+alter table public.announcements
+  add column if not exists updated_at timestamptz;
 
 create table if not exists public.announcement_reactions (
   announcement_id bigint not null references public.announcements(id) on delete cascade,
@@ -609,6 +613,46 @@ begin
 end;
 $$;
 
+create or replace function public.prevent_profile_privilege_escalation()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if auth.uid() is null then
+    raise exception 'not_authenticated';
+  end if;
+
+  if private.is_admin() then
+    return new;
+  end if;
+
+  if old.id <> auth.uid() or new.id <> old.id then
+    raise exception 'profile_update_not_allowed';
+  end if;
+
+  if new.access_role is distinct from old.access_role
+    or new.role is distinct from old.role
+    or new.vehicle_type is distinct from old.vehicle_type
+    or new.department is distinct from old.department
+    or new.license_summary is distinct from old.license_summary
+    or new.truck is distinct from old.truck
+    or new.employment_status is distinct from old.employment_status
+    or new.password_reset_required is distinct from old.password_reset_required then
+    raise exception 'role_or_admin_fields_locked';
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists prevent_profile_privilege_escalation_trigger on public.profiles;
+create trigger prevent_profile_privilege_escalation_trigger
+before update on public.profiles
+for each row
+execute function public.prevent_profile_privilege_escalation();
+
 drop policy if exists "employees can read profiles" on public.profiles;
 drop policy if exists "employees can update own profile" on public.profiles;
 drop policy if exists "admins can update employee profiles" on public.profiles;
@@ -667,6 +711,8 @@ drop policy if exists "employees can read shared media objects" on storage.objec
 drop policy if exists "employees can delete own media objects" on storage.objects;
 drop policy if exists "employees can read internal announcements" on public.announcements;
 drop policy if exists "employees can create internal announcements" on public.announcements;
+drop policy if exists "authors and admins can update announcements" on public.announcements;
+drop policy if exists "authors and admins can delete announcements" on public.announcements;
 drop policy if exists "employees can read announcement reactions" on public.announcement_reactions;
 drop policy if exists "employees can react to announcements" on public.announcement_reactions;
 drop policy if exists "employees can remove own reactions" on public.announcement_reactions;
@@ -912,6 +958,16 @@ on public.announcements for insert to authenticated with check (
       where id = auth.uid() and access_role in ('dispatcher', 'admin', 'owner')
     )
   )
+);
+create policy "authors and admins can update announcements"
+on public.announcements for update to authenticated using (
+  author_id = auth.uid() or private.is_admin()
+) with check (
+  author_id = auth.uid() or private.is_admin()
+);
+create policy "authors and admins can delete announcements"
+on public.announcements for delete to authenticated using (
+  author_id = auth.uid() or private.is_admin()
 );
 
 create policy "employees can read announcement reactions"

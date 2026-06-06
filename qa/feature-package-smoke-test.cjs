@@ -114,14 +114,17 @@ harness.run("updatePickupStatus('picked_up');");
 assert(JSON.parse(harness.storage.get('roadlog:activePickup')).status === 'picked_up', 'Pickup status should be stored');
 
 harness.run('openNotificationsModal();');
-const notificationModal = harness.modalNodes.find(node => node.innerHTML.includes('Notifikationer'));
+const notificationModal = harness.modalNodes.find(node => node.innerHTML.includes('Opslag og beskeder'));
 assert(notificationModal, 'Notification modal should open');
-assert(notificationModal.innerHTML.includes('Direkte besked'), 'Notifications should include direct message');
+assert(notificationModal.innerHTML.includes('Testbesked'), 'Notifications should include direct message content');
+assert(notificationModal.innerHTML.includes('Chat'), 'Notifications should label direct messages as chat');
 
 harness.run('openSupportRequestModal();');
 const supportModal = harness.modalNodes.find(node => node.innerHTML.includes('Meld fejl eller ønske'));
 assert(supportModal, 'Support request modal should open');
 assert(supportModal.innerHTML.includes('Noget virker ikke'), 'Support modal should support bug reports');
+assert(supportModal.innerHTML.includes('support-report-status'), 'Support modal should show report status metadata');
+assert(fs.readFileSync('src/app.js', 'utf8').includes('function supportRequestSummary'), 'Support requests should be copyable as a compact report');
 harness.run("saveSupportRequest(new Map([['type', 'bug'], ['area', 'home'], ['message', 'Knappen er svær at finde']]))");
 assert(JSON.parse(harness.storage.get('roadlog:supportRequests')).length === 1, 'Support requests should be stored locally');
 

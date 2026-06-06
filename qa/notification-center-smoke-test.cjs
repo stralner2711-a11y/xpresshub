@@ -91,11 +91,13 @@ assert(!harness.appElement.innerHTML.includes('Mere på forsiden'), 'Home should
 assert(!harness.appElement.innerHTML.includes('Start arbejdsdagen, s? deling og p?mindelser f?lger dine valg.'), 'Home reminders should not duplicate check-in');
 
 harness.run('openNotificationsModal();');
-const notificationModal = harness.modalNodes.find(node => node.innerHTML.includes('Notifikationer'));
+const notificationModal = harness.modalNodes.find(node => node.innerHTML.includes('Opslag og beskeder'));
 assert(notificationModal, 'Notification modal should open');
-assert(notificationModal.innerHTML.includes('Prioritet'), 'Notification modal should show priority grouping');
-assert(notificationModal.innerHTML.includes('Rolige standarder'), 'Notification modal should explain calm defaults');
-assert(notificationModal.innerHTML.includes('Marker alt som læst'), 'Notification modal should expose mark-all-read action');
+assert(notificationModal.innerHTML.includes('Kontoropslag, chat og vigtige driftsting'), 'Notification modal should explain the inbox purpose');
+assert(notificationModal.innerHTML.includes('notification-hero-card'), 'Notification modal should highlight the latest relevant message');
+assert(notificationModal.innerHTML.includes('Telefonbeskeder'), 'Notification modal should keep phone notification status compact');
+assert(notificationModal.innerHTML.includes('Marker alt som læst'), 'Notification modal should expose mark-all-read action when unread exists');
+assert(!notificationModal.innerHTML.includes('Ingen hastebeskeder lige nu'), 'Notification modal should not render empty priority filler');
 
 assert(harness.run('notificationSummary().unread') >= 1, 'Notification summary should count unread notifications');
 
