@@ -15,11 +15,13 @@ The schema keeps private logbook entries private with Row Level Security. Locati
 
 Because Supabase changed Data API defaults in 2026, `schema.sql` explicitly grants authenticated users Data API access after RLS is enabled. Without those grants, rows can be correctly protected by RLS but still unreachable from the browser client.
 
-`regulatory_sources` stores the official pages monitored by a scheduled backend task. When content changes, the backend should create a draft in `regulatory_updates`. Only approved updates are readable by employees. Draft review and approval must be implemented as an administrator-only backend action before production use.
+`regulatory_sources` stores the official pages monitored by a scheduled backend task. It now covers both transport/regulatory pages and legal/privacy sources such as GDPR news and supplier terms. When content changes, the backend should create a draft in `regulatory_updates`. Only approved updates are readable by employees. Draft review and approval must be implemented as an administrator-only backend action before production use.
 
 ## Rule monitoring
 
-The Edge Function in `functions/check-regulatory-sources` checks the seeded official sources and creates a draft when normalized page content changes.
+The Edge Function in `functions/check-regulatory-sources` checks the seeded official sources and creates a draft when normalized page content changes. Seeded sources include transport rules, GDPR/privacy news, and hosted-service terms that can affect real-world app usage.
+
+Each source now carries a `topic`, and each detected update stores both `topic` and `content_hash`. That makes future updates easier to filter by relevance and prevents duplicate drafts for the same detected page version.
 
 1. Deploy the function to Supabase.
 2. Set a long random `CRON_SECRET` for the function.

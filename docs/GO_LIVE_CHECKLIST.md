@@ -72,6 +72,8 @@ Før bred udrulning skal ledelsen godkende:
 - `docs/SECURITY_HARDENING.md`
 - `docs/APP_KRAV_AUDIT_ANDROID_GOOGLE_PLAY_GDPR.md`
 - `docs/privacy.html`
+- `docs/brugsvilkaar.html`
+- `docs/JURA_OPDATERINGSPLAN.md`
 - `docs/KRAVSTATUS_PROFESSIONEL_APP.md`
 
 ## 6. Stabil drift

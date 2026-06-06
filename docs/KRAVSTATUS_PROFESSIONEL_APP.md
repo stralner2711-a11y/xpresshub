@@ -14,6 +14,8 @@ Vi går ikke Google Play-vejen nu. Derfor er Google Play Data Safety og Play-ver
 | Krav | Status | Bevis/fil | Næste handling |
 | --- | --- | --- | --- |
 | Privatlivspolitik | Klar som arbejdsudgave | `docs/privacy.html` | Chef/ledelse skal godkende teksten. |
+| Interne brugsvilkår | Klar som arbejdsudgave | `docs/brugsvilkaar.html` | Chef/ledelse skal godkende teksten, før flere medarbejdere inviteres. |
+| Jura-opdateringsplan | Klar som arbejdsudgave | `docs/JURA_OPDATERINGSPLAN.md` | Bruges ved hver ny funktion, leverandør eller regelændring. |
 | GDPR dokumentationspakke | Klar som arbejdsudgave | `docs/GDPR_DOKUMENTATIONSPAKKE.md` | Chef/ledelse skal godkende formål, adgang og slettefrister. |
 | Drifts- og stabilitetsplan | Klar som arbejdsudgave | `docs/DRIFT_STABILITETSPLAN.md` | Brug den ved hver opdatering. |
 | Supabase public key kun i frontend | OK, skal fortsat kontrolleres | `public/app-config.js` og QA | Kør release-check før ny APK. |
@@ -49,6 +51,8 @@ Vi går ikke Google Play-vejen nu. Derfor er Google Play Data Safety og Play-ver
 ## Det vi kan sige nu
 
 - Appen har en privatlivspolitik som arbejdsudgave.
+- Appen har interne brugsvilkår som arbejdsudgave.
+- Appen har en fast plan for løbende jura- og GDPR-opdateringer.
 - Appen har en GDPR-pakke som arbejdsudgave.
 - Appen har en driftsplan.
 - Appen bruger ikke baggrundslokation.
@@ -64,7 +68,7 @@ Vi går ikke Google Play-vejen nu. Derfor er Google Play Data Safety og Play-ver
 
 ## Næste bedste handlinger
 
-1. Gennemgå `docs/privacy.html` med chef/ledelse.
+1. Gennemgå `docs/privacy.html`, `docs/brugsvilkaar.html` og `docs/JURA_OPDATERINGSPLAN.md` med chef/ledelse.
 2. Beslut GPS ud fra `docs/GPS_LOKATION_BESLUTNINGSGRUNDLAG.md`.
 3. Kør Supabase Security Advisor.
 4. Test RLS med mindst to rigtige roller, når du har mulighed.

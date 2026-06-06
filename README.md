@@ -30,7 +30,7 @@ GPS kræver, at browseren får tilladelse til position. Hvis GPS ikke er tilgæn
 - Chef/admin-overblik til roller, sikkerhed og medarbejderstyring
 - Chef/admin kan oprette og deaktivere/fjerne medarbejdere i demoen
 - Chef/admin kan styre kernefunktioner som GPS, billeder, logbog, kollegaopslag og regelgodkendelse
-- Sikkerhed & jura-sektion med GDPR-hovedpunkter, GPS-regler, billedregler og slettefrister
+- Sikkerhed & jura-sektion med GDPR-hovedpunkter, brugsvilkår, GPS-regler, billedregler, slettefrister og løbende jura-opdateringsvagt
 - Personbeskyttelse med indsigt, rettelse, sletning, eksport, begrænsning og privatliv som standard
 - "Mine data" med demo-overblik over egne oplysninger og interne dataanmodninger
 - Notifikationsbakke til direkte beskeder, kontoropslag, regelnyt og afhentningsstatus

@@ -439,6 +439,7 @@ create table if not exists public.regulatory_sources (
   title text not null,
   source_url text not null unique,
   audience text not null default 'all' check (audience in ('all', 'van', 'truck')),
+  topic text not null default 'transport' check (topic in ('transport', 'gdpr', 'terms', 'privacy', 'technology', 'operations')),
   active boolean not null default true,
   last_checked_at timestamptz,
   last_content_hash text,
@@ -449,14 +450,20 @@ alter table public.regulatory_sources
   add column if not exists audience text not null default 'all'
   check (audience in ('all', 'van', 'truck'));
 
+alter table public.regulatory_sources
+  add column if not exists topic text not null default 'transport'
+  check (topic in ('transport', 'gdpr', 'terms', 'privacy', 'technology', 'operations'));
+
 create table if not exists public.regulatory_updates (
   id bigint generated always as identity primary key,
   source_id bigint not null references public.regulatory_sources(id) on delete cascade,
   title text not null,
   summary text not null,
   audience text not null default 'all' check (audience in ('all', 'van', 'truck')),
+  topic text not null default 'transport' check (topic in ('transport', 'gdpr', 'terms', 'privacy', 'technology', 'operations')),
   status text not null default 'draft' check (status in ('draft', 'approved', 'rejected')),
   effective_date date,
+  content_hash text,
   detected_at timestamptz not null default now(),
   approved_at timestamptz,
   approved_by uuid references public.profiles(id) on delete set null
@@ -465,6 +472,13 @@ create table if not exists public.regulatory_updates (
 alter table public.regulatory_updates
   add column if not exists audience text not null default 'all'
   check (audience in ('all', 'van', 'truck'));
+
+alter table public.regulatory_updates
+  add column if not exists topic text not null default 'transport'
+  check (topic in ('transport', 'gdpr', 'terms', 'privacy', 'technology', 'operations'));
+
+alter table public.regulatory_updates
+  add column if not exists content_hash text;
 
 create index if not exists messages_conversation_created_idx on public.messages (conversation_id, created_at desc);
 create index if not exists media_attachments_owner_created_idx on public.media_attachments (owner_id, created_at desc);
@@ -480,6 +494,7 @@ create index if not exists notifications_user_created_idx on public.notification
 create index if not exists announcements_created_at_idx on public.announcements (created_at desc);
 create index if not exists announcement_comments_announcement_created_idx on public.announcement_comments (announcement_id, created_at);
 create index if not exists regulatory_updates_status_detected_idx on public.regulatory_updates (status, detected_at desc);
+create unique index if not exists regulatory_updates_source_hash_idx on public.regulatory_updates (source_id, content_hash) where content_hash is not null;
 create index if not exists profiles_access_role_idx on public.profiles (access_role);
 create index if not exists admin_audit_log_created_idx on public.admin_audit_log (created_at desc);
 create index if not exists employee_invitations_status_created_idx on public.employee_invitations (status, created_at desc);
@@ -1050,20 +1065,25 @@ grant execute on all functions in schema private to authenticated, service_role;
 grant execute on function public.start_direct_conversation(uuid) to authenticated;
 grant execute on function public.purge_expired_operational_data() to authenticated;
 
-insert into public.regulatory_sources (title, source_url, audience)
+insert into public.regulatory_sources (title, source_url, audience, topic)
 values
-  ('Færdselsstyrelsen · varebil', 'https://www.fstyr.dk/erhverv/varebil', 'van'),
-  ('Færdselsstyrelsen · køre- og hviletid', 'https://www.fstyr.dk/erhverv/gods-bus-og-varebil/koere-og-hviletid', 'truck'),
-  ('Færdselsstyrelsen · arbejdstidsregler', 'https://www.fstyr.dk/erhverv/gods-bus-og-varebil/arbejdstidsregler', 'all'),
-  ('Færdselsstyrelsen · virksomhedskontrol', 'https://www.fstyr.dk/erhverv/gods-bus-og-varebil/koere-og-hviletid/virksomhedskontrol', 'truck'),
-  ('Færdselsstyrelsen · takograf', 'https://www.fstyr.dk/erhverv/gods-bus-og-varebil/takograf', 'all'),
-  ('Vejafgifter.dk', 'https://vejafgifter.dk/', 'truck'),
-  ('Miljøzoner.dk · varebiler', 'https://miljoezoner.dk/regler-og-koretojer/regler-for-varebiler/', 'van'),
-  ('Miljøzoner.dk · lastbiler', 'https://miljoezoner.dk/regler-og-koretojer/regler-for-lastbiler-busser/', 'truck'),
-  ('European Labour Authority · varebil', 'https://www.ela.europa.eu/en/light-commercial-vehicles', 'van'),
-  ('European Labour Authority · vejtransport', 'https://www.ela.europa.eu/en/campaign/road-fair-transport', 'all')
+  ('Færdselsstyrelsen · varebil', 'https://www.fstyr.dk/erhverv/varebil', 'van', 'transport'),
+  ('Færdselsstyrelsen · køre- og hviletid', 'https://www.fstyr.dk/erhverv/gods-bus-og-varebil/koere-og-hviletid', 'truck', 'transport'),
+  ('Færdselsstyrelsen · arbejdstidsregler', 'https://www.fstyr.dk/erhverv/gods-bus-og-varebil/arbejdstidsregler', 'all', 'transport'),
+  ('Færdselsstyrelsen · virksomhedskontrol', 'https://www.fstyr.dk/erhverv/gods-bus-og-varebil/koere-og-hviletid/virksomhedskontrol', 'truck', 'transport'),
+  ('Færdselsstyrelsen · takograf', 'https://www.fstyr.dk/erhverv/gods-bus-og-varebil/takograf', 'all', 'transport'),
+  ('Vejafgifter.dk', 'https://vejafgifter.dk/', 'truck', 'transport'),
+  ('Miljøzoner.dk · varebiler', 'https://miljoezoner.dk/regler-og-koretojer/regler-for-varebiler/', 'van', 'transport'),
+  ('Miljøzoner.dk · lastbiler', 'https://miljoezoner.dk/regler-og-koretojer/regler-for-lastbiler-busser/', 'truck', 'transport'),
+  ('European Labour Authority · varebil', 'https://www.ela.europa.eu/en/light-commercial-vehicles', 'van', 'transport'),
+  ('European Labour Authority · vejtransport', 'https://www.ela.europa.eu/en/campaign/road-fair-transport', 'all', 'transport'),
+  ('Datatilsynet · nyheder', 'https://www.datatilsynet.dk/aktuelt/nyheder', 'all', 'gdpr'),
+  ('EDPB · news', 'https://www.edpb.europa.eu/news/news_en', 'all', 'gdpr'),
+  ('Supabase · legal DPA', 'https://supabase.com/legal/dpa', 'all', 'terms'),
+  ('Supabase · legal subprocessors', 'https://supabase.com/legal/subprocessors', 'all', 'privacy'),
+  ('Vercel · legal terms', 'https://vercel.com/legal/terms', 'all', 'terms')
 on conflict (source_url) do update
-set title = excluded.title, audience = excluded.audience, active = true;
+set title = excluded.title, audience = excluded.audience, topic = excluded.topic, active = true;
 
 insert into public.core_settings (key, enabled, description)
 values

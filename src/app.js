@@ -26,14 +26,18 @@ const icons = {
   search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>',
 };
 
-const APP_VERSION = '1.3.25-release-v86';
-const APP_DISPLAY_VERSION = '1.3.25';
-const APP_VERSION_CODE = 38;
+const APP_VERSION = '1.3.28-release-v89';
+const APP_DISPLAY_VERSION = '1.3.28';
+const APP_VERSION_CODE = 41;
 const TEMPORARY_EMPLOYEE_PASSWORD = 'xpress';
 const IMAGE_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
 const PROFILE_PHOTO_MAX_DIMENSION = 512;
 const PROFILE_PHOTO_QUALITY = 0.84;
 const SUPPORTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+const LOGIN_GUARD_KEY = 'loginGuard';
+const SECURITY_EVENTS_KEY = 'securityEvents';
+const LOGIN_GUARD_MAX_FAILED = 5;
+const LOGIN_GUARD_LOCK_MINUTES = 10;
 const UPDATE_CONFIG_KEY = 'appUpdateState';
 const defaultUpdateConfig = {
   versionUrl: 'https://stralner2711-a11y.github.io/xpresshub/version.json',
@@ -313,7 +317,7 @@ const infoLinks = globalThis.XpressIntraInfoCenter?.buildInfoLinks
   : fallbackBuildInfoLinks(infoDetails, infoSections);
 
 const WORKDAY_TIMEZONE = 'Europe/Copenhagen';
-const GDPR_POLICY_VERSION = '2026-06-02';
+const GDPR_POLICY_VERSION = '2026-06-06';
 
 const gdprRetentionPlan = [
   { key: 'live_gps', label: 'Live GPS', days: 1, area: 'GPS', description: 'Seneste position overskrives løbende. Undgå historik i normal drift.' },
@@ -330,6 +334,13 @@ const gdprDataAreas = [
   { area: 'Logbog', purpose: 'Privat personlig arbejdslog og minder fra turen.', basis: 'Frivillig funktion', employeeControl: 'Kan slås fra og slettes som egne data.' },
   { area: 'Billeder', purpose: 'Dokumentation i chat, opslag, profil, logbog og opgaver.', basis: 'Aftales efter formål', employeeControl: 'Upload er valgfrit og bør begrænses til relevante billeder.' },
   { area: 'Adminlog', purpose: 'Sikkerhed, ændringsspor og ansvarlighed.', basis: 'Legitim drift/sikkerhed vurderes af virksomheden', employeeControl: 'Indgår i indsigt uden privat chatindhold.' },
+];
+
+const legalMaintenancePlan = [
+  { title: 'Fast juridisk tjek', cadence: 'Hver 3. måned', body: 'Creator/chef gennemgår GDPR, brugsvilkår, slettefrister, databehandlere og appens nye funktioner.' },
+  { title: 'Funktionsændringer', cadence: 'Ved ny funktion', body: 'Nye ting med GPS, billeder, chat, profiler, notifikationer eller logbog skal vurderes, før de sendes ud.' },
+  { title: 'Regel- og leverandørændringer', cadence: 'Ved ændring', body: 'Hvis Datatilsynet, EU-regler, Supabase, hosting eller mail/kort-løsninger ændrer vilkår, opdateres appens tekst og dokumentation.' },
+  { title: 'Medarbejderbesked', cadence: 'Ved opdatering', body: 'Når vilkår eller privatlivstekst ændres væsentligt, skal medarbejderen acceptere den nye version i appen.' },
 ];
 
 const seedMessages = {
@@ -833,10 +844,12 @@ async function readImageFile(file, options = {}) {
   }
   if (!file || !file.size) return null;
   if (!isSupportedImageFile(file)) {
+    recordSecurityEvent('upload_rejected', `Afvist filtype: ${file.type || 'ukendt'}`);
     showToast('Vælg et billede som JPG, PNG, WebP eller GIF');
     return null;
   }
   if (file.size > IMAGE_UPLOAD_MAX_BYTES) {
+    recordSecurityEvent('upload_rejected', `For stort billede: ${Math.round(file.size / 1024 / 1024)} MB`);
     showToast('Billedet er for stort. Vælg max 10 MB.');
     return null;
   }
@@ -875,6 +888,8 @@ let notifications = stored('notifications') || (DEMO_MODE ? clone(seedNotificati
 let dataRequests = stored('dataRequests') || [];
 let supportRequests = stored('supportRequests') || [];
 let adminAuditEvents = stored('adminAuditEvents') || [];
+let securityEvents = stored(SECURITY_EVENTS_KEY) || [];
+let loginGuard = stored(LOGIN_GUARD_KEY) || {};
 let feedLikes = stored('feedLikes') || {};
 let appUpdateState = stored(UPDATE_CONFIG_KEY) || { lastCheckedAt: null, latest: null, required: null, lastError: null, dismissedVersionCode: null };
 let notificationPrefs = { ...defaultNotificationPrefs, ...stored('notificationPrefs') };
@@ -1063,6 +1078,61 @@ function showToast(text) {
   toast.textContent = text;
   toast.classList.add('show');
   setTimeout(() => toast.classList.remove('show'), 2200);
+}
+
+function normalizeLoginGuardEmail(email) {
+  return String(email || '').trim().toLowerCase();
+}
+
+function pruneSecurityEvents(events = securityEvents) {
+  const maxAge = Date.now() - (14 * 24 * 60 * 60 * 1000);
+  return events.filter(event => Date.parse(event.at || '') >= maxAge).slice(0, 60);
+}
+
+function recordSecurityEvent(type, detail = '') {
+  const event = {
+    id: `security-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    type,
+    detail,
+    user: profile?.email || session?.email || 'ukendt',
+    at: new Date().toISOString(),
+  };
+  securityEvents = pruneSecurityEvents([event, ...securityEvents]);
+  save(SECURITY_EVENTS_KEY, securityEvents);
+}
+
+function loginGuardState(email) {
+  const key = normalizeLoginGuardEmail(email);
+  const state = loginGuard[key] || { failed: 0, lockedUntil: 0, lastFailedAt: null };
+  if (Number(state.lockedUntil || 0) <= Date.now()) return { ...state, lockedUntil: 0 };
+  return state;
+}
+
+function loginGuardMessage(email) {
+  const state = loginGuardState(email);
+  if (!state.lockedUntil) return '';
+  const minutes = Math.max(1, Math.ceil((state.lockedUntil - Date.now()) / 60000));
+  return `For mange fejlforsog. Vent ca. ${minutes} min. og prov igen.`;
+}
+
+function registerLoginSuccess(email) {
+  const key = normalizeLoginGuardEmail(email);
+  if (!key) return;
+  delete loginGuard[key];
+  save(LOGIN_GUARD_KEY, loginGuard);
+}
+
+function registerLoginFailure(email, reason = '') {
+  const key = normalizeLoginGuardEmail(email);
+  if (!key) return;
+  const previous = loginGuardState(key);
+  const failed = Number(previous.failed || 0) + 1;
+  const lockedUntil = failed >= LOGIN_GUARD_MAX_FAILED
+    ? Date.now() + (LOGIN_GUARD_LOCK_MINUTES * 60 * 1000)
+    : 0;
+  loginGuard[key] = { failed, lockedUntil, lastFailedAt: new Date().toISOString() };
+  save(LOGIN_GUARD_KEY, loginGuard);
+  recordSecurityEvent('login_failed', `${key}${lockedUntil ? ' · midlertidigt bremset' : ''}${reason ? ` · ${reason}` : ''}`);
 }
 
 function systemNotificationPermission() {
@@ -3265,11 +3335,15 @@ function isCreatorOwner() {
 
 function securityReadinessItems() {
   const backend = supabaseStatus();
+  const recentSecurityEvents = pruneSecurityEvents().length;
   return [
     { id: 'public_key_only', title: 'Ingen service-role i appen', body: 'Frontend må kun bruge offentlig publishable/anon key. Service-role hører aldrig hjemme i appen eller APK.', done: true },
     { id: 'supabase_online', title: 'Supabase-forbindelse testet', body: backend.detail, done: backend.ready },
     { id: 'rls_storage', title: 'RLS og privat storage', body: 'SQL-pakken indeholder RLS på tabeller og privat bucket til billeder med bruger-mappe-regel.', done: true },
     { id: 'security_headers', title: 'Browser-beskyttelse', body: 'Hosting er sat op med CSP, clickjacking-beskyttelse, nosniff, referrer-policy og permissions-policy.', done: true },
+    { id: 'login_guard', title: 'Login-beskyttelse uden auto-logud', body: 'Gentagne fejllogins bremses midlertidigt lokalt, men medarbejdere bliver ikke smidt ud automatisk.', done: true },
+    { id: 'upload_guard', title: 'Upload-kontrol', body: 'Appen afviser forkerte billedtyper og for store filer før upload til Supabase Storage.', done: true },
+    { id: 'security_events', title: 'Sikkerhedshændelser', body: recentSecurityEvents ? `${recentSecurityEvents} lokal(e) hændelse(r) fra de seneste 14 dage.` : 'Appen kan registrere fejllogins og afviste uploads lokalt til creator-overblik.', done: true },
     { id: 'admin_audit', title: 'Adminhandlinger logges', body: 'Kritiske adminhandlinger gemmes i audit-log uden privat chat- eller logbogsindhold.', done: adminAuditEvents.length > 0 || canManageEmployees() },
     { id: 'lost_phone', title: 'Mistet telefon-procedure', body: 'Virksomheden skal have en kort procedure: deaktiver bruger, skift kode, log ud/revoker session og tjek aktivitet.', done: false },
     { id: 'mfa', title: 'MFA på ejer/admin', body: 'Supabase owner/admin-konti bør have 2-faktor login før rigtig drift.', done: false },
@@ -3484,6 +3558,32 @@ function renderGdprGoLivePanel({ compact = false } = {}) {
     </div>
     <div class="gdpr-check-grid">
       ${readiness.items.map(item => `<span class="${item.done ? 'done' : 'todo'}"><b>${item.done ? '?' : '?'} ${text(item.title)}</b><small>${text(item.body)}</small></span>`).join('')}
+    </div>
+  </section>`;
+}
+
+function hasCurrentLegalAcceptance() {
+  return Boolean(legalAcceptance?.version === GDPR_POLICY_VERSION);
+}
+
+function legalMaintenanceStatus() {
+  return {
+    version: GDPR_POLICY_VERSION,
+    accepted: hasCurrentLegalAcceptance(),
+    nextReview: 'Hver 3. måned eller straks ved ændringer',
+    items: legalMaintenancePlan,
+  };
+}
+
+function renderLegalMaintenancePanel({ compact = false } = {}) {
+  const status = legalMaintenanceStatus();
+  return `<section class="legal-status-card legal-maintenance-card ${compact ? 'compact' : ''}">
+    <b>Jura-opdateringsvagt</b>
+    <span>Version ${text(status.version)} · ${status.accepted ? 'accepteret' : 'kræver accept'} · næste tjek: ${text(status.nextReview)}</span>
+    <div class="legal-decision-list">
+      <h4>Hvornår skal vilkår og GDPR opdateres?</h4>
+      ${status.items.map(item => `<span><b>${text(item.cadence)} · ${text(item.title)}</b><small>${text(item.body)}</small></span>`).join('')}
+      <span><b>Kilder der skal holdes øje med</b><small>Datatilsynet, GDPR/EDPB, Supabase/hosting-vilkår og virksomhedens egne beslutninger.</small></span>
     </div>
   </section>`;
 }
@@ -3842,7 +3942,9 @@ function renderAdminDashboard() {
 }
 
 function legalStatusText() {
-  return legalAcceptance ? `Accepteret ${legalAcceptance.date}` : 'Mangler gennemgang';
+  if (hasCurrentLegalAcceptance()) return `Accepteret ${legalAcceptance.date}`;
+  if (legalAcceptance) return `Ny version ${GDPR_POLICY_VERSION} kræver accept`;
+  return 'Mangler gennemgang';
 }
 
 function accessRoleLabel(accessRole) {
@@ -6191,6 +6293,7 @@ function openGdprGoLiveModal() {
     <p class="eyebrow">GDPR go-live</p><h3>Persondata klar til drift</h3>
     <p class="info-intro">Samlet pakke til medarbejderinformation, slettefrister, dataanmodninger og intern risikovurdering. Den hjælper jer tættere på GDPR, men virksomheden skal stadig godkende det juridisk.</p>
     ${renderGdprGoLivePanel()}
+    ${renderLegalMaintenancePanel()}
     <section class="employee-privacy-notice">
       <h4>Medarbejderinformation i klart sprog</h4>
       <p>XpressIntra bruges til intern drift: beskeder, kollegaoverblik, frivillig live-position, dokumentation, profiloplysninger og privat logbog. GPS kan stoppes, begrænses til hold og skjule fart, bil og status. Chef/admin kan styre drift og medarbejdere, men må ikke læse private direkte beskeder eller private logbøger.</p>
@@ -6235,6 +6338,7 @@ function openSecurityCenterModal() {
   const readiness = securityReadiness();
   const backend = supabaseStatus();
   const criticalOpen = readiness.items.filter(item => !item.done).slice(0, 4);
+  const recentSecurityEvents = pruneSecurityEvents().slice(0, 6);
   const modal = document.createElement('div');
   modal.className = 'modal-backdrop';
   modal.innerHTML = `<section class="profile-modal security-center-modal">
@@ -6277,12 +6381,17 @@ function openLegalModal() {
   modal.className = 'modal-backdrop';
   modal.innerHTML = `<section class="profile-modal legal-modal">
     <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
-    <p class="eyebrow">Intern politik</p><h3>Sikkerhed & jura</h3>
+    <p class="eyebrow">Intern politik</p><h3>Sikkerhed, privatliv & brugsvilkår</h3>
     <section class="legal-status-card">
       <b>${text(legalStatusText())}</b>
       <span>Alle medarbejdere bør gennemgå denne side før rigtig drift. Demo-accept gemmes kun lokalt.</span>
     </section>
     ${renderGdprGoLivePanel({ compact: true })}
+    ${renderLegalMaintenancePanel({ compact: true })}
+    <section class="employee-privacy-notice compact">
+      <h4>Brugsvilkår kort fortalt</h4>
+      <p>XpressIntra er kun til interne medarbejdere. Login er personligt, chat skal bruges ordentligt, GPS er frivillig hjælp mellem kollegaer, og billeder må ikke indeholde uvedkommende personer eller følsomme oplysninger.</p>
+    </section>
     ${canManageEmployees() || isCreatorOwner() ? '<button class="save-btn secondary" type="button" data-action="open-gdpr-go-live">Åbn GDPR go-live pakke</button>' : ''}
     <div class="legal-grid">
       <article><b>GPS</b><span>GPS er frivillig, synlig og kan stoppes. Chef/admin må ikke bruge appen som skjult overvågning.</span></article>
@@ -6329,7 +6438,14 @@ function openLegalModal() {
       <span>Hvilke billeder må deles?</span>
       <span>Hvordan håndteres fratrådte medarbejdere?</span>
     </section>
-    <button class="save-btn" type="button" data-action="accept-legal">Jeg har læst og forstået</button>
+    <section class="legal-decision-list">
+      <h4>Interne brugsvilkår</h4>
+      <span>Appen må kun bruges af aktive medarbejdere eller personer med godkendt adgang.</span>
+      <span>Din adgangskode er personlig og må ikke deles med andre.</span>
+      <span>Chat, opslag og billeder skal være ordentlige, arbejdsrelevante og uden unødige personoplysninger.</span>
+      <span>Ved fratrædelse eller misbrug kan adgangen lukkes.</span>
+    </section>
+    <button class="save-btn" type="button" data-action="accept-legal">Jeg accepterer brugsvilkår og privatliv</button>
   </section>`;
   document.body.append(modal);
 }
@@ -6938,6 +7054,11 @@ document.addEventListener('submit', async event => {
     const data = new FormData(event.target);
     if (onlineBackendActive()) {
       try {
+        const loginBlocked = loginGuardMessage(data.get('email'));
+        if (loginBlocked) {
+          showToast(loginBlocked);
+          return;
+        }
         if (event.submitter?.dataset.action === 'signup-standard-password') {
           const inviteContext = loginInviteContext();
           const email = String(data.get('email') || '').trim().toLowerCase();
@@ -6965,9 +7086,11 @@ document.addEventListener('submit', async event => {
             return;
           }
           await signInSupabase(data.get('email'), data.get('password'));
+          registerLoginSuccess(data.get('email'));
           showToast('Du er logget ind på XpressIntra');
         }
       } catch (error) {
+        registerLoginFailure(data.get('email'), error.message);
         if (isEmailConfirmationError(error)) {
           openEmailConfirmationModal(data.get('email'));
           showToast('Bekræft mailen før du logger ind');

@@ -11,7 +11,7 @@ const manifest = fs.readFileSync('android/app/src/main/AndroidManifest.xml', 'ut
 const mainActivity = fs.readFileSync('android/app/src/main/java/dk/xpressbudet/xpressintra/MainActivity.java', 'utf8');
 const version = JSON.parse(fs.readFileSync('public/version.json', 'utf8'));
 
-assert(app.includes("const APP_VERSION = '1.3.25-release-v86'"), 'App should expose the notification release version');
+assert(app.includes("const APP_VERSION = '1.3.28-release-v89'"), 'App should expose the notification release version');
 assert(app.includes('function requestSystemNotifications'), 'App should request system notification permission from a user action');
 assert(app.includes('function showSystemNotification'), 'App should show system notifications');
 assert(app.includes('function safeSystemNotificationBody'), 'App should keep lock-screen chat text private');
@@ -31,13 +31,14 @@ assert(mainActivity.includes('requestNotificationPermissionOnFirstStart'), 'Andr
 assert(mainActivity.includes('Build.VERSION_CODES.TIRAMISU'), 'Android notification permission should be requested only on Android 13+');
 
 for (const source of [worker, publicWorker]) {
-  assert(source.includes("CACHE_NAME = 'xpressintra-v86-danish-day-greeting'"), 'Service worker cache should be bumped for notification release');
+  assert(source.includes("CACHE_NAME = 'xpressintra-v89-practical-security'"), 'Service worker cache should be bumped for notification release');
   assert(source.includes("self.addEventListener('notificationclick'"), 'Service worker should handle notification clicks');
   assert(source.includes("clients.openWindow"), 'Service worker should open the app from a notification');
 }
 
-assert(version.activeVersion === '1.3.25', 'Release version should be 1.3.25');
-assert(version.activeVersionCode === 38, 'Release build should be 38');
-assert(version.changelog.some(item => item.includes('Forsiden skifter nu automatisk')), 'Changelog should mention the latest day greeting update');
+assert(version.activeVersion === '1.3.28', 'Release version should be 1.3.28');
+assert(version.activeVersionCode === 41, 'Release build should be 41');
+assert(version.changelog.some(item => item.includes('Login-beskyttelse')), 'Changelog should mention the latest practical security update');
 
 console.log('Background notifications smoke test passed');
+

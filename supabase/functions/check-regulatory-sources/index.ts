@@ -4,6 +4,24 @@ const supabaseUrl = Deno.env.get('SUPABASE_URL');
 const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 const cronSecret = Deno.env.get('CRON_SECRET');
 
+const topicLabels: Record<string, string> = {
+  transport: 'transportændring',
+  gdpr: 'GDPR-ændring',
+  terms: 'ændring i brugsvilkår',
+  privacy: 'ændring i privatliv/databehandling',
+  technology: 'teknologiændring',
+  operations: 'driftsændring',
+};
+
+const topicSummaries: Record<string, string> = {
+  transport: 'Den overvågede transportkilde er ændret. Gennemgå siden og skriv en kort driftsbesked før godkendelse.',
+  gdpr: 'Den overvågede GDPR-kilde er ændret. Vurder om persondata, compliance eller medarbejderinformation skal opdateres.',
+  terms: 'De overvågede brugsvilkår er ændret. Vurder om app-brug, leverandørvilkår eller intern godkendelse skal opdateres.',
+  privacy: 'Den overvågede privacy-kilde er ændret. Vurder om databehandling, privatlivstekst eller leverandørforhold skal opdateres.',
+  technology: 'Den overvågede teknologikilde er ændret. Vurder om integrationer eller arbejdsgange påvirkes.',
+  operations: 'Den overvågede driftskilde er ændret. Vurder om planlægning eller intern information skal opdateres.',
+};
+
 function normalizePage(html: string) {
   return html
     .replace(/<script[\s\S]*?<\/script>/gi, '')
@@ -29,7 +47,7 @@ Deno.serve(async request => {
   const supabase = createClient(supabaseUrl, serviceRoleKey);
   const { data: sources, error } = await supabase
     .from('regulatory_sources')
-    .select('id,title,source_url,audience,last_content_hash')
+    .select('id,title,source_url,audience,topic,last_content_hash')
     .eq('active', true);
 
   if (error) return Response.json({ error: error.message }, { status: 500 });
@@ -46,13 +64,28 @@ Deno.serve(async request => {
       const changed = Boolean(source.last_content_hash && source.last_content_hash !== contentHash);
 
       if (changed) {
-        await supabase.from('regulatory_updates').insert({
-          source_id: source.id,
-          audience: source.audience,
-          title: `Mulig regelændring: ${source.title}`,
-          summary: 'Den overvågede kilde er ændret. Gennemgå siden og skriv en kort medarbejderbesked før godkendelse.',
-          status: 'draft',
-        });
+        const topic = source.topic || 'transport';
+        const { data: existingUpdate, error: existingError } = await supabase
+          .from('regulatory_updates')
+          .select('id')
+          .eq('source_id', source.id)
+          .eq('content_hash', contentHash)
+          .maybeSingle();
+
+        if (existingError) throw existingError;
+
+        if (!existingUpdate) {
+          const { error: insertError } = await supabase.from('regulatory_updates').insert({
+            source_id: source.id,
+            audience: source.audience,
+            topic,
+            content_hash: contentHash,
+            title: `Mulig ${topicLabels[topic] || 'ændring'}: ${source.title}`,
+            summary: topicSummaries[topic] || topicSummaries.transport,
+            status: 'draft',
+          });
+          if (insertError) throw insertError;
+        }
       }
 
       await supabase
@@ -60,9 +93,13 @@ Deno.serve(async request => {
         .update({ last_checked_at: new Date().toISOString(), last_content_hash: contentHash })
         .eq('id', source.id);
 
-      results.push({ source: source.title, changed });
+      results.push({ source: source.title, topic: source.topic || 'transport', changed });
     } catch (error) {
-      results.push({ source: source.title, error: error instanceof Error ? error.message : String(error) });
+      results.push({
+        source: source.title,
+        topic: source.topic || 'transport',
+        error: error instanceof Error ? error.message : String(error),
+      });
     }
   }
 

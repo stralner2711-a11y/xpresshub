@@ -38,6 +38,12 @@ assert(securityDoc.includes('Lost phone process'), 'Security checklist should in
 assert(app.includes('function securityReadinessItems()'), 'App should include the operational security checklist');
 assert(app.includes('openSecurityCenterModal'), 'App should expose a security center modal');
 assert(app.includes("data-action=\"open-security-center\""), 'Creator/admin UI should link to the security center');
+assert(app.includes('LOGIN_GUARD_MAX_FAILED'), 'App should include local failed-login throttling');
+assert(app.includes('function registerLoginFailure'), 'App should record failed login attempts');
+assert(app.includes('function registerLoginSuccess'), 'App should clear login guard after a successful login');
+assert(app.includes('Login-beskyttelse uden auto-logud'), 'Security center should document that users are not auto-logged out');
+assert(!/setTimeout\([^)]*logout|inactivityLogout|autoLogout/i.test(app), 'App should not introduce automatic logout code');
+assert(app.includes("recordSecurityEvent('upload_rejected'"), 'Rejected uploads should be visible as local security events');
 
 console.log('Security hardening smoke test passed');
 
