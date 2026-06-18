@@ -58,6 +58,7 @@ $$;
 
 drop function if exists public.handle_new_user() cascade;
 drop function if exists public.start_direct_conversation(uuid) cascade;
+drop function if exists public.start_direct_conversation_v2(uuid) cascade;
 drop function if exists public.can_access_conversation(uuid) cascade;
 drop function if exists public.can_read_conversation(uuid) cascade;
 drop function if exists public.is_conversation_member(uuid) cascade;
@@ -707,6 +708,15 @@ begin
 end;
 $$;
 
+create or replace function public.start_direct_conversation_v2(target_user_id uuid)
+returns uuid
+language sql
+security definer
+set search_path = public
+as $$
+  select public.start_direct_conversation(target_user_id);
+$$;
+
 create or replace function public.prevent_profile_privilege_escalation()
 returns trigger
 language plpgsql
@@ -1119,6 +1129,7 @@ alter default privileges in schema public grant usage, select on sequences to au
 revoke execute on all functions in schema private from public, anon;
 grant execute on all functions in schema private to authenticated, service_role;
 grant execute on function public.start_direct_conversation(uuid) to authenticated;
+grant execute on function public.start_direct_conversation_v2(uuid) to authenticated;
 grant execute on function public.purge_expired_operational_data() to authenticated;
 
 insert into public.regulatory_sources (title, source_url, audience, topic)

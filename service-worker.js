@@ -1,4 +1,4 @@
-const CACHE_NAME = 'xpressintra-v92-release-fix';
+const CACHE_NAME = 'xpressintra-v94-direct-message-fix';
 const APP_FILES = [
   './',
   './index.html',

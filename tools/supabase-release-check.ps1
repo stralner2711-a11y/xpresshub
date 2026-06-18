@@ -23,6 +23,7 @@ $configPath = Join-Path $ProjectRoot 'public\app-config.js'
 $schemaPath = Join-Path $ProjectRoot 'supabase\schema.sql'
 $fullSetupPath = Join-Path $ProjectRoot 'supabase\RUN_THIS_FROM_SCRATCH_IN_SUPABASE.sql'
 $setupNotePath = Join-Path $ProjectRoot 'supabase\XPRESSINTRA_CURRENT_SUPABASE_SETUP.md'
+$directMessagesRepairPath = Join-Path $ProjectRoot 'supabase\REPAIR_DIRECT_MESSAGES.sql'
 $appPath = Join-Path $ProjectRoot 'src\app.js'
 $workerPath = Join-Path $ProjectRoot 'public\service-worker.js'
 
@@ -30,12 +31,14 @@ if (!(Test-Path $configPath)) { Fail "public/app-config.js mangler" }
 if (!(Test-Path $schemaPath)) { Fail "supabase/schema.sql mangler" }
 if (!(Test-Path $fullSetupPath)) { Fail "supabase/RUN_THIS_FROM_SCRATCH_IN_SUPABASE.sql mangler" }
 if (!(Test-Path $setupNotePath)) { Fail "supabase/XPRESSINTRA_CURRENT_SUPABASE_SETUP.md mangler" }
+if (!(Test-Path $directMessagesRepairPath)) { Fail "supabase/REPAIR_DIRECT_MESSAGES.sql mangler" }
 if (!(Test-Path $appPath)) { Fail "src/app.js mangler" }
 if (!(Test-Path $workerPath)) { Fail "public/service-worker.js mangler" }
 
 $config = Get-Content $configPath -Raw
 $schema = Get-Content $schemaPath -Raw
 $fullSetup = Get-Content $fullSetupPath -Raw
+$directMessagesRepair = Get-Content $directMessagesRepairPath -Raw
 $app = Get-Content $appPath -Raw
 $worker = Get-Content $workerPath -Raw
 
@@ -102,6 +105,15 @@ if ($schema -notmatch 'create schema if not exists private') { Fail "schema.sql 
 if ($schema -notmatch 'function private\.is_admin\(\)' -or $schema -notmatch 'function private\.can_read_conversation') {
   Fail "schema.sql skal bruge private RLS-hjaelpefunktioner"
 }
+if ($schema -notmatch 'create or replace function public\.start_direct_conversation\(target_user_id uuid\)' -or $schema -notmatch 'grant execute on function public\.start_direct_conversation\(uuid\) to authenticated;') {
+  Fail "schema.sql mangler sikker RPC til direkte beskeder"
+}
+if ($schema -notmatch 'create or replace function public\.start_direct_conversation_v2\(target_user_id uuid\)' -or $schema -notmatch 'grant execute on function public\.start_direct_conversation_v2\(uuid\) to authenticated;') {
+  Fail "schema.sql mangler reserve-RPC til direkte beskeder"
+}
+if ($directMessagesRepair -notmatch 'create or replace function public\.start_direct_conversation\(target_user_id uuid\)' -or $directMessagesRepair -notmatch 'create or replace function public\.start_direct_conversation_v2\(target_user_id uuid\)' -or $directMessagesRepair -notmatch "notify pgrst, 'reload schema';") {
+  Fail "REPAIR_DIRECT_MESSAGES.sql skal genoprette direkte besked RPC og reloade Supabase schema cache"
+}
 if ($schema -notmatch 'function private\.protect_profile_security_fields\(\)' -or $schema -notmatch 'execute procedure private\.protect_profile_security_fields\(\)') {
   Fail "schema.sql skal laase profilens rolle/adgangsfelter med en private trigger"
 }
@@ -125,6 +137,7 @@ Pass "Kun offentlig publishable/anon key bruges i app-config.js"
 Pass "Supabase SQL, RLS, Storage og standardchat er med i pakken"
 Pass "Standardkode-login er med i Supabase SQL og afviser ikke-oprettede mails"
 Pass "Interne RLS-hjaelpefunktioner ligger i private schema, ikke som public RPC"
+Pass "Direkte beskeder har sikker RPC og en separat reparationsfil"
 Pass "Login-sikkerhed tjekket: ingen gemte adgangskoder og ingen hemmelige noegler i appen"
 
 if ($env:XPRESSINTRA_SUPABASE_ONLINE_CHECK -eq '1') {

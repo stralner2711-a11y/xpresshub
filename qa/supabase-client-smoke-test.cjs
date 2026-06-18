@@ -127,7 +127,7 @@ function createHarness() {
           }
           if (table === 'location_shares') {
             return resolve({
-              data: [{ user_id: 'target-user-1', latitude: 55.49, longitude: 9.47, speed_kmh: null, visibility: 'team', audience: 'truck', show_speed: false, show_vehicle: true, show_status: true, status: 'driving', share_mode: 'manual', last_updated_at: '2026-05-31T10:03:00Z' }],
+              data: [{ user_id: '11111111-1111-4111-8111-111111111111', latitude: 55.49, longitude: 9.47, speed_kmh: null, visibility: 'team', audience: 'truck', show_speed: false, show_vehicle: true, show_status: true, status: 'driving', share_mode: 'manual', last_updated_at: '2026-05-31T10:03:00Z' }],
               error: null,
             });
           }
@@ -222,9 +222,13 @@ function assert(condition, message) {
   });
   assert(harness.insertedRows.some(item => item.table === 'messages' && item.row.body === 'Hej online'), 'Sending chat should insert a Supabase message');
 
-  await harness.run("employees.push({ id: 'target-user-1', name: 'Test Medarbejder', initials: 'TM', employmentStatus: 'active' }); startSupabaseDirectChat(employees.find(item => item.id === 'target-user-1'), 'Direkte hej')");
-  assert(harness.rpcCalls.some(item => item.name === 'start_direct_conversation' && item.args.target_user_id === 'target-user-1'), 'Direct chats should be created through the safe Supabase RPC');
+  await harness.run("employees.push({ id: '11111111-1111-4111-8111-111111111111', name: 'Test Medarbejder', initials: 'TM', employmentStatus: 'active' }); startSupabaseDirectChat(employees.find(item => item.id === '11111111-1111-4111-8111-111111111111'), 'Direkte hej')");
+  assert(harness.rpcCalls.some(item => item.name === 'start_direct_conversation' && item.args.target_user_id === '11111111-1111-4111-8111-111111111111'), 'Direct chats should be created through the safe Supabase RPC');
   assert(harness.insertedRows.some(item => item.table === 'messages' && item.row.conversation_id === 'direct-conversation-1' && item.row.body === 'Direkte hej'), 'Starting a direct chat should send the first message online');
+  const rpcCallCount = harness.rpcCalls.length;
+  const invalidDirectChatError = await harness.run("(async () => { try { await startSupabaseDirectChat({ id: 'local-test-profile', name: 'Lokal Testprofil', initials: 'LT', employmentStatus: 'active' }, 'Hej'); return ''; } catch (error) { return error.message; } })()");
+  assert(invalidDirectChatError.includes('ikke oprettet som aktiv onlinebruger'), 'Local/demo employee ids should be rejected with a clear direct-chat message');
+  assert(harness.rpcCalls.length === rpcCallCount, 'Local/demo employee ids should not call the online direct-chat RPC');
 
   await harness.run("activeChat = 'direct-conversation-1'");
   await harness.document.dispatchEvent({
@@ -256,9 +260,9 @@ function assert(condition, message) {
   await harness.run("endWorkday('Test slut', 'auto_ended')");
   assert(harness.updates.some(item => item.table === 'workday_sessions' && item.row.status === 'auto_ended'), 'Ending workday should update the online workday session');
 
-  harness.run("activePickup = { employeeId: 'target-user-1', note: 'Hent palle i Kolding', duration: '30', pickupPlace: 'Kolding terminal', dropoffPlace: 'Hasselager', reference: 'REF-42', priority: 'Haster', status: 'started', checklist: pickupChecklistItems().map(item => ({ ...item, done: item.id === 'route' })), steps: [{ status: 'started', at: '2026-05-31T10:20:00Z' }], expiresAt: '2099-05-31T10:50:00Z', startedAt: '2026-05-31T10:20:00Z', startedLocationSharing: true }");
+  harness.run("activePickup = { employeeId: '11111111-1111-4111-8111-111111111111', note: 'Hent palle i Kolding', duration: '30', pickupPlace: 'Kolding terminal', dropoffPlace: 'Hasselager', reference: 'REF-42', priority: 'Haster', status: 'started', checklist: pickupChecklistItems().map(item => ({ ...item, done: item.id === 'route' })), steps: [{ status: 'started', at: '2026-05-31T10:20:00Z' }], expiresAt: '2099-05-31T10:50:00Z', startedAt: '2026-05-31T10:20:00Z', startedLocationSharing: true }");
   await harness.run('createSupabasePickupTask()');
-  assert(harness.insertedRows.some(item => item.table === 'pickup_tasks' && item.row.driver_id === 'user-1' && item.row.colleague_id === 'target-user-1' && item.row.expires_at === '2099-05-31T10:50:00Z'), 'Starting a pickup task should create an online task with expiry and colleague access');
+  assert(harness.insertedRows.some(item => item.table === 'pickup_tasks' && item.row.driver_id === 'user-1' && item.row.colleague_id === '11111111-1111-4111-8111-111111111111' && item.row.expires_at === '2099-05-31T10:50:00Z'), 'Starting a pickup task should create an online task with expiry and colleague access');
   assert(harness.run("activePickup.id") === 'pickup-1', 'Created online pickup task should store its Supabase id locally');
   await harness.run("updatePickupStatus('found')");
   assert(harness.updates.some(item => item.table === 'pickup_tasks' && item.row.status === 'found'), 'Changing pickup status should update the online pickup task');
@@ -269,9 +273,9 @@ function assert(condition, message) {
   assert(harness.subscriptions.some(item => item.filter.table === 'pickup_tasks'), 'Pickup tasks should subscribe to realtime changes');
 
   harness.run("profile = { ...profile, name: 'Chef Test', role: 'Chef', accessRole: 'admin', vehicleType: 'dispatch' }");
-  await harness.run("updateSupabaseEmployeeProfile({ id: 'target-user-1', name: 'Test Medarbejder', phone: '+45 20 11 40 44', email: 'test@example.com', department: 'Varebil', license: 'B', languages: 'Dansk', role: 'Chauffør', accessRole: 'employee', vehicleType: 'van', truck: 'Testbil', employmentStatus: 'offboarded', logbook: true, emergencyContact: 'Test kontakt' })");
+  await harness.run("updateSupabaseEmployeeProfile({ id: '11111111-1111-4111-8111-111111111111', name: 'Test Medarbejder', phone: '+45 20 11 40 44', email: 'test@example.com', department: 'Varebil', license: 'B', languages: 'Dansk', role: 'Chauffør', accessRole: 'employee', vehicleType: 'van', truck: 'Testbil', employmentStatus: 'offboarded', logbook: true, emergencyContact: 'Test kontakt' })");
   assert(harness.updates.some(item => item.table === 'profiles' && item.row.employment_status === 'offboarded' && item.row.access_role === 'employee'), 'Admin profile changes should update Supabase profiles');
-  assert(harness.upserts.some(item => item.table === 'profile_private_details' && item.row.user_id === 'target-user-1'), 'Admin profile changes should upsert private profile details separately');
+  assert(harness.upserts.some(item => item.table === 'profile_private_details' && item.row.user_id === '11111111-1111-4111-8111-111111111111'), 'Admin profile changes should upsert private profile details separately');
   await harness.run("coreSettings = { gps: false, media: true, logbook: true, employeePosts: false, ruleApproval: true }; syncSupabaseCoreSettings()");
   assert(harness.upserts.some(item => item.table === 'core_settings' && Array.isArray(item.row) && item.row.some(row => row.key === 'gps' && row.enabled === false && row.updated_by === 'user-1')), 'Core settings should sync online with admin actor');
   await harness.run("createSupabaseEmployeeInvitation({ name: 'Ny Medarbejder', email: 'ny@example.com', phone: '+45 10 10 10 10', role: 'Chauffør', accessRole: 'employee', vehicleType: 'truck', truck: 'TR 99', department: 'Lastbil', license: 'C/E', languages: 'Dansk', emergencyContact: 'Kontakt', logbook: true })");
@@ -288,7 +292,7 @@ function assert(condition, message) {
   await harness.run("createSupabaseAnnouncement({ title: 'Ny kontorbesked', body: 'Husk dokumentation', kind: 'office', audience: 'Alle medarbejdere', pinned: false })");
   assert(harness.insertedRows.some(item => item.table === 'announcements' && item.row.author_id === 'user-1' && item.row.audience === 'all'), 'Announcements should be created online with the current author');
   await harness.run("notifySupabaseAudience({ title: 'Ny kontorbesked', body: 'Husk dokumentation', kind: 'office', audience: 'Alle medarbejdere' })");
-  assert(harness.insertedRows.some(item => item.table === 'notifications' && Array.isArray(item.row) && item.row.some(row => row.user_id === 'target-user-1' && row.category === 'office')), 'Office announcements should create online audience notifications');
+  assert(harness.insertedRows.some(item => item.table === 'notifications' && Array.isArray(item.row) && item.row.some(row => row.user_id === '11111111-1111-4111-8111-111111111111' && row.category === 'office')), 'Office announcements should create online audience notifications');
   await harness.run("syncSupabaseAnnouncementReaction('7', true)");
   assert(harness.insertedRows.some(item => item.table === 'announcement_reactions' && item.row.announcement_id === 7 && item.row.user_id === 'user-1'), 'Announcement likes should sync online');
   await harness.run("createSupabaseAnnouncementComment('7', 'Tak for info')");
@@ -307,5 +311,6 @@ function assert(condition, message) {
   console.error(error);
   process.exit(1);
 });
+
 
 

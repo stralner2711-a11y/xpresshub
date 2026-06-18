@@ -26,9 +26,9 @@
   search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>',
 };
 
-const APP_VERSION = '1.3.32-release-v93';
-const APP_DISPLAY_VERSION = '1.3.32';
-const APP_VERSION_CODE = 45;
+const APP_VERSION = '1.3.33-release-v94';
+const APP_DISPLAY_VERSION = '1.3.33';
+const APP_VERSION_CODE = 46;
 const TEMPORARY_EMPLOYEE_PASSWORD = 'xpress';
 const IMAGE_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
 const PROFILE_PHOTO_MAX_DIMENSION = 512;
@@ -2239,8 +2239,14 @@ async function notifySupabaseAudience(post) {
 async function startSupabaseDirectChat(employee, firstMessage = '') {
   const client = getSupabaseClient();
   if (!client || !employee?.id) return null;
-  const { data: conversationId, error } = await client.rpc('start_direct_conversation', { target_user_id: employee.id });
-  if (error) throw error;
+  if (!isSupabaseProfileId(employee.id)) {
+    throw new Error('Kollegaen er ikke oprettet som aktiv onlinebruger endnu. Opret eller genaktivér profilen under Drift > Medarbejdere, og lad kollegaen logge ind første gang.');
+  }
+  if (employee.employmentStatus === 'offboarded' || employee.status === 'Deaktiveret') {
+    throw new Error('Kollegaen er deaktiveret og kan ikke modtage direkte beskeder.');
+  }
+  const { data: conversationId, error } = await startDirectConversationRpc(client, employee.id);
+  if (error) throw new Error(directChatErrorMessage(error, employee));
 
   await loadSupabaseChats(supabaseAuthSession());
   let chat = chats.find(item => item.id === conversationId);
@@ -2268,9 +2274,49 @@ async function startSupabaseDirectChat(employee, firstMessage = '') {
       sender_id: session.userId,
       body: firstMessage.trim(),
     });
-    if (messageError) throw messageError;
+    if (messageError) throw new Error(directChatErrorMessage(messageError, employee));
   }
   return conversationId;
+}
+
+async function startDirectConversationRpc(client, employeeId) {
+  const primary = await client.rpc('start_direct_conversation', { target_user_id: employeeId });
+  if (!isMissingRpcError(primary.error)) return primary;
+  const fallback = await client.rpc('start_direct_conversation_v2', { target_user_id: employeeId });
+  return fallback.error ? primary : fallback;
+}
+
+function isMissingRpcError(error) {
+  const raw = String(error?.message || error?.details || error || '').toLowerCase();
+  return raw.includes('could not find the function')
+    || raw.includes('start_direct_conversation')
+    || raw.includes('schema cache');
+}
+
+function isSupabaseProfileId(value) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value || '').trim());
+}
+
+function directChatErrorMessage(error, employee = {}) {
+  const raw = String(error?.message || error?.details || error || '').trim();
+  const lower = raw.toLowerCase();
+  const name = employee?.name || 'Kollegaen';
+  if (lower.includes('target_user_not_active')) {
+    return `${name} er ikke aktiv i Supabase endnu. Tjek at medarbejderen er aktiveret under Drift > Medarbejdere, og at invitationen er brugt.`;
+  }
+  if (lower.includes('cannot_start_direct_conversation_with_self')) {
+    return 'Du kan ikke starte en direkte samtale med dig selv.';
+  }
+  if (lower.includes('invalid input syntax') || lower.includes('uuid')) {
+    return `${name} mangler et gyldigt online-id. Det sker typisk ved gamle testprofiler eller lokale demo-profiler. Opret profilen igen via medarbejder/invitation.`;
+  }
+  if (lower.includes('row-level security') || lower.includes('permission denied') || lower.includes('not authorized')) {
+    return `Du har ikke adgang til at skrive til ${name}. Tjek at I begge er aktive medarbejdere i samme firma.`;
+  }
+  if (lower.includes('start_direct_conversation') || lower.includes('could not find the function')) {
+    return 'Databasen mangler funktionen til direkte beskeder. Kør supabase/REPAIR_DIRECT_MESSAGES.sql i Supabase SQL Editor, eller kør den nyeste fulde SQL-pakke.';
+  }
+  return raw || 'Direkte besked kunne ikke startes lige nu.';
 }
 
 function locationShareFromSupabase(row) {
@@ -5912,12 +5958,19 @@ async function finishPickup() {
 function openNewChatModal() {
   const modal = document.createElement('div');
   modal.className = 'modal-backdrop';
+  const availableEmployees = employees.filter(employee => {
+    if (employee.id === currentEmployee().id || employee.id === session?.userId) return false;
+    if (employee.employmentStatus === 'offboarded' || employee.status === 'Deaktiveret') return false;
+    return !onlineBackendActive() || isSupabaseProfileId(employee.id);
+  });
   modal.innerHTML = `<form class="profile-modal new-chat-form">
     <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
     <p class="eyebrow">Intern besked</p><h3>Start ny samtale</h3>
-    <label>Vælg kollega<select name="employee">${employees.filter(employee => employee.id !== currentEmployee().id && employee.id !== session?.userId).map(employee => `<option value="${text(employee.id)}">${text(employee.name)}</option>`).join('')}</select></label>
+    ${availableEmployees.length
+      ? `<label>Vælg kollega<select name="employee">${availableEmployees.map(employee => `<option value="${text(employee.id)}">${text(employee.name)}</option>`).join('')}</select></label>
     <label>Besked<input name="message" placeholder="Skriv din første besked..." required /></label>
-    <button class="save-btn">Start samtale</button>
+    <button class="save-btn">Start samtale</button>`
+      : '<section class="invite-help"><b>Ingen online kollegaer klar</b><span>Direkte beskeder kræver, at kollegaen er oprettet via invitation, har logget ind første gang og står som aktiv medarbejder.</span></section>'}
   </form>`;
   document.body.append(modal);
 }
@@ -6955,12 +7008,16 @@ document.addEventListener('click', async event => {
   if (directChatEmployeeId) {
     const employee = employees.find(item => item.id === directChatEmployeeId);
     if (employee) {
-      const chatId = await ensureDirectChat(employee);
-      if (!chatId) return;
-      activeTab = 'chat';
-      activeChat = chatId;
-      event.target.closest('.modal-backdrop')?.remove();
-      render();
+      try {
+        const chatId = await ensureDirectChat(employee);
+        if (!chatId) return;
+        activeTab = 'chat';
+        activeChat = chatId;
+        event.target.closest('.modal-backdrop')?.remove();
+        render();
+      } catch (error) {
+        showToast(directChatErrorMessage(error, employee));
+      }
     }
   }
   const modalReplacingActions = [

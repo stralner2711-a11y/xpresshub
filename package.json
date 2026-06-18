@@ -11,7 +11,7 @@
     "android:add": "cap add android",
     "android:sync": "npm run build && cap sync android",
     "android:open": "cap open android",
-    "android:apk": "npm run android:sync && cd android && gradlew.bat assembleDebug",
+    "android:apk": "powershell -ExecutionPolicy Bypass -File \"./Build Android APK.ps1\"",
     "android:aab": "npm run android:sync && cd android && gradlew.bat bundleRelease",
     "ios:add": "cap add ios",
     "ios:sync": "npm run build && cap sync ios",

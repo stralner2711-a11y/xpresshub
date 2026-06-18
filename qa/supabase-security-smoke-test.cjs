@@ -9,6 +9,7 @@ const firstAdmin = fs.readFileSync('supabase/first-admin.sql', 'utf8');
 const fullBootstrap = fs.readFileSync('supabase/RUN_THIS_FROM_SCRATCH_IN_SUPABASE.sql', 'utf8');
 const resetSql = fs.readFileSync('supabase/RESET_XPRESSINTRA_SUPABASE.sql', 'utf8');
 const locationRepair = fs.readFileSync('supabase/REPAIR_LOCATION_SHARES.sql', 'utf8');
+const directMessageRepair = fs.readFileSync('supabase/REPAIR_DIRECT_MESSAGES.sql', 'utf8');
 
 [
   'new.department := old.department;',
@@ -66,7 +67,14 @@ assert(resetSql.includes("to_regclass('public.profiles')"), 'Reset SQL should be
 assert(schema.includes('grant select, insert, update, delete on all tables in schema public to authenticated;'), 'Schema should grant Data API table access after RLS is enabled');
 assert(schema.includes('create or replace function public.start_direct_conversation(target_user_id uuid)'), 'Schema should expose a controlled direct chat starter');
 assert(schema.includes('grant execute on function public.start_direct_conversation(uuid) to authenticated;'), 'Authenticated users should be able to call the direct chat RPC');
+assert(schema.includes('create or replace function public.start_direct_conversation_v2(target_user_id uuid)'), 'Schema should expose a fallback direct chat starter RPC for schema-cache recovery');
+assert(schema.includes('grant execute on function public.start_direct_conversation_v2(uuid) to authenticated;'), 'Authenticated users should be able to call the fallback direct-chat RPC');
 assert(schema.includes('cannot_start_direct_conversation_with_self'), 'Direct chat RPC should reject self conversations');
+assert(directMessageRepair.includes('create or replace function public.start_direct_conversation(target_user_id uuid)'), 'Direct message repair SQL should recreate the safe direct-chat starter RPC');
+assert(directMessageRepair.includes('create or replace function public.start_direct_conversation_v2(target_user_id uuid)'), 'Direct message repair SQL should recreate the fallback direct-chat starter RPC');
+assert(directMessageRepair.includes('grant execute on function public.start_direct_conversation(uuid) to authenticated;'), 'Direct message repair SQL should grant authenticated users access to the direct-chat RPC');
+assert(directMessageRepair.includes('grant execute on function public.start_direct_conversation_v2(uuid) to authenticated;'), 'Direct message repair SQL should grant authenticated users access to the fallback direct-chat RPC');
+assert(directMessageRepair.includes("notify pgrst, 'reload schema';"), 'Direct message repair SQL should refresh Supabase/PostgREST schema cache');
 assert(schema.includes('create table if not exists public.employee_invitations'), 'Schema should support safe employee invitations without exposing service-role keys');
 assert(schema.includes('on public.employee_invitations for all to authenticated using (private.is_admin())'), 'Only admins should manage employee invitations');
 assert(schema.includes('prevent_profile_privilege_escalation'), 'Profiles should have a database trigger against role escalation');
