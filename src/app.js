@@ -26,9 +26,9 @@
   search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>',
 };
 
-const APP_VERSION = '1.3.33-release-v94';
-const APP_DISPLAY_VERSION = '1.3.33';
-const APP_VERSION_CODE = 46;
+const APP_VERSION = '1.3.34-release-v95';
+const APP_DISPLAY_VERSION = '1.3.34';
+const APP_VERSION_CODE = 47;
 const TEMPORARY_EMPLOYEE_PASSWORD = 'xpress';
 const IMAGE_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
 const PROFILE_PHOTO_MAX_DIMENSION = 512;
@@ -1377,13 +1377,18 @@ function shouldShowUpdate(info, manual = false) {
 }
 
 async function fetchVersionInfo() {
-  const urls = [appUpdateConfig.versionUrl || './version.json'];
+  const urls = [
+    appUpdateConfig.versionUrl || './version.json',
+    'https://raw.githubusercontent.com/stralner2711-a11y/xpresshub/main/version.json',
+    'https://raw.githubusercontent.com/stralner2711-a11y/xpresshub/main/docs/version.json',
+  ];
   if (appUpdateConfig.allowLocalVersionFallback && !urls.includes('./version.json')) urls.push('./version.json');
   let lastError = null;
-  for (const url of urls) {
+  for (const originalUrl of [...new Set(urls.filter(Boolean))]) {
     try {
-      if (!isAllowedUpdateUrl(url)) throw new Error('version.json ligger ikke på en godkendt kilde');
-      const response = await fetch(url, { cache: 'no-store' });
+      if (!isAllowedUpdateUrl(originalUrl)) throw new Error('version.json ligger ikke på en godkendt kilde');
+      const url = cacheBustedUpdateUrl(originalUrl);
+      const response = await fetch(url, { cache: 'no-store', headers: { 'Cache-Control': 'no-cache' } });
       if (!response.ok) throw new Error(`Kunne ikke hente version.json (${response.status})`);
       return normalizeVersionInfo(await response.json());
     } catch (error) {
@@ -1391,6 +1396,16 @@ async function fetchVersionInfo() {
     }
   }
   throw lastError || new Error('Opdateringstjek fejlede');
+}
+
+function cacheBustedUpdateUrl(url) {
+  try {
+    const next = new URL(url, window.location.href);
+    next.searchParams.set('xpressUpdateCheck', String(Date.now()));
+    return next.href;
+  } catch {
+    return url;
+  }
 }
 
 async function checkForAppUpdate({ manual = false, silent = false } = {}) {
@@ -7736,6 +7751,20 @@ setTimeout(() => {
   }
   checkForAppUpdate({ silent: true });
 }, 900);
+
+let lastForegroundUpdateCheck = 0;
+function checkForUpdateWhenForegrounded() {
+  const now = Date.now();
+  if (now - lastForegroundUpdateCheck < 60 * 1000) return;
+  lastForegroundUpdateCheck = now;
+  checkForAppUpdate({ silent: true });
+}
+
+window.addEventListener('focus', checkForUpdateWhenForegrounded);
+window.addEventListener('online', checkForUpdateWhenForegrounded);
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) checkForUpdateWhenForegrounded();
+});
 
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js').catch(() => {});
 
