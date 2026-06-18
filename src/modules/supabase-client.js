@@ -1,4 +1,4 @@
-export const defaultSupabaseConfig = {
+﻿export const defaultSupabaseConfig = {
   url: 'https://mtfbdoajzmlgqbeiubxe.supabase.co',
   anonKey: 'sb_publishable_O5_UP9V86eoCG_5f7xksCQ_uoW0jcJd',
 };
@@ -22,27 +22,27 @@ export function supabaseStatusFromConfig(config = {}, hasNativeClient = false) {
 
 export function profileFromSupabaseRow(row, user, privateDetails, currentProfile = {}) {
   return {
-    name: row?.full_name || currentProfile.name || '',
-    phone: row?.phone || currentProfile.phone || '',
-    email: row?.email || user?.email || currentProfile.email || '',
-    role: row?.role || currentProfile.role || 'Chauffør',
-    accessRole: row?.access_role || currentProfile.accessRole || 'employee',
-    vehicleType: row?.vehicle_type || currentProfile.vehicleType || 'truck',
-    truck: row?.truck || currentProfile.truck || '',
-    department: row?.department || currentProfile.department || '',
-    license: row?.license_summary || currentProfile.license || '',
-    emergencyContact: privateDetails?.emergency_contact || currentProfile.emergencyContact || '',
-    languages: row?.languages || currentProfile.languages || '',
-    logbook: Boolean(row?.logbook_enabled ?? currentProfile.logbook),
-    passwordResetRequired: Boolean(row?.password_reset_required),
+    name: row.full_name || currentProfile.name || '',
+    phone: row.phone || currentProfile.phone || '',
+    email: row.email || user.email || currentProfile.email || '',
+    role: row.role || currentProfile.role || 'Chauffør',
+    accessRole: row.access_role || currentProfile.accessRole || 'employee',
+    vehicleType: row.vehicle_type || currentProfile.vehicleType || 'truck',
+    truck: row.truck || currentProfile.truck || '',
+    department: row.department || currentProfile.department || '',
+    license: row.license_summary || currentProfile.license || '',
+    emergencyContact: privateDetails.emergency_contact || currentProfile.emergencyContact || '',
+    languages: row.languages || currentProfile.languages || '',
+    logbook: Boolean(row.logbook_enabled ?? currentProfile.logbook),
+    passwordResetRequired: Boolean(row.password_reset_required),
   };
 }
 
 export function employeeFromSupabaseRow(row, userId, initialsFromName = fallbackInitialsFromName) {
   return {
     id: row.id,
-    name: row.full_name || row.email || 'Medarbejder',
-    initials: initialsFromName(row.full_name || row.email),
+    name: row.full_name || 'Medarbejder',
+    initials: initialsFromName(row.full_name || 'Medarbejder'),
     role: row.role || 'Chauffør',
     accessRole: row.access_role || 'employee',
     vehicleType: row.vehicle_type || 'van',
@@ -72,3 +72,4 @@ globalThis.XpressIntraSupabaseClient = {
   profileFromSupabaseRow,
   employeeFromSupabaseRow,
 };
+

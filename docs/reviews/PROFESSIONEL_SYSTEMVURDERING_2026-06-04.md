@@ -170,12 +170,12 @@ Android-loggen viser også en seneste succesfuld APK-build med output til:
 
 XpressIntra giver mest værdi, hvis den bliver tænkt som chaufførens enkle startpunkt for dagen:
 
-- Hvad skal jeg vide?
-- Hvem kan jeg skrive til?
-- Skal jeg dele position?
-- Har jeg en opgave for en kollega?
-- Hvad skal gemmes i logbogen?
-- Hvad har kontoret meldt ud?
+- Hvad skal jeg vide
+- Hvem kan jeg skrive til
+- Skal jeg dele position
+- Har jeg en opgave for en kollega
+- Hvad skal gemmes i logbogen
+- Hvad har kontoret meldt ud
 
 Derfor bør forsiden holdes meget enkel. Alt der er indstillinger, tilladelser, creator-drift, juridik eller avanceret styring bør ligge væk fra forsiden. Forsiden skal være "dagens overblik", ikke "hele appen på én side".
 

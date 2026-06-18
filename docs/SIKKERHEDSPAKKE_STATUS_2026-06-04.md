@@ -45,7 +45,7 @@ Men GDPR handler også om beslutninger og drift. Derfor er appen først klar til
 - Lav en "Mistet telefon" handling i creator-panelet, der guider creator gennem de konkrete trin.
 - Lav en enkel "Fratrådt medarbejder" handling med deaktivér profil, stop GPS og fjern adgang.
 - Tilføj en release-test der kører dependency audit, når miljøet understøtter det.
-- Lav en lille medarbejdervenlig privacy-side i appen med "Hvad kan andre se om mig?".
+- Lav en lille medarbejdervenlig privacy-side i appen med "Hvad kan andre se om mig".
 - Lav en intern accept-/læsekvittering for privatlivspolitik og GPS-regler.
 
 ## Kilder der bør bruges ved endelig godkendelse

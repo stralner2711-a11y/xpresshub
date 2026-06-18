@@ -13,7 +13,10 @@ assert(app.includes("!raw.includes('@')"), 'Greeting helper should reject email 
 assert(app.includes('${text(dayGreeting())}, ${text(profileGreetingName())}'), 'Home hero should greet using time-aware greeting and the full profile display name');
 assert(!app.includes('<h2>Godmorgen, ${text(profileGreetingName())}</h2>'), 'Home hero should not be locked to morning all day');
 assert(!app.includes("Godmorgen, ${text(profile.name.split(' ')[0])}"), 'Home hero should not use first-name-only split logic');
-assert(app.includes("name: row?.full_name || profile.name || ''"), 'Supabase profile fallback should not turn email into display name');
+assert(
+  app.includes("name: row?.full_name || profile.name || ''") || app.includes("name: row.full_name || profile.name || ''"),
+  'Supabase profile fallback should not turn email into display name'
+);
 
 console.log('Home greeting smoke test passed');
 

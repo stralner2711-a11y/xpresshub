@@ -40,11 +40,11 @@ Status: Bruges før hver større intern opdatering og før appen gives til flere
 
 ## Ældre chauffør-test
 
-- Kan man forstå forsiden på under 10 sekunder?
-- Kan man finde `Arbejde`, `Beskeder`, `Live-kort` og `Information` uden forklaring?
-- Er knapperne store nok med én hånd?
-- Er tekst læsbar i mørk kabine?
-- Er fejlbeskeder skrevet som XpressIntra-beskeder, ikke teknisk Supabase-sprog?
+- Kan man forstå forsiden på under 10 sekunder
+- Kan man finde `Arbejde`, `Beskeder`, `Live-kort` og `Information` uden forklaring
+- Er knapperne store nok med én hånd
+- Er tekst læsbar i mørk kabine
+- Er fejlbeskeder skrevet som XpressIntra-beskeder, ikke teknisk Supabase-sprog
 
 ## Stop release hvis
 

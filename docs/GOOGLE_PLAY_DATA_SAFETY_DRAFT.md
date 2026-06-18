@@ -22,7 +22,7 @@ Når appen skal i Google Play, skal denne ligge på en offentlig HTTPS-adresse, 
 
 ## Data der sandsynligvis skal deklareres
 
-| Datatype | Indsamles? | Deles med tredjepart? | Formål | Kommentar |
+| Datatype | Indsamles | Deles med tredjepart | Formål | Kommentar |
 | --- | --- | --- | --- | --- |
 | Navn | Ja | Nej, normalt ikke | Konto, profil, intern drift | Ligger i Supabase. |
 | Email | Ja | Nej, normalt ikke | Login og kontakt | Supabase Auth/profil. |

@@ -112,3 +112,4 @@ assert(!/home-driver-tools[\s\S]*<b>Del position<\/b>/.test(harness.appElement.i
 console.log('Home dashboard smoke test passed');
 
 
+

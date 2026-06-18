@@ -135,15 +135,15 @@ I online-versionen bør der være en funktion til "Mine data", hvor medarbejdere
 
 ## Beslutninger før rigtig drift
 
-1. Hvem er dataansvarlig internt?
-2. Hvem må være chef/admin?
-3. Skal GPS kun være live, eller må der gemmes historik?
-4. Hvor længe skal chat gemmes?
-5. Hvilke billeder må deles?
-6. Hvem godkender regelnyt?
-7. Hvordan håndteres fratrådte medarbejdere?
-8. Skal appen bruges til kontrol, eller kun drift og fællesskab?
-9. Hvem svarer på medarbejdernes spørgsmål om data?
+1. Hvem er dataansvarlig internt
+2. Hvem må være chef/admin
+3. Skal GPS kun være live, eller må der gemmes historik
+4. Hvor længe skal chat gemmes
+5. Hvilke billeder må deles
+6. Hvem godkender regelnyt
+7. Hvordan håndteres fratrådte medarbejdere
+8. Skal appen bruges til kontrol, eller kun drift og fællesskab
+9. Hvem svarer på medarbejdernes spørgsmål om data
 10. Skal der laves databehandleraftale med leverandører som Supabase.
 
 ## Kilder

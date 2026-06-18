@@ -193,7 +193,7 @@ Minimum før professionel intern drift:
 | Middel | Medarbejdervejledning mangler | Lav kort guide med screenshots. |
 | Lav | Push-notifikationer ikke bygget | Vent, til appen er stabil. Tilføj først når tilladelse og privacy er klar. |
 
-## Beslutning: APK internt eller Google Play?
+## Beslutning: APK internt eller Google Play
 
 ### Hvis appen kun deles internt som APK
 

@@ -1,4 +1,4 @@
-const fs = require('fs');
+﻿const fs = require('fs');
 const vm = require('vm');
 
 const code = fs.readFileSync('src/app.js', 'utf8');

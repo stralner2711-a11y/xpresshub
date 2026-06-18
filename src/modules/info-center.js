@@ -17,16 +17,16 @@ export function cleanPhone(phone = '') {
 }
 
 export function infoSourceFromHref(href = '') {
-  return href?.includes('fstyr.dk') ? 'Færdselsstyrelsen'
-    : href?.includes('miljoezoner.dk') ? 'Miljøzoner'
-    : href?.includes('vejafgifter.dk') ? 'Vejafgifter'
-    : href?.includes('ela.europa.eu') ? 'European Labour Authority'
-    : href?.includes('itd.dk') ? 'ITD'
-    : href?.includes('at.dk') ? 'Arbejdstilsynet'
-    : href?.includes('virk.dk') ? 'Virk'
-    : href?.includes('xpressbudet.dk') ? 'XpressBudet'
-    : href?.includes('europa.eu') ? 'EU'
-    : href?.startsWith('tel:') ? 'Telefon'
+  return href.includes('fstyr.dk') ? 'Færdselsstyrelsen'
+    : href.includes('miljoezoner.dk') ? 'Miljøzoner'
+    : href.includes('vejafgifter.dk') ? 'Vejafgifter'
+    : href.includes('ela.europa.eu') ? 'European Labour Authority'
+    : href.includes('itd.dk') ? 'ITD'
+    : href.includes('at.dk') ? 'Arbejdstilsynet'
+    : href.includes('virk.dk') ? 'Virk'
+    : href.includes('xpressbudet.dk') ? 'XpressBudet'
+    : href.includes('europa.eu') ? 'EU'
+    : href.startsWith('tel:') ? 'Telefon'
     : 'Intern';
 }
 
@@ -38,7 +38,7 @@ export function buildInfoLinks(infoDetails = {}, infoSections = []) {
       title,
       description,
       href,
-      icon: infoSections.find(item => item.id === category)?.icon || 'info',
+      icon: infoSections.find(item => item.id === category).icon || 'info',
       source: infoSourceFromHref(href),
     }))
   );
@@ -72,7 +72,7 @@ export function contactDirectoryEntries({ companyContacts = [], employees = [], 
 export function resultTitle(activeCategory = 'all', infoSections = []) {
   if (activeCategory === 'favorites') return 'Dine favoritter';
   if (activeCategory === 'all') return 'Søgeresultater';
-  return infoSections.find(section => section.id === activeCategory)?.title || 'Resultater';
+  return infoSections.find(section => section.id === activeCategory).title || 'Resultater';
 }
 
 globalThis.XpressIntraInfoCenter = {

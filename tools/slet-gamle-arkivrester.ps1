@@ -86,15 +86,15 @@ function Assert-SafeTarget {
 function Convert-ToLongPath {
   param([string]$Path)
 
-  if ($Path.StartsWith('\\?\')) {
+  if ($Path.StartsWith('\\\')) {
     return $Path
   }
 
   if ($Path.StartsWith('\\')) {
-    return '\\?\UNC\' + $Path.Substring(2)
+    return '\\\UNC\' + $Path.Substring(2)
   }
 
-  return '\\?\' + $Path
+  return '\\\' + $Path
 }
 
 function Remove-SafeTarget {

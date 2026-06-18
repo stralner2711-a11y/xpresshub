@@ -1,4 +1,4 @@
-const icons = {
+﻿const icons = {
   home: '<svg viewBox="0 0 24 24"><path d="m4 11 8-7 8 7v8a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z"/></svg>',
   users: '<svg viewBox="0 0 24 24"><path d="M16 20a4 4 0 0 0-8 0"/><circle cx="12" cy="9" r="3"/><path d="M19 20a3 3 0 0 0-2-2.83M17 6.13a3 3 0 0 1 0 5.74M5 20a3 3 0 0 1 2-2.83M7 6.13a3 3 0 0 0 0 5.74"/></svg>',
   map: '<svg viewBox="0 0 24 24"><path d="m9 18-6 3V6l6-3 6 3 6-3v15l-6 3z"/><path d="M9 3v15m6-12v15"/></svg>',
@@ -26,9 +26,9 @@ const icons = {
   search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>',
 };
 
-const APP_VERSION = '1.3.31-release-v92';
-const APP_DISPLAY_VERSION = '1.3.31';
-const APP_VERSION_CODE = 44;
+const APP_VERSION = '1.3.32-release-v93';
+const APP_DISPLAY_VERSION = '1.3.32';
+const APP_VERSION_CODE = 45;
 const TEMPORARY_EMPLOYEE_PASSWORD = 'xpress';
 const IMAGE_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
 const PROFILE_PHOTO_MAX_DIMENSION = 512;
@@ -325,7 +325,7 @@ const stored = key => {
 const save = (key, value) => localStorage.setItem(`roadlog:${key}`, JSON.stringify(value));
 const clone = value => JSON.parse(JSON.stringify(value));
 const text = value => String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
-const mediaName = value => String(value || 'xpressintra-billede.jpg').replace(/[^\wæøåÆØÅ.-]+/g, '-');
+const mediaName = value => String(value || 'xpressintra-billede.jpg').replace(/[^\wæøåÆØÅ&.-]+/g, '-');
 
 let supabaseClientInstance = null;
 let supabaseChatSubscription = null;
@@ -887,6 +887,9 @@ let globalQuery = '';
 let chatQuery = '';
 let activeInfoCategory = 'all';
 let infoFavorites = stored('infoFavorites') || [];
+let savedItems = stored('savedItems') || [];
+let announcementReads = stored('announcementReads') || {};
+let offlineQueue = stored('offlineQueue') || [];
 let session = hasSupabaseConfigForMode && !DEMO_MODE ? null : stored('session');
 let pendingStandardSignupEmail = '';
 let pendingStandardSignupInvitationId = '';
@@ -1916,8 +1919,8 @@ function employeeFromSupabase(row, userId) {
   }
   return {
     id: row.id,
-    name: row.full_name || row.email || 'Medarbejder',
-    initials: initialsFromName(row.full_name || row.email),
+    name: row.full_name || 'Medarbejder',
+    initials: initialsFromName(row.full_name || 'Medarbejder'),
     role: row.role || 'Chauffør',
     accessRole: row.access_role || 'employee',
     vehicleType: row.vehicle_type || 'van',
@@ -3465,7 +3468,7 @@ function renderOnboardingControlPanel({ compact = false } = {}) {
         </nav>
       </article>`).join('')}
     </div>
-    <p class="onboarding-note">Bemærk: Supabase skjuler bekræftet mail-status for den almindelige app af sikkerhedsgrunde. Hvis vi senere vil se “mail bekræftet” 100%, skal det laves via en sikker admin/Edge Function.</p>
+    <p class="onboarding-note">Bemærk: Supabase skjuler bekræftet mail-status for den almindelige app af sikkerhedsgrunde. Hvis vi senere vil se "mail bekræftet" 100%, skal det laves via en sikker admin/Edge Function.</p>
   </section>`;
 }
 
@@ -3480,6 +3483,7 @@ function creatorOperationsStats() {
   const disabledCore = Object.entries(coreSettings).filter(([, enabled]) => !enabled).length;
   const pendingDataRequests = dataRequests.filter(request => !/closed|done|afsluttet/i.test(request.status || '')).length;
   const openSupportRequests = supportRequests.filter(request => !/closed|done|afsluttet/i.test(request.status || '')).length;
+  const offlineQueueStats = offlineQueueSummary();
   const security = securityReadiness();
   const managedDataAreas = [employees, chats, notifications, vehicles, ruleUpdates, announcements, dataRequests]
     .filter(list => Array.isArray(list) && list.length).length;
@@ -3508,6 +3512,8 @@ function creatorOperationsStats() {
     disabledCore,
     pendingDataRequests,
     openSupportRequests,
+    savedItems: savedItems.length,
+    offlinePending: offlineQueueStats.pending,
     latestSupportRequest: supportRequests[0] || null,
     security,
     managedDataAreas,
@@ -3527,6 +3533,7 @@ function creatorOperationsActionItems(stats = creatorOperationsStats()) {
   if (stats.disabledCore) items.push({ tone: 'warn', title: 'Kernefunktioner er slukket', body: `${stats.disabledCore} funktion(er) er midlertidigt lukket for medarbejderne.`, action: 'open-admin' });
   if (stats.pendingDataRequests) items.push({ tone: 'warn', title: 'Persondata skal behandles', body: `${stats.pendingDataRequests} dataanmodning(er) ligger aabne.`, action: 'open-my-data' });
   if (stats.openSupportRequests) items.push({ tone: 'warn', title: 'Fejl/ønsker skal kigges igennem', body: `${stats.openSupportRequests} melding(er) ligger lokalt i fejlcenteret.`, action: 'open-support-request' });
+  if (stats.offlinePending) items.push({ tone: 'warn', title: 'Lokale ting venter', body: `${stats.offlinePending} handling(er) er gemt lokalt og bør tjekkes ved forbindelse.`, action: 'open-offline-queue' });
   if (!items.length) items.push({ tone: 'good', title: 'Ingen akutte driftspunkter', body: 'Appen ser rolig ud lige nu. Hold stadig oeje med go-live og telefon-test.', action: 'open-launch-checklist' });
   return items.slice(0, 5);
 }
@@ -3832,6 +3839,8 @@ function renderCreatorOperationsDashboard() {
       <span><b>${stats.disabledCore}</b><small>Funktioner slukket</small></span>
       <span><b>${stats.pendingDataRequests}</b><small>Dataanmodninger</small></span>
       <span><b>${stats.openSupportRequests}</b><small>Fejl/onsker</small></span>
+      <span><b>${stats.offlinePending}</b><small>Venter lokalt</small></span>
+      <span><b>${stats.savedItems}</b><small>Gemt til senere</small></span>
       <span><b>${stats.security.percent}%</b><small>Sikkerhed</small></span>
     </div>
     <div class="creator-ops-actions">
@@ -3842,6 +3851,7 @@ function renderCreatorOperationsDashboard() {
       <button type="button" data-action="open-launch-checklist">Go-live tjek</button>
       <button type="button" data-action="open-security-center">Sikkerhed</button>
       <button type="button" data-action="open-support-request">Fejlcenter</button>
+      <button type="button" data-action="open-offline-queue">Offline-kø</button>
       <button type="button" data-action="open-settings">Backend</button>
     </div>
     ${renderUpdateSummary()}
@@ -3854,6 +3864,7 @@ function renderCreatorOperationsDashboard() {
       <span class="${stats.disabledCore ? 'warn' : 'ok'}"><b>Kernefunktioner</b><small>${stats.disabledCore ? `${stats.disabledCore} funktion(er) er slaaet fra` : 'Alle kernefunktioner er aabne'}</small></span>
       <span class="${stats.pendingDataRequests ? 'warn' : 'ok'}"><b>Persondata</b><small>${stats.pendingDataRequests ? `${stats.pendingDataRequests} anmodning(er) boer behandles` : 'Ingen aabne dataanmodninger'}</small></span>
       <span class="${stats.openSupportRequests ? 'warn' : 'ok'}"><b>Fejlmeldinger</b><small>${stats.openSupportRequests ? `${stats.openSupportRequests} melding(er) ligger klar til gennemgang` : 'Ingen lokale fejlmeldinger lige nu'}</small></span>
+      <span class="${stats.offlinePending ? 'warn' : 'ok'}"><b>Offline-kø</b><small>${stats.offlinePending ? `${stats.offlinePending} lokal(e) handling(er) venter` : 'Ingen lokale handlinger venter'}</small></span>
     </section>
     <details class="creator-ops-details" open>
       <summary>Onboarding kontrol</summary>
@@ -4693,10 +4704,73 @@ function postAvatar(item) {
   return `<span class="feed-avatar ${item.kind === 'office' ? 'office' : ''}">${text(item.initials || 'XB')}</span>`;
 }
 
+function savedItemKey(type, id) {
+  return `${type}:${id}`;
+}
+
+function toggleSavedItem(type, id, label = 'Elementet') {
+  const key = savedItemKey(type, id);
+  savedItems = savedItems.includes(key)
+    ? savedItems.filter(item => item !== key)
+    : [...savedItems, key];
+  save('savedItems', savedItems);
+  showToast(savedItems.includes(key) ? `${label} er gemt til senere` : `${label} er fjernet fra gemte`);
+  render();
+}
+
+function markAnnouncementRead(id) {
+  if (!id) return;
+  announcementReads = { ...announcementReads, [id]: new Date().toISOString() };
+  save('announcementReads', announcementReads);
+}
+
+function queueOfflineChange(type, body, source = 'XpressIntra', action = '') {
+  offlineQueue = [
+    {
+      id: `offline-${Date.now()}-${offlineQueue.length}`,
+      type,
+      body,
+      source,
+      action,
+      createdAt: new Date().toISOString(),
+      status: 'pending',
+    },
+    ...offlineQueue,
+  ].slice(0, 30);
+  save('offlineQueue', offlineQueue);
+  return offlineQueue[0];
+}
+
+function offlineQueueSummary() {
+  const pending = offlineQueue.filter(item => item.status !== 'synced').length;
+  return { pending, total: offlineQueue.length };
+}
+
+function openOfflineQueueModal() {
+  const modal = document.createElement('div');
+  modal.className = 'modal-backdrop';
+  const pending = offlineQueueSummary().pending;
+  modal.innerHTML = `<section class="profile-modal notification-modal">
+    <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
+    <p class="eyebrow">Offline-kø</p><h3>Lokale ting der venter</h3>
+    <p class="info-intro">${pending ? `${pending} ting er gemt lokalt og skal tjekkes, når forbindelsen er stabil.` : 'Der er ingen lokale ændringer der venter.'}</p>
+    <div class="offline-queue-list">
+      ${offlineQueue.length ? offlineQueue.map(item => `<article>
+        <b>${text(item.type)}</b>
+        <span>${text(item.body)}</span>
+        <small>${text(item.source)} · ${formatClock(item.createdAt)}</small>
+      </article>`).join('') : '<p class="empty-state">Alt er ajour.</p>'}
+    </div>
+  </section>`;
+  document.body.append(modal);
+}
+
 function renderFeedPost(item) {
   const liked = Boolean(feedLikes[item.id]);
   const likeCount = Number(item.likes || 0) + (liked ? 1 : 0);
   const canEditPost = canManageAnnouncement(item);
+  const saved = savedItems.includes(savedItemKey('announcement', item.id));
+  const read = Boolean(announcementReads[item.id]);
   return `<article class="social-post ${item.kind === 'rule' ? 'rule-post' : ''}">
     <header>${postAvatar(item)}<div><b>${text(item.author)}</b><span>${text(item.time)} · ${text(item.audience)}</span></div>${item.pinned ? '<em>Fastgjort</em>' : ''}${canEditPost ? `<nav class="post-admin-actions" aria-label="Opslagshandlinger"><button data-action="edit-announcement" data-post="${text(item.id)}">Ret</button><button data-action="delete-announcement" data-post="${text(item.id)}">Slet</button></nav>` : ''}</header>
     <div class="social-post-body">${item.title ? `<h3>${text(item.title)}</h3>` : ''}<p>${text(item.body)}</p>
@@ -4705,6 +4779,8 @@ function renderFeedPost(item) {
     </div>
     <footer>
       <button class="${liked ? 'liked' : ''}" data-action="toggle-like" data-post="${text(item.id)}">${icon('heart')}<span>${likeCount || 'Synes godt om'}</span></button>
+      <button class="${saved ? 'liked' : ''}" data-action="toggle-save-post" data-post="${text(item.id)}">${icon('document')}<span>${saved ? 'Gemt' : 'Gem'}</span></button>
+      <button data-action="mark-post-read" data-post="${text(item.id)}">${icon('check')}<span>${read ? 'Læst' : 'Ikke læst'}</span></button>
       ${item.kind === 'rule'
         ? `<button data-action="open-rule-updates">${icon('document')}<span>Læs mere</span></button>`
         : `<button data-action="open-comments" data-post="${text(item.id)}">${icon('comment')}<span>${item.comments?.length || 0} kommentarer</span></button>`}
@@ -4882,6 +4958,7 @@ function renderHome() {
   const unreadNotifications = notifications.filter(item => item.unread).length;
   const officePosts = announcements.filter(item => item.kind === 'office' && canReadAudience(item.audience)).slice(0, 1);
   const sharingEmployees = onlineEmployees.filter(employee => employee.sharing).length;
+  const offlinePending = offlineQueueSummary().pending;
   const nowStatus = workday.active ? 'Arbejdsdag aktiv' : location.sharing ? 'Position deles' : 'Klar til dagen';
   const locationText = location.sharing ? locationExpiryText() : 'GPS er skjult';
   const nextAction = activePickup
@@ -4922,6 +4999,8 @@ function renderHome() {
         <span><b>${workday.active ? 'Aktiv' : 'Ikke mødt ind'}</b><small>Arbejde</small></span>
         <span><b>${location.sharing ? 'Live' : 'Skjult'}</b><small>GPS</small></span>
         <span><b>${unreadNotifications}</b><small>Ulæst</small></span>
+        <span><b>${savedItems.length}</b><small>Gemt</small></span>
+        <span><b>${offlinePending}</b><small>Venter</small></span>
       </div>
     </section>
     <section class="home-day-tools screen-section" aria-label="Dagens værktøjer">
@@ -6434,7 +6513,7 @@ function openSecurityCenterModal() {
     </section>
     <section class="security-check-list">
       ${readiness.items.map(item => `<article class="${item.done ? 'done' : 'todo'}">
-        <b>${item.done ? '?' : '•'} ${text(item.title)}</b>
+        <b>${item.done ? 'OK' : '-'} ${text(item.title)}</b>
         <small>${text(item.body)}</small>
       </article>`).join('')}
     </section>
@@ -6924,6 +7003,7 @@ document.addEventListener('click', async event => {
   if (action === 'open-vehicles') openVehiclesModal();
   if (action === 'open-notifications') openNotificationsModal();
   if (action === 'open-support-request') openSupportRequestModal();
+  if (action === 'open-offline-queue') openOfflineQueueModal();
   if (action === 'copy-support-report') {
     const request = supportRequests.find(item => item.id === event.target.closest('[data-support-report]')?.dataset.supportReport);
     await copyTextToClipboard(supportRequestSummary(request), 'Fejlrapport kopieret');
@@ -7073,6 +7153,14 @@ document.addEventListener('click', async event => {
     if (onlineBackendActive()) {
       syncSupabaseAnnouncementReaction(postId, feedLikes[postId]).catch(error => showToast(`Reaktionen blev gemt lokalt, men ikke online: ${error.message}`));
     }
+    render();
+  }
+  if (action === 'toggle-save-post' && postId) {
+    toggleSavedItem('announcement', postId, 'Opslaget');
+  }
+  if (action === 'mark-post-read' && postId) {
+    markAnnouncementRead(postId);
+    showToast('Opslaget er markeret som læst');
     render();
   }
   if (action === 'zoom-in') { mapZoom = Math.min(2, mapZoom + 1); render(); }
@@ -7565,6 +7653,10 @@ setTimeout(() => {
 }, 900);
 
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js').catch(() => {});
+
+
+
+
 
 
 

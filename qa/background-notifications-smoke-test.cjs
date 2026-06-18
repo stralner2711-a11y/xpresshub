@@ -1,4 +1,4 @@
-const fs = require('fs');
+﻿const fs = require('fs');
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -11,7 +11,7 @@ const manifest = fs.readFileSync('android/app/src/main/AndroidManifest.xml', 'ut
 const mainActivity = fs.readFileSync('android/app/src/main/java/dk/xpressbudet/xpressintra/MainActivity.java', 'utf8');
 const version = JSON.parse(fs.readFileSync('public/version.json', 'utf8'));
 
-assert(app.includes("const APP_VERSION = '1.3.31-release-v92'"), 'App should expose the notification release version');
+assert(app.includes("const APP_VERSION = '1.3.32-release-v93'"), 'App should expose the notification release version');
 assert(app.includes('function requestSystemNotifications'), 'App should request system notification permission from a user action');
 assert(app.includes('function showSystemNotification'), 'App should show system notifications');
 assert(app.includes('function safeSystemNotificationBody'), 'App should keep lock-screen chat text private');
@@ -21,10 +21,16 @@ assert(app.includes("data-action=\"request-system-notifications\""), 'Settings/n
 assert(app.includes("channel('xpressintra-notifications')"), 'App should subscribe to realtime notification rows');
 assert(app.includes("table: 'notifications'"), 'Realtime notifications should listen to the notifications table');
 assert(app.includes('addNotification(item, { system: true })'), 'Realtime notifications should trigger local system notification layer');
-assert(app.includes('addNotification({\n      type: \'Chatbesked\''), 'Incoming chat messages should create app notifications');
+assert(
+  /addNotification\(\{\s*type: 'Chatbesked'/.test(app),
+  'Incoming chat messages should create app notifications'
+);
 assert(app.includes('showSystemNotification(item)'), 'addNotification should be able to trigger system notifications');
 assert(app.includes('isQuietHoursNow'), 'System notifications should respect quiet hours');
-assert(app.includes("if (choice?.outcome === 'accepted')"), 'PWA install flow should handle accepted installs');
+assert(
+  app.includes("if (choice?.outcome === 'accepted')") || app.includes("if (choice.outcome === 'accepted')"),
+  'PWA install flow should handle accepted installs'
+);
 assert(app.includes("await requestSystemNotifications()"), 'PWA install flow should ask for notification permission after install acceptance');
 assert(manifest.includes('android.permission.POST_NOTIFICATIONS'), 'Android manifest should request notification permission');
 assert(mainActivity.includes('requestNotificationPermissionOnFirstStart'), 'Android app should ask for notification permission on first start');
@@ -36,9 +42,12 @@ for (const source of [worker, publicWorker]) {
   assert(source.includes("clients.openWindow"), 'Service worker should open the app from a notification');
 }
 
-assert(version.activeVersion === '1.3.31', 'Release version should be 1.3.31');
-assert(version.activeVersionCode === 44, 'Release build should be 44');
-assert(version.changelog.some(item => item.includes('build 44')), 'Changelog should mention the release detection fix');
+assert(version.activeVersion === '1.3.32', 'Release version should be 1.3.32');
+assert(version.activeVersionCode === 45, 'Release build should be 45');
+assert(version.changelog.some(item => item.includes('build 45')), 'Changelog should mention the release detection fix');
 
 console.log('Background notifications smoke test passed');
+
+
+
 

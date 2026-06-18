@@ -122,3 +122,4 @@ assert(disabledSettings.smartLogbook === false, 'Smart logbook master switch sho
 console.log('Logbook automation smoke test passed');
 
 
+

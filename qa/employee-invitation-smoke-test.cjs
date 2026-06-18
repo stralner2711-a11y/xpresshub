@@ -1,4 +1,4 @@
-const fs = require('fs');
+﻿const fs = require('fs');
 const vm = require('vm');
 
 function assert(condition, message) {
@@ -120,3 +120,4 @@ assert(message.body.includes('Åbn dette personlige invitationslink'), 'Invite m
 assert(message.body.includes('downloadsiden her'), 'Invite message should keep the download page as fallback only');
 
 console.log('Employee invitation smoke test passed');
+

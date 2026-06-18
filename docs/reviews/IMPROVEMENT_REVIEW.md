@@ -11,7 +11,7 @@ Appen har et stærkt grundkoncept: intern startside, adskilte chats, frivillig G
 De største forbedringer er:
 
 1. Gør kortet til en rigtig driftsvisning med live-positioner, tydelig deling og Google Maps-lignende brugeroplevelse.
-2. Gør informationscenteret mere praktisk: kortere svar, bedre kategorier, officielle kilder, favoritter og "hvad betyder det for mig?".
+2. Gør informationscenteret mere praktisk: kortere svar, bedre kategorier, officielle kilder, favoritter og "hvad betyder det for mig".
 3. Gør startsiden til appens centrum med opslag fra kontoret, kollegaopslag, regelnyt, hurtige handlinger og vigtige advarsler.
 4. Byg en administrationsdel til kontor/chef uden adgang til de private lastbil- og varebilchats.
 5. Lav en klar privatlivsmodel for GPS, logbog, chat, historik og sletning.
@@ -76,7 +76,7 @@ Startsiden bør være appens daglige indgang. Den skal minde om sociale medier, 
 - Kollegaposter fra vejen.
 - Regelnyt med tydelig målgruppe: alle, lastbil eller varebil.
 - Hurtige handlinger: del position, hent for kollega, skriv i fælleschat, åbn kort, åbn information.
-- "Hvem er online?" med frivillig positionsstatus.
+- "Hvem er online" med frivillig positionsstatus.
 - Vigtige advarsler: vejarbejde, kø, terminalinfo, forsinkelser, dokumentationskrav.
 - Dagens praktiske huskeliste.
 
@@ -140,7 +140,7 @@ Informationscenteret skal ikke bare være en linkliste. Det skal hjælpe en træ
 
 ### Bedre brugerflade
 
-- Start med spørgsmål: "Hvad har du brug for?"
+- Start med spørgsmål: "Hvad har du brug for"
 - Brug store kort: Uheld, forsinkelse, CMR, køre/hviletid, vejafgift, miljøzoner, varebil, lastbil.
 - Giv hver artikel en kort version først: "Det vigtigste på 20 sekunder".
 - Vis "Gælder for" på alle emner: alle, varebil, lastbil, internationalt, Danmark.
@@ -151,7 +151,7 @@ Informationscenteret skal ikke bare være en linkliste. Det skal hjælpe en træ
 
 ### Indhold der bør skrives internt
 
-- Ved uheld: hvad gør jeg først?
+- Ved uheld: hvad gør jeg først
 - Ved skade på gods.
 - Ved forsinkelse.
 - Ved manglende dokumenter.
@@ -257,7 +257,7 @@ Forbedringer:
 - Mulighed for at dele enkelte logbogsindlæg til startsiden.
 - Automatisk forslag: sted, dato, rute, billede.
 - "Mine steder" med kort over byer og lande.
-- Månedsoversigt: hvor har jeg været?
+- Månedsoversigt: hvor har jeg været
 - Eksport af egne data.
 - Sletning af egne logbogsdata.
 
@@ -282,13 +282,13 @@ Dette er en af de vigtigste dele, hvis appen skal bruges i et rigtigt firma.
 
 Beslutninger der skal træffes:
 
-- Hvor længe gemmes GPS-positioner?
-- Hvem må se live-position?
-- Må kontoret se historiske positioner, eller kun live?
-- Må hastighed gemmes, eller kun vises midlertidigt?
-- Hvem kan eksportere data?
-- Hvad sker der, når en medarbejder stopper?
-- Hvordan informeres medarbejderne om databrug?
+- Hvor længe gemmes GPS-positioner
+- Hvem må se live-position
+- Må kontoret se historiske positioner, eller kun live
+- Må hastighed gemmes, eller kun vises midlertidigt
+- Hvem kan eksportere data
+- Hvad sker der, når en medarbejder stopper
+- Hvordan informeres medarbejderne om databrug
 
 Anbefaling:
 
@@ -394,9 +394,9 @@ Appen er klar til intern test, når dette virker:
 
 Der er tre beslutninger, som bør tages tidligt:
 
-1. Skal kortet være Google Maps fra starten, eller er Leaflet/OpenStreetMap nok til MVP?
-2. Skal kontoret kunne se historiske positioner, eller kun aktiv live-deling?
-3. Hvem må godkende regelnyt og officielle informationsopslag?
+1. Skal kortet være Google Maps fra starten, eller er Leaflet/OpenStreetMap nok til MVP
+2. Skal kontoret kunne se historiske positioner, eller kun aktiv live-deling
+3. Hvem må godkende regelnyt og officielle informationsopslag
 
 Min anbefaling:
 

@@ -7,10 +7,10 @@ function assert(condition, message) {
 const app = fs.readFileSync('src/app.js', 'utf8');
 const moduleCode = fs.readFileSync('src/modules/info-center.js', 'utf8');
 
-assert(app.includes('XpressIntraInfoCenter?.buildInfoLinks'), 'App should delegate info link building to the Information module when loaded');
-assert(app.includes('XpressIntraInfoCenter?.contactDirectoryEntries'), 'App should delegate contact directory building to the Information module when loaded');
-assert(app.includes('XpressIntraInfoCenter?.filterInfoLinks'), 'App should delegate Information filtering to the module when loaded');
-assert(app.includes('XpressIntraInfoCenter?.cleanPhone'), 'App should delegate phone cleanup to the module when loaded');
+assert(app.includes('XpressIntraInfoCenter.buildInfoLinks'), 'App should delegate info link building to the Information module when loaded');
+assert(app.includes('XpressIntraInfoCenter.contactDirectoryEntries'), 'App should delegate contact directory building to the Information module when loaded');
+assert(app.includes('XpressIntraInfoCenter.filterInfoLinks'), 'App should delegate Information filtering to the module when loaded');
+assert(app.includes('XpressIntraInfoCenter.cleanPhone'), 'App should delegate phone cleanup to the module when loaded');
 
 assert(moduleCode.includes('export function buildInfoLinks'), 'Information module should export link building');
 assert(moduleCode.includes('export function contactDirectoryEntries'), 'Information module should export contact directory builder');

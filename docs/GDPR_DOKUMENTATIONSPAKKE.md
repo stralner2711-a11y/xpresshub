@@ -100,16 +100,16 @@ Fordi appen kan behandle lokationsdata om medarbejdere, bør ledelsen lave en ko
 
 Minimumsspørgsmål:
 
-1. Hvilke data behandles?
-2. Hvorfor er behandlingen nødvendig?
-3. Hvem kan se data?
-4. Hvor længe gemmes data?
-5. Kan formålet nås med mindre data?
-6. Kan medarbejderen slå funktionen fra?
-7. Hvad er risikoen ved misbrug, mistet telefon eller forkert adgang?
-8. Hvilke tekniske og organisatoriske sikkerhedsforanstaltninger findes?
-9. Hvordan informeres medarbejderne?
-10. Hvem godkender ændringer?
+1. Hvilke data behandles
+2. Hvorfor er behandlingen nødvendig
+3. Hvem kan se data
+4. Hvor længe gemmes data
+5. Kan formålet nås med mindre data
+6. Kan medarbejderen slå funktionen fra
+7. Hvad er risikoen ved misbrug, mistet telefon eller forkert adgang
+8. Hvilke tekniske og organisatoriske sikkerhedsforanstaltninger findes
+9. Hvordan informeres medarbejderne
+10. Hvem godkender ændringer
 
 ## Dataanmodninger
 
@@ -144,13 +144,13 @@ Service-role keys, database passwords og andre hemmelige nøgler må aldrig ligg
 
 ## Beslutninger der mangler
 
-1. Må GPS kun være live, eller må historik gemmes?
-2. Må fart gemmes eller kun vises lokalt for chaufføren?
-3. Hvor længe skal chats gemmes?
-4. Hvem må oprette og slette medarbejdere?
-5. Hvem må godkende nye app-opdateringer?
-6. Hvad sker der ved misbrug af chat eller billeder?
-7. Skal appen bruges til drift alene, eller også kontrol?
-8. Hvem svarer på GDPR-anmodninger?
-9. Hvem kontakter medarbejdere ved sikkerhedsbrud?
-10. Hvornår er pilotperioden slut?
+1. Må GPS kun være live, eller må historik gemmes
+2. Må fart gemmes eller kun vises lokalt for chaufføren
+3. Hvor længe skal chats gemmes
+4. Hvem må oprette og slette medarbejdere
+5. Hvem må godkende nye app-opdateringer
+6. Hvad sker der ved misbrug af chat eller billeder
+7. Skal appen bruges til drift alene, eller også kontrol
+8. Hvem svarer på GDPR-anmodninger
+9. Hvem kontakter medarbejdere ved sikkerhedsbrud
+10. Hvornår er pilotperioden slut

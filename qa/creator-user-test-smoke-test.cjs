@@ -93,6 +93,6 @@ assert(reportModal.innerHTML.includes('data-action="open-admin"'), 'Report actio
 
 harness.run("profile = { ...profile, name: 'Almindelig Chauffør', email: 'driver@example.com', role: 'Chauffør', accessRole: 'employee', vehicleType: 'truck' }; activeTab = 'more'; render();");
 assert(!harness.appElement.innerHTML.includes('Kør brugertest'), 'Employees should not see creator user-test controls');
-assert(harness.run("renderCreatorUserTestPanel()") === '', 'Employee calls to render user-test panel should return nothing');
+assert(harness.run('renderCreatorUserTestPanel()') === '', 'Employee calls to render user-test panel should return nothing');
 
 console.log('Creator user-test smoke test passed');

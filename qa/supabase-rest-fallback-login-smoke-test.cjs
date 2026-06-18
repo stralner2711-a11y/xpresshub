@@ -1,4 +1,4 @@
-const fs = require('fs');
+﻿const fs = require('fs');
 const vm = require('vm');
 
 function assert(condition, message) {
@@ -126,3 +126,4 @@ function createHarness() {
   console.error(error);
   process.exit(1);
 });
+

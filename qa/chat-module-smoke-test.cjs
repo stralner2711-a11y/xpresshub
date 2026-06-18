@@ -7,9 +7,9 @@ function assert(condition, message) {
 const app = fs.readFileSync('src/app.js', 'utf8');
 const chatModule = fs.readFileSync('src/modules/chat.js', 'utf8');
 
-assert(app.includes('XpressIntraChat?.hasChannelAccess'), 'App should delegate channel access checks to the chat module when loaded');
-assert(app.includes('XpressIntraChat?.chatFromConversationRow'), 'App should delegate Supabase conversation mapping to the chat module when loaded');
-assert(app.includes('XpressIntraChat?.messageFromSupabaseRow'), 'App should delegate Supabase message mapping to the chat module when loaded');
+assert(app.includes('XpressIntraChat.hasChannelAccess'), 'App should delegate channel access checks to the chat module when loaded');
+assert(app.includes('XpressIntraChat.chatFromConversationRow'), 'App should delegate Supabase conversation mapping to the chat module when loaded');
+assert(app.includes('XpressIntraChat.messageFromSupabaseRow'), 'App should delegate Supabase message mapping to the chat module when loaded');
 assert(app.includes("const emojiChoices = ['\\u{1F44D}', '\\u{1F44C}', '\\u{1F60A}'"), 'Chat emoji choices should use stable unicode escapes instead of broken placeholder text');
 assert(app.includes('<div class="emoji-row">'), 'Conversation should render the emoji row');
 assert(app.includes('<button type="submit" aria-label="Send besked">'), 'Chat send button should remain the submit button after emoji controls');

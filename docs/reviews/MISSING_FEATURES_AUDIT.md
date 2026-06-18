@@ -222,14 +222,14 @@ Mangler:
 
 Mangler beslutning:
 
-- Hvem er dataansvarlig?
-- Hvem må være admin?
-- Hvor længe gemmes chat?
-- Hvor længe gemmes billeder?
-- Skal GPS kun være live?
-- Må hastighed nogensinde gemmes?
-- Hvordan håndteres fratrådte medarbejdere?
-- Hvem svarer på medarbejdernes dataanmodninger?
+- Hvem er dataansvarlig
+- Hvem må være admin
+- Hvor længe gemmes chat
+- Hvor længe gemmes billeder
+- Skal GPS kun være live
+- Må hastighed nogensinde gemmes
+- Hvordan håndteres fratrådte medarbejdere
+- Hvem svarer på medarbejdernes dataanmodninger
 
 ## Anbefalet rækkefølge
 

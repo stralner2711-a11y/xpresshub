@@ -33,7 +33,7 @@ function contentType(filePath) {
 function startServer() {
   const server = http.createServer((req, res) => {
     const urlPath = decodeURIComponent(new URL(req.url, 'http://127.0.0.1').pathname);
-    let filePath = path.join(root, urlPath === '/' ? 'index.html' : urlPath);
+    let filePath = path.join(root, urlPath === '/'  'index.html' : urlPath);
     if (!fs.existsSync(filePath) && urlPath === '/xpressbudet-logo-transparent.png') {
       filePath = path.join(root, 'public', 'xpressbudet-logo-transparent.png');
     }
@@ -96,7 +96,7 @@ function startServer() {
   });
 
   for (const tab of tabs) {
-    await page.goto(`http://127.0.0.1:${port}/?tab=${tab}&demo=video`, { waitUntil: 'networkidle' });
+    await page.goto(`http://127.0.0.1:${port}/tab=${tab}&demo=video`, { waitUntil: 'networkidle' });
     await page.waitForTimeout(700);
     await page.screenshot({ path: path.join(outputDir, `${tab}.png`), fullPage: false });
   }

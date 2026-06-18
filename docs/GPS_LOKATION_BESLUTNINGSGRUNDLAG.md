@@ -18,7 +18,7 @@ Den sikreste model for XpressIntra lige nu er:
 - Kort slettefrist.
 - Chef/admin må ikke bruge XpressIntra GPS til almindelig medarbejderkontrol. Hvis virksomheden har drifts-/flådebehov, hører det til flådesystemet og egne regler.
 
-## Hvad siger kilderne?
+## Hvad siger kilderne
 
 Datatilsynet har i vejledningen om databeskyttelse i ansættelsesforhold fokus på, at arbejdsgiveren skal have et behandlingsgrundlag, og at kontrolforanstaltninger kræver retningslinjer, gennemsigtighed og information til medarbejderne.
 
@@ -28,7 +28,7 @@ Datatilsynets vejledning om konsekvensanalyse/DPIA siger også, at behandling ka
 
 Derudover nævner arbejdsmarkedskilder, at GPS i firmabiler ofte anses som en kontrolforanstaltning, der kræver forudgående information/varsling efter relevante aftaler, hvis virksomheden er omfattet.
 
-## Hvad betyder det for XpressIntra?
+## Hvad betyder det for XpressIntra
 
 ### Model A: Frivillig live-deling til kollega-hjælp
 

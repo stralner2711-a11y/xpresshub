@@ -123,7 +123,7 @@ assert(creatorModal.innerHTML.includes('Sikkerhedscenter'), 'Creator should get 
 assert(creatorModal.innerHTML.includes('Dataanmodninger'), 'Creator should see privacy/data operations status');
 assert(!creatorModal.innerHTML.includes('Godmorgen Tommy. Din næste aflæsning'), 'Creator operations panel should not expose private/direct chat message content');
 
-assert(creatorModal.innerHTML.includes('Hvad skal du holde øje med?'), 'Creator should see prioritized action items');
+assert(creatorModal.innerHTML.includes('Hvad skal du holde øje med'), 'Creator should see prioritized action items');
 assert(creatorModal.innerHTML.includes('Onboarding kontrol'), 'Creator should see an onboarding control section');
 assert(creatorModal.innerHTML.includes('Medarbejdere ind i appen'), 'Creator should see employee onboarding overview');
 assert(creatorModal.innerHTML.includes('Mangler kode') && creatorModal.innerHTML.includes('Skal følges op'), 'Onboarding overview should show follow-up KPIs');

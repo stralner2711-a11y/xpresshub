@@ -189,8 +189,8 @@ function assert(condition, message) {
 (async () => {
   const app = fs.readFileSync('src/app.js', 'utf8');
   const supabaseModule = fs.readFileSync('src/modules/supabase-client.js', 'utf8');
-  assert(app.includes('XpressIntraSupabaseClient?.resolveSupabaseConfig'), 'App should delegate Supabase config resolution to the module when loaded');
-  assert(app.includes('XpressIntraSupabaseClient?.profileFromSupabaseRow'), 'App should delegate Supabase profile mapping to the module when loaded');
+  assert(app.includes('XpressIntraSupabaseClient.resolveSupabaseConfig'), 'App should delegate Supabase config resolution to the module when loaded');
+  assert(app.includes('XpressIntraSupabaseClient.profileFromSupabaseRow'), 'App should delegate Supabase profile mapping to the module when loaded');
   assert(supabaseModule.includes('export function resolveSupabaseConfig'), 'Supabase module should export config resolution');
   assert(supabaseModule.includes('export function profileFromSupabaseRow'), 'Supabase module should export profile mapping');
   assert(supabaseModule.includes('globalThis.XpressIntraSupabaseClient'), 'Supabase module should expose a browser global for the app wrapper');
@@ -208,8 +208,8 @@ function assert(condition, message) {
 
   await harness.run("signInSupabase('driver@example.com', 'secret123')");
   assert(harness.run('chats.some(chat => chat.community && chat.preview === "Velkommen online")'), 'Supabase conversations and messages should load into chat');
-  assert(harness.subscriptions.some(item => item.filter?.table === 'messages'), 'Chat should subscribe to realtime message inserts');
-  assert(harness.subscriptions.some(item => item.filter?.table === 'notifications'), 'App should subscribe to realtime notification inserts');
+  assert(harness.subscriptions.some(item => item.filter.table === 'messages'), 'Chat should subscribe to realtime message inserts');
+  assert(harness.subscriptions.some(item => item.filter.table === 'notifications'), 'App should subscribe to realtime notification inserts');
 
   harness.run("activeChat = '00000000-0000-4000-8000-000000000001'");
   await harness.document.dispatchEvent({
@@ -247,7 +247,7 @@ function assert(condition, message) {
   harness.run("workdayPrivacy = { ...workdayPrivacy, showSpeed: true, audience: 'all', showVehicle: true, showStatus: true };");
   await harness.run('syncSupabaseLocation()');
   assert(harness.upserts.some(item => item.table === 'location_shares' && item.row.user_id === 'user-1' && item.row.speed_kmh === 42 && item.row.audience === 'all'), 'Online GPS sharing should include speed only when the user allows it');
-  assert(harness.subscriptions.some(item => item.filter?.table === 'location_shares'), 'Live map should subscribe to realtime location changes');
+  assert(harness.subscriptions.some(item => item.filter.table === 'location_shares'), 'Live map should subscribe to realtime location changes');
   await harness.run('stopSupabaseLocation()');
   assert(harness.deletes.some(item => item.table === 'location_shares' && item.column === 'user_id' && item.value === 'user-1'), 'Stopping GPS should delete the online location share');
 
@@ -266,7 +266,7 @@ function assert(condition, message) {
   assert(harness.updates.some(item => item.table === 'pickup_tasks' && item.row.checklist.some(check => check.id === 'message' && check.done)), 'Pickup checklist changes should sync online');
   await harness.run('finishPickup()');
   assert(harness.updates.some(item => item.table === 'pickup_tasks' && item.row.status === 'delivered' && item.row.completed_at), 'Finishing a pickup should close the online pickup task');
-  assert(harness.subscriptions.some(item => item.filter?.table === 'pickup_tasks'), 'Pickup tasks should subscribe to realtime changes');
+  assert(harness.subscriptions.some(item => item.filter.table === 'pickup_tasks'), 'Pickup tasks should subscribe to realtime changes');
 
   harness.run("profile = { ...profile, name: 'Chef Test', role: 'Chef', accessRole: 'admin', vehicleType: 'dispatch' }");
   await harness.run("updateSupabaseEmployeeProfile({ id: 'target-user-1', name: 'Test Medarbejder', phone: '+45 20 11 40 44', email: 'test@example.com', department: 'Varebil', license: 'B', languages: 'Dansk', role: 'Chauffør', accessRole: 'employee', vehicleType: 'van', truck: 'Testbil', employmentStatus: 'offboarded', logbook: true, emergencyContact: 'Test kontakt' })");

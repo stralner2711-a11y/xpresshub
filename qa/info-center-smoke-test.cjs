@@ -100,3 +100,4 @@ assert(harness.appElement.innerHTML.includes('Køre- og hviletid'), 'Favorites t
 console.log('Info center smoke test passed');
 
 
+

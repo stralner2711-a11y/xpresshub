@@ -22,7 +22,7 @@ The app requires login. Please use the provided test account during review. Loca
 
 ## Testbruger
 
-Udfyld f?r upload:
+Udfyld fr upload:
 
 - Email:
 - Password:
@@ -30,7 +30,7 @@ Udfyld f?r upload:
 
 ## Privacy policy URL
 
-Udfyld f?r upload:
+Udfyld fr upload:
 
 - URL:
 
@@ -41,4 +41,4 @@ Udfyld f?r upload:
 - User Content: chat, opslag, billeder, logbog og opgaver.
 - Identifiers: Supabase Auth-bruger og interne profil-id'er.
 - Usage Data: kun det der faktisk gemmes om opgaver, arbejdsdag og appbrug.
-- Diagnostics: kun hvis der senere tilf?jes egentlig crash- eller diagnostiksporing.
+- Diagnostics: kun hvis der senere tilfjes egentlig crash- eller diagnostiksporing.

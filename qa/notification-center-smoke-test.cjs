@@ -88,7 +88,7 @@ harness.run("activeTab = 'home'; render();");
 assert(!harness.appElement.innerHTML.includes('Husk i dag'), 'Home should not show the full daily reminder panel');
 assert(harness.appElement.innerHTML.includes('Ulæst'), 'Home should keep a simple unread notification shortcut');
 assert(!harness.appElement.innerHTML.includes('Mere på forsiden'), 'Home should no longer keep duplicate secondary content');
-assert(!harness.appElement.innerHTML.includes('Start arbejdsdagen, s? deling og p?mindelser f?lger dine valg.'), 'Home reminders should not duplicate check-in');
+assert(!harness.appElement.innerHTML.includes('Start arbejdsdagen, s deling og pmindelser flger dine valg.'), 'Home reminders should not duplicate check-in');
 
 harness.run('openNotificationsModal();');
 const notificationModal = harness.modalNodes.find(node => node.innerHTML.includes('Opslag og beskeder'));
@@ -113,5 +113,6 @@ harness.run('markAllNotificationsRead();');
 assert(harness.run('notifications.every(item => item.unread === false)') === true, 'Mark all read should clear unread flags');
 
 console.log('Notification center smoke test passed');
+
 
 

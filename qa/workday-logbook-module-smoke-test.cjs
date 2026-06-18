@@ -7,10 +7,10 @@ function assert(condition, message) {
 const app = fs.readFileSync('src/app.js', 'utf8');
 const moduleCode = fs.readFileSync('src/modules/workday-logbook.js', 'utf8');
 
-assert(app.includes('XpressIntraWorkdayLogbook?.workdayEndTime'), 'App should delegate Danish workday end time to the workday/logbook module when loaded');
-assert(app.includes('XpressIntraWorkdayLogbook?.workdayPermissions'), 'App should delegate workday permissions to the module when loaded');
-assert(app.includes('XpressIntraWorkdayLogbook?.logbookSuggestions'), 'App should delegate smart logbook suggestions to the module when loaded');
-assert(app.includes('XpressIntraWorkdayLogbook?.draftId'), 'App should delegate stable draft ids to the module when loaded');
+assert(app.includes('XpressIntraWorkdayLogbook.workdayEndTime'), 'App should delegate Danish workday end time to the workday/logbook module when loaded');
+assert(app.includes('XpressIntraWorkdayLogbook.workdayPermissions'), 'App should delegate workday permissions to the module when loaded');
+assert(app.includes('XpressIntraWorkdayLogbook.logbookSuggestions'), 'App should delegate smart logbook suggestions to the module when loaded');
+assert(app.includes('XpressIntraWorkdayLogbook.draftId'), 'App should delegate stable draft ids to the module when loaded');
 
 assert(moduleCode.includes('export function workdayEndTime'), 'Module should export workday end time helper');
 assert(moduleCode.includes('export function workdayPermissions'), 'Module should export workday permission helper');

@@ -80,7 +80,7 @@ function vehicleLabel(vehicleType) {
 function visibleMapPeople() {
   const people = employees.filter(person => person.sharing && person.coords);
   const withCurrent = location.sharing
-    ? [...people.filter(person => person.id !== currentEmployee().id), { ...currentEmployee(), location: 'Dig', coords: location.coords || currentEmployee().coords, sharing: true, status: `Deler GPS · ${location.speed} km/t` }]
+     [...people.filter(person => person.id !== currentEmployee().id), { ...currentEmployee(), location: 'Dig', coords: location.coords || currentEmployee().coords, sharing: true, status: `Deler GPS · ${location.speed} km/t` }]
     : people;
   return withCurrent.filter(person => mapFilter === 'all' || person.vehicleType === mapFilter);
 }
@@ -95,7 +95,7 @@ In `updateLocation`, save `location.coords = [position.coords.latitude, position
 Add filter buttons to `renderMap()` and use `visibleMapPeople()` for counts and list rendering. Add a link:
 
 ```html
-<a class="map-open-link" href="https://www.google.com/maps/search/?api=1&query=LAT,LNG" target="_blank" rel="noreferrer">Åbn i Google Maps</a>
+<a class="map-open-link" href="https://www.google.com/maps/search/api=1&query=LAT,LNG" target="_blank" rel="noreferrer">Åbn i Google Maps</a>
 ```
 
 - [ ] **Step 5: Use filtered markers in Leaflet**
@@ -136,7 +136,7 @@ When submitting `.pickup-form`, store:
 
 ```js
 duration: data.get('duration'),
-expiresAt: data.get('duration') === 'until-done' ? null : new Date(Date.now() + Number(data.get('duration')) * 60 * 1000).toISOString(),
+expiresAt: data.get('duration') === 'until-done'  null : new Date(Date.now() + Number(data.get('duration')) * 60 * 1000).toISOString(),
 ```
 
 - [ ] **Step 3: Show expiry in active pickup card**
@@ -144,7 +144,7 @@ expiresAt: data.get('duration') === 'until-done' ? null : new Date(Date.now() + 
 Render text like:
 
 ```js
-const expiryText = activePickup.expiresAt ? `Stopper automatisk ${new Date(activePickup.expiresAt).toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' })}` : 'Stopper når du markerer opgaven færdig';
+const expiryText = activePickup.expiresAt  `Stopper automatisk ${new Date(activePickup.expiresAt).toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' })}` : 'Stopper når du markerer opgaven færdig';
 ```
 
 - [ ] **Step 4: Add automatic expiry check**
@@ -153,7 +153,7 @@ Add:
 
 ```js
 function enforcePickupExpiry() {
-  if (!activePickup?.expiresAt) return;
+  if (!activePickup.expiresAt) return;
   if (Date.now() < new Date(activePickup.expiresAt).getTime()) return;
   activePickup = null;
   save('activePickup', null);
@@ -183,7 +183,7 @@ Expected: no syntax errors.
 
 Add a `quickGuides` array with guide titles for accident, delay, CMR, load securing, tolls, environmental zones, van rules, and tachograph.
 
-- [ ] **Step 2: Add "what does this mean?" cards**
+- [ ] **Step 2: Add "what does this mean" cards**
 
 In `renderInfo()`, add a section before the link list that shows three practical cards:
 

@@ -115,7 +115,7 @@ assert(maintenance.includes('Hver 3. måned'), 'Legal maintenance document shoul
 assert(maintenance.includes('Ved ny funktion'), 'Legal maintenance document should define feature-triggered review');
 assert(maintenance.includes('Bump `GDPR_POLICY_VERSION`'), 'Legal maintenance document should explain policy version bumps');
 
-run("profile = { ...profile, name: 'Tommy Hansen', email: 'stralner2711@gmail.com', role: 'Appansvarlig · Lastbilchauffør', accessRole: 'owner' }; dataRequests = [{ id: 'request-1', label: 'Indsigt', message: 'Hvad gemmer appen?', status: 'open', createdAt: '02.06.2026' }];");
+run("profile = { ...profile, name: 'Tommy Hansen', email: 'stralner2711@gmail.com', role: 'Appansvarlig · Lastbilchauffør', accessRole: 'owner' }; dataRequests = [{ id: 'request-1', label: 'Indsigt', message: 'Hvad gemmer appen', status: 'open', createdAt: '02.06.2026' }];");
 context.openGdprGoLiveModal();
 const creatorModal = modalNodes.at(-1);
 assert(creatorModal.innerHTML.includes('Marker behandlet'), 'Creator/admin should be able to handle data requests');

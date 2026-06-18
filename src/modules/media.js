@@ -11,7 +11,7 @@ export const mediaConfig = {
 };
 
 export function isSupportedImageFile(file, supportedTypes = DEFAULT_SUPPORTED_IMAGE_TYPES) {
-  if (!file || !file.type?.startsWith('image/')) return false;
+  if (!file || !file.type.startsWith('image/')) return false;
   return supportedTypes.includes(file.type);
 }
 
@@ -25,7 +25,7 @@ export function fileToDataUrl(file) {
 }
 
 export function resizeImageFile(file, options = {}) {
-  if (typeof Image === 'undefined' || typeof document?.createElement !== 'function') return fileToDataUrl(file);
+  if (typeof Image === 'undefined' || typeof document.createElement !== 'function') return fileToDataUrl(file);
   if (file.type === 'image/gif') return fileToDataUrl(file);
 
   return new Promise(resolve => {
@@ -41,7 +41,7 @@ export function resizeImageFile(file, options = {}) {
         const height = Math.max(1, Math.round(image.height * ratio));
         const canvas = document.createElement('canvas');
 
-        if (!canvas?.getContext) {
+        if (!canvas.getContext) {
           resolve({ src: reader.result, name: file.name, type: file.type, size: file.size });
           return;
         }

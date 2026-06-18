@@ -131,3 +131,4 @@ assert(harness.run('pickupHistory.length') >= 1, 'Finished pickup should be save
 console.log('Pickup task smoke test passed');
 
 
+

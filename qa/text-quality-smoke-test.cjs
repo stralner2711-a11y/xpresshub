@@ -37,7 +37,7 @@ const files = scanRoots
 const findings = [];
 for (const file of files) {
   const content = fs.readFileSync(file, 'utf8');
-  const lines = content.split(/\r?\n/);
+  const lines = content.split(/\r\n/);
   for (const { label, pattern } of badPatterns) {
     lines.forEach((line, index) => {
       if (pattern.test(line)) findings.push(`${path.relative(root, file)}:${index + 1} ${label}`);

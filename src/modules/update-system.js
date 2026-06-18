@@ -1,11 +1,11 @@
 const DEFAULT_OFFICIAL_REPO = 'https://github.com/stralner2711-a11y/xpresshub';
 
 function currentHref() {
-  return globalThis.location?.href || 'https://xpresshub-seven.vercel.app/';
+  return globalThis.location.href || 'https://xpresshub-seven.vercel.app/';
 }
 
 function currentOrigin() {
-  if (globalThis.location?.origin) return globalThis.location.origin;
+  if (globalThis.location.origin) return globalThis.location.origin;
   try {
     return new URL(currentHref()).origin;
   } catch {
@@ -80,21 +80,21 @@ export function stableRollbackUrl(info, options = {}) {
 
 export function rollbackReadiness(info, options = {}) {
   const stableUrl = stableRollbackUrl(info, options);
-  const hasPrevious = Boolean(info?.previousStableVersion || info?.stableVersion);
+  const hasPrevious = Boolean(info.previousStableVersion || info.stableVersion);
   const appVersionCode = Number(options.appVersionCode || 0);
   const appDisplayVersion = String(options.appDisplayVersion || '');
-  const currentMarked = Array.isArray(info?.defectiveVersions)
+  const currentMarked = Array.isArray(info.defectiveVersions)
     && info.defectiveVersions.some(version => String(version) === appDisplayVersion || Number(version) === appVersionCode);
-  const recommended = Boolean(info?.rollbackReason || Number(info?.activeVersionCode) < appVersionCode || currentMarked);
+  const recommended = Boolean(info.rollbackReason || Number(info.activeVersionCode) < appVersionCode || currentMarked);
   return {
     available: Boolean(info && hasPrevious),
     stableUrl,
     recommended,
     currentMarked,
-    label: recommended ? 'Rollback anbefalet' : stableUrl ? 'Backup klar' : 'Klargør backup',
+    label: recommended ? 'Rollback anbefalet' : stableUrl ? 'Backup klar' : 'Klarg?r backup',
     detail: stableUrl
-      ? 'Creator kan åbne eller installere sidste stabile appversion uden at slette Supabase-data.'
-      : 'Tilføj stableApkDownloadUrl eller previousStableApkDownloadUrl i version.json for én-tryk rollback.',
+      ? 'Creator kan ?bne eller installere sidste stabile appversion uden at slette Supabase-data.'
+      : 'Tilf?j stableApkDownloadUrl eller previousStableApkDownloadUrl i version.json for ?n-tryk rollback.',
   };
 }
 

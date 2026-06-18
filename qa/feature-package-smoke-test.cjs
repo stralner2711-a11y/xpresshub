@@ -131,3 +131,4 @@ assert(JSON.parse(harness.storage.get('roadlog:supportRequests')).length === 1, 
 console.log('Feature package smoke test passed');
 
 
+

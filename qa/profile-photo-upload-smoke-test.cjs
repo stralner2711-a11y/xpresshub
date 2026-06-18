@@ -12,7 +12,7 @@ assert(app.includes('const IMAGE_UPLOAD_MAX_BYTES = 10 * 1024 * 1024'), 'Image h
 assert(app.includes('const PROFILE_PHOTO_MAX_DIMENSION = 512'), 'Profile photos should be downscaled to an avatar-friendly size');
 assert(app.includes('function isSupportedImageFile(file)'), 'Image helper should validate supported image types');
 assert(app.includes('function resizeImageFile(file, options = {})'), 'Image helper should resize large profile photos');
-assert(app.includes('globalThis.XpressIntraMedia?.resizeImageFile'), 'App should delegate image resizing to the media module when available');
+assert(app.includes('globalThis.XpressIntraMedia.resizeImageFile'), 'App should delegate image resizing to the media module when available');
 assert(mediaModule.includes('export function isSupportedImageFile'), 'Media module should own supported image validation');
 assert(mediaModule.includes('export function resizeImageFile'), 'Media module should own image resizing');
 assert(mediaModule.includes('globalThis.XpressIntraMedia'), 'Media module should expose a browser-compatible global for the legacy app shell');

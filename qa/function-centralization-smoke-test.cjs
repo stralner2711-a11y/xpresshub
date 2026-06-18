@@ -74,7 +74,7 @@ function assert(condition, message) {
 }
 
 function count(haystack, needle) {
-  return (haystack.match(new RegExp(needle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g')) || []).length;
+  return (haystack.match(new RegExp(needle.replace(/[.*+^${}()|[\]\\]/g, '\\$&'), 'g')) || []).length;
 }
 
 const harness = createHarness();
