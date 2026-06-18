@@ -81,6 +81,9 @@ function createHarness() {
       if (name === 'start_direct_conversation') {
         return Promise.resolve({ data: 'direct-conversation-1', error: null });
       }
+      if (name === 'start_direct_conversation_v2') {
+        return Promise.resolve({ data: 'direct-conversation-1', error: null });
+      }
       return Promise.resolve({ data: null, error: new Error(`Unknown RPC ${name}`) });
     },
     from(table) {
@@ -225,6 +228,10 @@ function assert(condition, message) {
   await harness.run("employees.push({ id: '11111111-1111-4111-8111-111111111111', name: 'Test Medarbejder', initials: 'TM', employmentStatus: 'active' }); startSupabaseDirectChat(employees.find(item => item.id === '11111111-1111-4111-8111-111111111111'), 'Direkte hej')");
   assert(harness.rpcCalls.some(item => item.name === 'start_direct_conversation' && item.args.target_user_id === '11111111-1111-4111-8111-111111111111'), 'Direct chats should be created through the safe Supabase RPC');
   assert(harness.insertedRows.some(item => item.table === 'messages' && item.row.conversation_id === 'direct-conversation-1' && item.row.body === 'Direkte hej'), 'Starting a direct chat should send the first message online');
+  await harness.run("messages['direct-conversation-1'] = []; chats = chats.filter(item => item.id !== 'direct-conversation-1')");
+  await harness.run("getSupabaseClient().rpc = () => Promise.resolve({ data: null, error: null })");
+  await harness.run("startSupabaseDirectChat(employees.find(item => item.id === '11111111-1111-4111-8111-111111111111'), 'Direkte igen')");
+  assert(harness.insertedRows.some(item => item.table === 'messages' && item.row.conversation_id === 'direct-conversation-1' && item.row.body === 'Direkte igen'), 'Direct chat should recover the conversation id when RPC returns an empty body');
   const rpcCallCount = harness.rpcCalls.length;
   const invalidDirectChatError = await harness.run("(async () => { try { await startSupabaseDirectChat({ id: 'local-test-profile', name: 'Lokal Testprofil', initials: 'LT', employmentStatus: 'active' }, 'Hej'); return ''; } catch (error) { return error.message; } })()");
   assert(invalidDirectChatError.includes('ikke oprettet som aktiv onlinebruger'), 'Local/demo employee ids should be rejected with a clear direct-chat message');
@@ -311,6 +318,7 @@ function assert(condition, message) {
   console.error(error);
   process.exit(1);
 });
+
 
 
 

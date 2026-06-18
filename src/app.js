@@ -501,7 +501,9 @@ function createRestSupabaseClient(config) {
     'Content-Type': 'application/json',
   });
   const parseJsonResponse = async response => {
-    const body = await response.text();
+    const body = typeof response?.text === 'function'
+      ? await response.text()
+      : response?.body ? String(response.body) : '';
     let data = null;
     if (body) {
       try {
@@ -510,7 +512,7 @@ function createRestSupabaseClient(config) {
         data = body;
       }
     }
-    if (!response.ok) return { data: null, error: { message: data?.msg || data?.message || body || `HTTP ${response.status}`, status: response.status } };
+    if (!response?.ok) return { data: null, error: { message: data?.msg || data?.message || body || `HTTP ${response?.status || 'ukendt'}`, status: response?.status } };
     return { data, error: null };
   };
   const normalizeAuthSession = data => data?.access_token ? {
@@ -1955,6 +1957,7 @@ function chatFromConversation(row, latestMessage = null) {
     time: latestMessage?.created_at ? new Date(latestMessage.created_at).toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' }) : '',
     unread: 0,
     community: isAll,
+    direct: row.channel_type === 'direct',
     channel: isTruck ? 'truck' : isVan ? 'van' : null,
     online: true,
   };
@@ -2245,10 +2248,13 @@ async function startSupabaseDirectChat(employee, firstMessage = '') {
   if (employee.employmentStatus === 'offboarded' || employee.status === 'Deaktiveret') {
     throw new Error('Kollegaen er deaktiveret og kan ikke modtage direkte beskeder.');
   }
-  const { data: conversationId, error } = await startDirectConversationRpc(client, employee.id);
+  const { data: rawConversationId, error } = await startDirectConversationRpc(client, employee.id);
   if (error) throw new Error(directChatErrorMessage(error, employee));
+  let conversationId = normalizeRpcConversationId(rawConversationId);
 
   await loadSupabaseChats(supabaseAuthSession());
+  if (!conversationId) conversationId = findExistingDirectChatId(employee);
+  if (!conversationId) throw new Error('Samtalen blev oprettet, men appen kunne ikke hente samtale-id. Luk beskeder og prøv igen.');
   let chat = chats.find(item => item.id === conversationId);
   if (!chat) {
     chat = {
@@ -2277,6 +2283,28 @@ async function startSupabaseDirectChat(employee, firstMessage = '') {
     if (messageError) throw new Error(directChatErrorMessage(messageError, employee));
   }
   return conversationId;
+}
+
+function normalizeRpcConversationId(value) {
+  if (typeof value === 'string' && isSupabaseProfileId(value)) return value;
+  if (Array.isArray(value)) return normalizeRpcConversationId(value[0]);
+  if (value && typeof value === 'object') {
+    return normalizeRpcConversationId(value.conversation_id || value.start_direct_conversation || value.start_direct_conversation_v2 || value.id);
+  }
+  return '';
+}
+
+function findExistingDirectChatId(employee) {
+  const targetName = String(employee?.name || '').trim().toLowerCase();
+  const targetInitials = String(employee?.initials || initialsFromName(employee?.name || '')).trim().toLowerCase();
+  const direct = chats.find(chat => {
+    const name = String(chat.name || '').trim().toLowerCase();
+    const initials = String(chat.initials || '').trim().toLowerCase();
+    return name === targetName || initials === targetInitials;
+  });
+  if (direct?.id) return direct.id;
+  const genericDirectChats = chats.filter(chat => chat.direct || String(chat.name || '').trim().toLowerCase() === 'direkte samtale');
+  return genericDirectChats.length === 1 ? genericDirectChats[0].id : '';
 }
 
 async function startDirectConversationRpc(client, employeeId) {
