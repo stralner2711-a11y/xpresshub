@@ -38,13 +38,15 @@ function createHarness() {
   const updates = [];
   const resendCalls = [];
   const signUpCalls = [];
+  let currentAuthSession = null;
   const fakeClient = {
     auth: {
-      getSession() { return Promise.resolve({ data: { session: null }, error: null }); },
+      getSession() { return Promise.resolve({ data: { session: currentAuthSession }, error: null }); },
       signOut() { return Promise.resolve({ error: null }); },
       signInWithPassword() {
+        currentAuthSession = { access_token: 'signed-in-token', user: { id: 'user-1', email: 'driver@example.com' } };
         return Promise.resolve({
-          data: { session: { user: { id: 'user-1', email: 'driver@example.com' } } },
+          data: { session: currentAuthSession },
           error: null,
         });
       },
@@ -176,6 +178,20 @@ function createHarness() {
     FormData: class {},
     FileReader: class {},
     URL,
+    fetch(url, options) {
+      if (String(url).includes('/rest/v1/rpc/start_direct_conversation_v2')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          text: () => Promise.resolve(JSON.stringify('direct-conversation-1')),
+        });
+      }
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        text: () => Promise.resolve('[]'),
+      });
+    },
   };
 
   context.window.document = document;
@@ -232,6 +248,10 @@ function assert(condition, message) {
   await harness.run("getSupabaseClient().rpc = () => Promise.resolve({ data: null, error: null })");
   await harness.run("startSupabaseDirectChat(employees.find(item => item.id === '11111111-1111-4111-8111-111111111111'), 'Direkte igen')");
   assert(harness.insertedRows.some(item => item.table === 'messages' && item.row.conversation_id === 'direct-conversation-1' && item.row.body === 'Direkte igen'), 'Direct chat should recover the conversation id when RPC returns an empty body');
+  await harness.run("messages['direct-conversation-1'] = []; chats = chats.filter(item => item.id !== 'direct-conversation-1')");
+  await harness.run("getSupabaseClient().rpc = () => Promise.reject(new Error(\"Cannot read properties of null (reading 'body')\"))");
+  await harness.run("startSupabaseDirectChat(employees.find(item => item.id === '11111111-1111-4111-8111-111111111111'), 'Direkte reserve')");
+  assert(harness.insertedRows.some(item => item.table === 'messages' && item.row.conversation_id === 'direct-conversation-1' && item.row.body === 'Direkte reserve'), 'Direct chat should use REST fallback when Supabase RPC throws a null-body error');
   const rpcCallCount = harness.rpcCalls.length;
   const invalidDirectChatError = await harness.run("(async () => { try { await startSupabaseDirectChat({ id: 'local-test-profile', name: 'Lokal Testprofil', initials: 'LT', employmentStatus: 'active' }, 'Hej'); return ''; } catch (error) { return error.message; } })()");
   assert(invalidDirectChatError.includes('ikke oprettet som aktiv onlinebruger'), 'Local/demo employee ids should be rejected with a clear direct-chat message');

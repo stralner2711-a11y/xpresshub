@@ -26,9 +26,9 @@
   search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>',
 };
 
-const APP_VERSION = '1.3.34-release-v95';
-const APP_DISPLAY_VERSION = '1.3.34';
-const APP_VERSION_CODE = 47;
+const APP_VERSION = '1.3.35-release-v96';
+const APP_DISPLAY_VERSION = '1.3.35';
+const APP_VERSION_CODE = 48;
 const TEMPORARY_EMPLOYEE_PASSWORD = 'xpress';
 const IMAGE_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
 const PROFILE_PHOTO_MAX_DIMENSION = 512;
@@ -2323,10 +2323,26 @@ function findExistingDirectChatId(employee) {
 }
 
 async function startDirectConversationRpc(client, employeeId) {
-  const primary = await client.rpc('start_direct_conversation', { target_user_id: employeeId });
-  if (!isMissingRpcError(primary.error)) return primary;
-  const fallback = await client.rpc('start_direct_conversation_v2', { target_user_id: employeeId });
-  return fallback.error ? primary : fallback;
+  let primary;
+  try {
+    primary = await client.rpc('start_direct_conversation', { target_user_id: employeeId });
+  } catch (error) {
+    primary = { data: null, error };
+  }
+  if (primary?.data && !primary?.error) return primary;
+  if (primary?.error && !isMissingRpcError(primary.error) && !isNullBodyRpcError(primary.error)) return primary;
+
+  let fallback;
+  try {
+    fallback = await client.rpc('start_direct_conversation_v2', { target_user_id: employeeId });
+  } catch (error) {
+    fallback = { data: null, error };
+  }
+  if (fallback?.data && !fallback?.error) return fallback;
+
+  const restFallback = await callDirectConversationRestRpc(client, employeeId, 'start_direct_conversation_v2');
+  if (restFallback?.data && !restFallback?.error) return restFallback;
+  return fallback?.error ? fallback : primary;
 }
 
 function isMissingRpcError(error) {
@@ -2334,6 +2350,53 @@ function isMissingRpcError(error) {
   return raw.includes('could not find the function')
     || raw.includes('start_direct_conversation')
     || raw.includes('schema cache');
+}
+
+function isNullBodyRpcError(error) {
+  const raw = String(error?.message || error?.details || error || '').toLowerCase();
+  return raw.includes('cannot read properties of null')
+    || raw.includes("reading 'body'")
+    || raw.includes('reading "body"');
+}
+
+async function callDirectConversationRestRpc(client, employeeId, functionName = 'start_direct_conversation_v2') {
+  const config = supabaseConfig();
+  let token = '';
+  try {
+    const { data } = await client.auth.getSession();
+    token = data?.session?.access_token || '';
+  } catch {
+    token = '';
+  }
+  if (!config.url || !config.anonKey || !token || typeof fetch !== 'function') {
+    return { data: null, error: { message: 'Direkte besked kunne ikke bruge reserveforbindelsen. Log ind igen og prøv en gang mere.' } };
+  }
+  try {
+    const response = await fetch(`${config.url}/rest/v1/rpc/${functionName}`, {
+      method: 'POST',
+      headers: {
+        apikey: config.anonKey,
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ target_user_id: employeeId }),
+    });
+    const body = typeof response.text === 'function' ? await response.text() : '';
+    let parsed = null;
+    if (body) {
+      try {
+        parsed = JSON.parse(body);
+      } catch {
+        parsed = body;
+      }
+    }
+    if (!response.ok) {
+      return { data: null, error: { message: parsed?.message || parsed?.msg || body || `HTTP ${response.status}`, status: response.status } };
+    }
+    return { data: parsed, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
 }
 
 function isSupabaseProfileId(value) {
