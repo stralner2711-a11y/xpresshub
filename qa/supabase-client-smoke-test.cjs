@@ -31,6 +31,7 @@ function createHarness() {
   let createClientCalled = false;
   const insertedRows = [];
   const rpcCalls = [];
+  const fetchCalls = [];
   const subscriptions = [];
   const uploads = [];
   const upserts = [];
@@ -179,6 +180,7 @@ function createHarness() {
     FileReader: class {},
     URL,
     fetch(url, options) {
+      fetchCalls.push({ url: String(url), options });
       if (String(url).includes('/rest/v1/rpc/start_direct_conversation_v2')) {
         return Promise.resolve({
           ok: true,
@@ -198,7 +200,7 @@ function createHarness() {
   context.window.localStorage = context.localStorage;
   vm.createContext(context);
   vm.runInContext(code, context, { filename: 'app.js' });
-  return { appElement, document, modalNodes, insertedRows, rpcCalls, subscriptions, uploads, upserts, deletes, updates, resendCalls, signUpCalls, createClientWasCalled: () => createClientCalled, run: script => vm.runInContext(script, context) };
+  return { appElement, document, modalNodes, insertedRows, rpcCalls, fetchCalls, subscriptions, uploads, upserts, deletes, updates, resendCalls, signUpCalls, createClientWasCalled: () => createClientCalled, run: script => vm.runInContext(script, context) };
 }
 
 function assert(condition, message) {
@@ -242,7 +244,7 @@ function assert(condition, message) {
   assert(harness.insertedRows.some(item => item.table === 'messages' && item.row.body === 'Hej online'), 'Sending chat should insert a Supabase message');
 
   await harness.run("employees.push({ id: '11111111-1111-4111-8111-111111111111', name: 'Test Medarbejder', initials: 'TM', employmentStatus: 'active' }); startSupabaseDirectChat(employees.find(item => item.id === '11111111-1111-4111-8111-111111111111'), 'Direkte hej')");
-  assert(harness.rpcCalls.some(item => item.name === 'start_direct_conversation' && item.args.target_user_id === '11111111-1111-4111-8111-111111111111'), 'Direct chats should be created through the safe Supabase RPC');
+  assert(harness.fetchCalls.some(item => item.url.includes('/rest/v1/rpc/start_direct_conversation_v2') && item.options.body.includes('11111111-1111-4111-8111-111111111111')), 'Direct chats should be created through the safe REST RPC path');
   assert(harness.insertedRows.some(item => item.table === 'messages' && item.row.conversation_id === 'direct-conversation-1' && item.row.body === 'Direkte hej'), 'Starting a direct chat should send the first message online');
   await harness.run("messages['direct-conversation-1'] = []; chats = chats.filter(item => item.id !== 'direct-conversation-1')");
   await harness.run("getSupabaseClient().rpc = () => Promise.resolve({ data: null, error: null })");
@@ -252,7 +254,7 @@ function assert(condition, message) {
   await harness.run("getSupabaseClient().rpc = () => Promise.reject(new Error(\"Cannot read properties of null (reading 'body')\"))");
   await harness.run("startSupabaseDirectChat(employees.find(item => item.id === '11111111-1111-4111-8111-111111111111'), 'Direkte reserve')");
   assert(harness.insertedRows.some(item => item.table === 'messages' && item.row.conversation_id === 'direct-conversation-1' && item.row.body === 'Direkte reserve'), 'Direct chat should use REST fallback when Supabase RPC throws a null-body error');
-  assert(app.includes('if (restFallback && !restFallback.error) return restFallback;'), 'Direct chat should accept REST fallback success even when Supabase returns an empty body');
+  assert(app.includes("callDirectConversationRestRpc(client, employeeId, 'start_direct_conversation_v2')"), 'Direct chat should use the REST RPC path before the Supabase client RPC');
   const rpcCallCount = harness.rpcCalls.length;
   const invalidDirectChatError = await harness.run("(async () => { try { await startSupabaseDirectChat({ id: 'local-test-profile', name: 'Lokal Testprofil', initials: 'LT', employmentStatus: 'active' }, 'Hej'); return ''; } catch (error) { return error.message; } })()");
   assert(invalidDirectChatError.includes('ikke oprettet som aktiv onlinebruger'), 'Local/demo employee ids should be rejected with a clear direct-chat message');

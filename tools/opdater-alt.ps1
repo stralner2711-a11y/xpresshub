@@ -1,5 +1,6 @@
 param(
-  [switch]$NoPause
+  [switch]$NoPause,
+  [switch]$AllowNoAdmin
 )
 
 $ErrorActionPreference = 'Stop'
@@ -114,7 +115,7 @@ function Copy-RootFile($name) {
   }
 }
 
-if (!(Test-Admin)) {
+if (!(Test-Admin) -and !$AllowNoAdmin) {
   Write-Host 'Starter igen med administrator-rettigheder...'
   Start-Process powershell.exe -Verb RunAs -ArgumentList @(
     '-NoExit',
@@ -137,7 +138,11 @@ if (!(Test-Path -LiteralPath (Join-Path $repo '.git'))) { Stop-Release "GitHub-r
 if (!(Test-Path -LiteralPath $git)) { Stop-Release "Git blev ikke fundet: $git" }
 if (!(Test-Path -LiteralPath $gh)) { Stop-Release "GitHub CLI blev ikke fundet: $gh" }
 
-Invoke-NativeToLog $git @('config', '--global', '--add', 'safe.directory', ($repo -replace '\\', '/')) $project @(0)
+if ($AllowNoAdmin) {
+  Write-Log 'Springer global Git safe.directory over i no-admin Codex-korsel.'
+} else {
+  Invoke-NativeToLog $git @('config', '--global', '--add', 'safe.directory', ($repo -replace '\\', '/')) $project @(0)
+}
 
 Invoke-LoggedCommand '[1/9] Tjekker Supabase og faelles login-config...' $project 'powershell.exe' @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', (Join-Path $project 'tools\supabase-release-check.ps1'))
 Invoke-LoggedCommand '[2/9] Tjekker login- og privatlivssikkerhed...' $project 'node.exe' @('qa/credential-privacy-smoke-test.cjs')

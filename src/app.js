@@ -26,9 +26,9 @@ const icons = {
   search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>',
 };
 
-const APP_VERSION = '1.3.37-release-v98';
-const APP_DISPLAY_VERSION = '1.3.37';
-const APP_VERSION_CODE = 50;
+const APP_VERSION = '1.3.38-release-v99';
+const APP_DISPLAY_VERSION = '1.3.38';
+const APP_VERSION_CODE = 51;
 const TEMPORARY_EMPLOYEE_PASSWORD = 'xpress';
 const IMAGE_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
 const PROFILE_PHOTO_MAX_DIMENSION = 512;
@@ -2390,14 +2390,15 @@ function findExistingDirectChatId(employee) {
 }
 
 async function startDirectConversationRpc(client, employeeId) {
-  let primary;
-  try {
-    primary = await client.rpc('start_direct_conversation', { target_user_id: employeeId });
-  } catch (error) {
-    primary = { data: null, error };
-  }
-  if (primary?.data && !primary?.error) return primary;
-  if (primary?.error && !isMissingRpcError(primary.error) && !isNullBodyRpcError(primary.error)) return primary;
+  const restPrimary = await callDirectConversationRestRpc(client, employeeId, 'start_direct_conversation_v2');
+  if (restPrimary?.data && !restPrimary?.error) return restPrimary;
+  if (restPrimary && !restPrimary.error) return restPrimary;
+  if (restPrimary?.error && !isMissingRpcError(restPrimary.error) && !isNullBodyRpcError(restPrimary.error)) return restPrimary;
+
+  const restLegacy = await callDirectConversationRestRpc(client, employeeId, 'start_direct_conversation');
+  if (restLegacy?.data && !restLegacy?.error) return restLegacy;
+  if (restLegacy && !restLegacy.error) return restLegacy;
+  if (restLegacy?.error && !isMissingRpcError(restLegacy.error) && !isNullBodyRpcError(restLegacy.error)) return restLegacy;
 
   let fallback;
   try {
@@ -2408,10 +2409,7 @@ async function startDirectConversationRpc(client, employeeId) {
   if (fallback?.data && !fallback?.error) return fallback;
   if (fallback && !fallback.error) return fallback;
 
-  const restFallback = await callDirectConversationRestRpc(client, employeeId, 'start_direct_conversation_v2');
-  if (restFallback?.data && !restFallback?.error) return restFallback;
-  if (restFallback && !restFallback.error) return restFallback;
-  return fallback?.error ? fallback : primary;
+  return restPrimary || restLegacy || fallback;
 }
 
 function isMissingRpcError(error) {
@@ -6148,6 +6146,16 @@ function openNewChatModal() {
       : '<section class="invite-help"><b>Ingen online kollegaer klar</b><span>Direkte beskeder kræver, at kollegaen er oprettet via invitation, har logget ind første gang og står som aktiv medarbejder.</span></section>'}
   </form>`;
   document.body.append(modal);
+  const form = modal.querySelector('.new-chat-form');
+  const submitButton = form?.querySelector('[data-action="start-new-chat"]');
+  form?.addEventListener('submit', async event => {
+    event.preventDefault();
+    await submitNewChatForm(form);
+  });
+  submitButton?.addEventListener('click', async event => {
+    event.preventDefault();
+    await submitNewChatForm(form);
+  });
 }
 
 function openSettingsModal() {

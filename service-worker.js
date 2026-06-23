@@ -1,4 +1,4 @@
-const CACHE_NAME = 'xpressintra-v98-direct-chat-submit-fix';
+const CACHE_NAME = 'xpressintra-v99-direct-chat-rest-fix';
 const APP_FILES = [
   './',
   './index.html',
