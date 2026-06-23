@@ -1,4 +1,4 @@
-﻿const icons = {
+const icons = {
   home: '<svg viewBox="0 0 24 24"><path d="m4 11 8-7 8 7v8a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z"/></svg>',
   users: '<svg viewBox="0 0 24 24"><path d="M16 20a4 4 0 0 0-8 0"/><circle cx="12" cy="9" r="3"/><path d="M19 20a3 3 0 0 0-2-2.83M17 6.13a3 3 0 0 1 0 5.74M5 20a3 3 0 0 1 2-2.83M7 6.13a3 3 0 0 0 0 5.74"/></svg>',
   map: '<svg viewBox="0 0 24 24"><path d="m9 18-6 3V6l6-3 6 3 6-3v15l-6 3z"/><path d="M9 3v15m6-12v15"/></svg>',
@@ -26,9 +26,9 @@
   search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>',
 };
 
-const APP_VERSION = '1.3.35-release-v96';
-const APP_DISPLAY_VERSION = '1.3.35';
-const APP_VERSION_CODE = 48;
+const APP_VERSION = '1.3.37-release-v98';
+const APP_DISPLAY_VERSION = '1.3.37';
+const APP_VERSION_CODE = 50;
 const TEMPORARY_EMPLOYEE_PASSWORD = 'xpress';
 const IMAGE_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
 const PROFILE_PHOTO_MAX_DIMENSION = 512;
@@ -385,7 +385,7 @@ function openPwaInstallHelpModal() {
   const modal = document.createElement('div');
   modal.className = 'modal-backdrop';
   modal.innerHTML = `<section class="profile-modal install-help-modal">
-    <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
+    <button type="button" class="modal-close" data-action="close-modal" aria-label="Luk">${icon('close')}</button>
     <h3>Installer IntraBudet</h3>
     <p>Browseren er ikke helt klar med installationsboksen endnu. Prøv først at genindlæse siden. Kommer boksen ikke, kan appen installeres direkte fra browserens menu.</p>
     <div class="install-help-steps">
@@ -845,6 +845,20 @@ let securityEvents = stored(SECURITY_EVENTS_KEY) || [];
 let loginGuard = stored(LOGIN_GUARD_KEY) || {};
 let feedLikes = stored('feedLikes') || {};
 let appUpdateState = stored(UPDATE_CONFIG_KEY) || { lastCheckedAt: null, latest: null, required: null, lastError: null, dismissedVersionCode: null };
+function isStaleRequiredUpdate(info = null) {
+  if (!info) return true;
+  const currentMarkedDefective = Array.isArray(info.defectiveVersions)
+    && info.defectiveVersions.some(version => String(version) === APP_DISPLAY_VERSION || Number(version) === APP_VERSION_CODE);
+  return Number(info.activeVersionCode || 0) <= APP_VERSION_CODE
+    && !info.rollbackReason
+    && !currentMarkedDefective;
+}
+function clearStaleRequiredUpdate() {
+  if (!isStaleRequiredUpdate(appUpdateState.required)) return false;
+  if (!appUpdateState.required) return false;
+  appUpdateState.required = null;
+  return true;
+}
 let notificationPrefs = { ...defaultNotificationPrefs, ...stored('notificationPrefs') };
 let workdayPrivacy = {
   gps: true,
@@ -1413,13 +1427,14 @@ async function checkForAppUpdate({ manual = false, silent = false } = {}) {
     const info = await fetchVersionInfo();
     appUpdateState = { ...appUpdateState, latest: info, lastCheckedAt: new Date().toISOString(), lastError: null };
     if (info.forceUpdate && info.activeVersionCode !== APP_VERSION_CODE) appUpdateState.required = info;
-    else if (appUpdateState.required?.activeVersionCode === APP_VERSION_CODE) appUpdateState.required = null;
+    else clearStaleRequiredUpdate();
     saveAppUpdateState();
     if (shouldShowUpdate(info, manual)) openAppUpdateModal(info, { force: info.forceUpdate || info.activeVersionCode < APP_VERSION_CODE });
     else if (manual) showToast('Appen er opdateret');
     return info;
   } catch (error) {
     appUpdateState = { ...appUpdateState, lastCheckedAt: new Date().toISOString(), lastError: error.message };
+    clearStaleRequiredUpdate();
     saveAppUpdateState();
     if (appUpdateState.required && appUpdateState.required.activeVersionCode !== APP_VERSION_CODE) {
       openAppUpdateModal(appUpdateState.required, { force: true, offline: true });
@@ -1469,8 +1484,13 @@ function openAppUpdateModal(info = appUpdateState.latest, options = {}) {
     showToast('Der er ingen versionsdata endnu');
     return;
   }
+  if (isStaleRequiredUpdate(info) && !options.manual) {
+    clearStaleRequiredUpdate();
+    saveAppUpdateState();
+    return;
+  }
   document.querySelector('.modal-backdrop')?.remove();
-  const force = Boolean(options.force || info.forceUpdate || appUpdateState.required);
+  const force = Boolean(options.force || (info.forceUpdate && info.activeVersionCode !== APP_VERSION_CODE) || (appUpdateState.required && !isStaleRequiredUpdate(appUpdateState.required)));
   const rollback = info.activeVersionCode < APP_VERSION_CODE || Boolean(info.rollbackReason);
   const title = rollback ? 'Skift til stabil version' : force ? 'Vigtig opdatering klar' : 'Ny version klar';
   const subtitle = rollback
@@ -1486,7 +1506,7 @@ function openAppUpdateModal(info = appUpdateState.latest, options = {}) {
   const modal = document.createElement('div');
   modal.className = `modal-backdrop ${force ? 'force-update' : ''}`;
   modal.innerHTML = `<section class="profile-modal update-modal update-modal-pro">
-    ${force ? '' : `<button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>`}
+    ${force ? '' : `<button type="button" class="modal-close" data-action="close-modal" aria-label="Luk">${icon('close')}</button>`}
     <section class="update-hero">
       <span class="update-hero-icon">${icon('download')}</span>
       <div>
@@ -1584,7 +1604,7 @@ function openRollbackCenterModal() {
   const modal = document.createElement('div');
   modal.className = 'modal-backdrop';
   modal.innerHTML = `<section class="profile-modal rollback-modal">
-    <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
+    <button type="button" class="modal-close" data-action="close-modal" aria-label="Luk">${icon('close')}</button>
     <p class="eyebrow">Creator / backup</p><h3>Gå tilbage til stabil version</h3>
     <section class="rollback-hero ${rollback.recommended ? 'risk' : 'ready'}">
       <span>${icon('download')}</span>
@@ -1637,7 +1657,7 @@ function openUpdateStatusModal() {
   const modal = document.createElement('div');
   modal.className = 'modal-backdrop';
   modal.innerHTML = `<section class="profile-modal update-status-modal">
-    <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
+    <button type="button" class="modal-close" data-action="close-modal" aria-label="Luk">${icon('close')}</button>
     <p class="eyebrow">Creator / distribution</p><h3>Opdateringssystem</h3>
     ${renderUpdateSummary()}
     <section class="update-detail-list">
@@ -2300,6 +2320,53 @@ async function startSupabaseDirectChat(employee, firstMessage = '') {
   return conversationId;
 }
 
+async function submitNewChatForm(form) {
+  if (!form) return;
+  if (form.dataset.submitting === 'true') return;
+  form.dataset.submitting = 'true';
+  const data = new FormData(form);
+  const employee = employees.find(item => item.id === data.get('employee'));
+  if (!employee) {
+    form.dataset.submitting = 'false';
+    showToast('Vælg en kollega først');
+    return;
+  }
+  if (onlineBackendActive()) {
+    try {
+      const chatId = await startSupabaseDirectChat(employee, data.get('message'));
+      activeTab = 'chat';
+      activeChat = chatId;
+      form.closest('.modal-backdrop')?.remove();
+      render();
+      showToast('Direkte samtale er startet');
+    } catch (error) {
+      form.dataset.submitting = 'false';
+      showToast(`Samtalen kunne ikke startes: ${error.message}`);
+    }
+    return;
+  }
+  const chatId = employee.id;
+  if (!chats.some(chat => chat.id === chatId)) chats.unshift({ id: chatId, name: employee.name, initials: employee.initials, preview: data.get('message'), time: 'Nu', unread: 0 });
+  save('chats', chats);
+  messages[chatId] = messages[chatId] || [];
+  messages[chatId].push({
+    side: 'me',
+    senderId: session?.userId || currentEmployee().id,
+    senderName: currentEmployee().name,
+    senderInitials: currentEmployee().initials,
+    senderRole: currentEmployee().role,
+    senderVehicle: currentEmployee().truck,
+    body: data.get('message'),
+    createdAt: new Date().toISOString(),
+    time: new Date().toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' }),
+  });
+  save('messages', messages);
+  activeTab = 'chat';
+  activeChat = chatId;
+  form.closest('.modal-backdrop')?.remove();
+  render();
+}
+
 function normalizeRpcConversationId(value) {
   if (typeof value === 'string' && isSupabaseProfileId(value)) return value;
   if (Array.isArray(value)) return normalizeRpcConversationId(value[0]);
@@ -2339,9 +2406,11 @@ async function startDirectConversationRpc(client, employeeId) {
     fallback = { data: null, error };
   }
   if (fallback?.data && !fallback?.error) return fallback;
+  if (fallback && !fallback.error) return fallback;
 
   const restFallback = await callDirectConversationRestRpc(client, employeeId, 'start_direct_conversation_v2');
   if (restFallback?.data && !restFallback?.error) return restFallback;
+  if (restFallback && !restFallback.error) return restFallback;
   return fallback?.error ? fallback : primary;
 }
 
@@ -3053,7 +3122,7 @@ function openEmailConfirmationModal(email) {
   const modal = document.createElement('div');
   modal.className = 'modal-backdrop';
   modal.innerHTML = `<section class="profile-modal invite-result-modal">
-    <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
+    <button type="button" class="modal-close" data-action="close-modal" aria-label="Luk">${icon('close')}</button>
     <p class="eyebrow">Mailbekræftelse</p>
     <h3>Tjek din mail</h3>
     <section class="invite-help">
@@ -3955,7 +4024,7 @@ function openCreatorUserTestModal() {
   const modal = document.createElement('div');
   modal.className = 'modal-backdrop';
   modal.innerHTML = `<section class="profile-modal creator-user-test-modal">
-    <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
+    <button type="button" class="modal-close" data-action="close-modal" aria-label="Luk">${icon('close')}</button>
     <p class="eyebrow">Creator QA</p>
     <h3>${text(test.label)}</h3>
     <p class="info-intro">Denne rapport tester appens vigtigste brugerrejser ud fra den aktuelle konfiguration. Den erstatter ikke en rigtig test på telefon, men den finder hurtigt oplagte fejl før opdatering.</p>
@@ -4903,7 +4972,7 @@ function openOfflineQueueModal() {
   modal.className = 'modal-backdrop';
   const pending = offlineQueueSummary().pending;
   modal.innerHTML = `<section class="profile-modal notification-modal">
-    <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
+    <button type="button" class="modal-close" data-action="close-modal" aria-label="Luk">${icon('close')}</button>
     <p class="eyebrow">Offline-kø</p><h3>Lokale ting der venter</h3>
     <p class="info-intro">${pending ? `${pending} ting er gemt lokalt og skal tjekkes, når forbindelsen er stabil.` : 'Der er ingen lokale ændringer der venter.'}</p>
     <div class="offline-queue-list">
@@ -5695,7 +5764,7 @@ function openProfileModal(employee = currentEmployee(), isNew = false) {
   const modal = document.createElement('div');
   modal.className = 'modal-backdrop';
   modal.innerHTML = `<form class="profile-modal">
-    <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
+    <button type="button" class="modal-close" data-action="close-modal" aria-label="Luk">${icon('close')}</button>
     ${avatar(employee, 'modal-avatar')}
     <p class="eyebrow">${isNew ? 'Registrér kollega' : 'Medarbejderprofil'}</p>
     <h3>${isNew ? 'Opret invitation' : text(employee.name)}</h3>
@@ -5822,7 +5891,7 @@ function openEmployeeInviteResultModal(employee, invitationId = '') {
   const modal = document.createElement('div');
   modal.className = 'modal-backdrop';
   modal.innerHTML = `<section class="profile-modal invite-result-modal">
-    <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
+    <button type="button" class="modal-close" data-action="close-modal" aria-label="Luk">${icon('close')}</button>
     <p class="eyebrow">Invitationsgenerator</p>
     <h3>${text(employee.name)} kan oprette sig</h3>
     <section class="invite-help">
@@ -5860,7 +5929,7 @@ function openStandardSignupPasswordModal(email, invitationId = '') {
   const modal = document.createElement('div');
   modal.className = 'modal-backdrop';
   modal.innerHTML = `<form class="profile-modal standard-signup-password-modal standard-signup-password-form">
-    <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
+    <button type="button" class="modal-close" data-action="close-modal" aria-label="Luk">${icon('close')}</button>
     <p class="eyebrow">Opret konto</p>
     <h3>Lav din personlige kode</h3>
     <section class="invite-help">
@@ -5914,7 +5983,7 @@ function openLogbookModal() {
   const modal = document.createElement('div');
   modal.className = 'modal-backdrop';
   modal.innerHTML = `<section class="profile-modal logbook-modal">
-    <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
+    <button type="button" class="modal-close" data-action="close-modal" aria-label="Luk">${icon('close')}</button>
     <p class="eyebrow">Kun synlig for dig</p><h3>Personlig logbog</h3>
     <p class="privacy-note">Privat område: chef, disponenter og kollegaer skal ikke kunne læse dine personlige minder. Automatikken laver forslag, du godkender selv.</p>
     <div class="logbook-stats">
@@ -5962,7 +6031,7 @@ function openPickupModal() {
   const modal = document.createElement('div');
   modal.className = 'modal-backdrop';
   modal.innerHTML = `<form class="profile-modal pickup-form">
-    <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
+    <button type="button" class="modal-close" data-action="close-modal" aria-label="Luk">${icon('close')}</button>
     <p class="eyebrow">Midlertidig GPS-deling</p><h3>Hent for en kollega</h3>
     <p class="info-intro">Vælg kollegaen, sted og prioritet. Når du markerer opgaven som færdig, stopper den opgaverelaterede GPS-deling igen.</p>
     ${quickColleague ? `<section class="pickup-quick-start">
@@ -6070,12 +6139,12 @@ function openNewChatModal() {
     return !onlineBackendActive() || isSupabaseProfileId(employee.id);
   });
   modal.innerHTML = `<form class="profile-modal new-chat-form">
-    <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
+    <button type="button" class="modal-close" data-action="close-modal" aria-label="Luk">${icon('close')}</button>
     <p class="eyebrow">Intern besked</p><h3>Start ny samtale</h3>
     ${availableEmployees.length
       ? `<label>Vælg kollega<select name="employee">${availableEmployees.map(employee => `<option value="${text(employee.id)}">${text(employee.name)}</option>`).join('')}</select></label>
     <label>Besked<input name="message" placeholder="Skriv din første besked..." required /></label>
-    <button class="save-btn">Start samtale</button>`
+    <button class="save-btn" type="submit" data-action="start-new-chat">Start samtale</button>`
       : '<section class="invite-help"><b>Ingen online kollegaer klar</b><span>Direkte beskeder kræver, at kollegaen er oprettet via invitation, har logget ind første gang og står som aktiv medarbejder.</span></section>'}
   </form>`;
   document.body.append(modal);
@@ -6096,7 +6165,7 @@ function openSettingsModal() {
   const modal = document.createElement('div');
   modal.className = 'modal-backdrop';
   modal.innerHTML = `<form class="profile-modal settings-form">
-    <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
+    <button type="button" class="modal-close" data-action="close-modal" aria-label="Luk">${icon('close')}</button>
     <p class="eyebrow">XpressIntra</p><h3>Indstillinger</h3>
     ${backendSettings}
     ${renderUpdateSummary()}
@@ -6165,7 +6234,7 @@ async function openSupabaseDiagnosticsModal() {
   const modal = document.createElement('div');
   modal.className = 'modal-backdrop';
   modal.innerHTML = `<section class="profile-modal supabase-diagnostics-modal">
-    <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
+    <button type="button" class="modal-close" data-action="close-modal" aria-label="Luk">${icon('close')}</button>
     <p class="eyebrow">Supabase</p><h3>Tester forbindelse</h3>
     <p class="info-intro">Appen tester URL, nøgle, Auth og Data API fra denne enhed.</p>
     <section class="diagnostic-list"><span>Tester...</span></section>
@@ -6184,7 +6253,7 @@ function openMyDataModal() {
   const modal = document.createElement('div');
   modal.className = 'modal-backdrop';
   modal.innerHTML = `<section class="profile-modal my-data-modal">
-    <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
+    <button type="button" class="modal-close" data-action="close-modal" aria-label="Luk">${icon('close')}</button>
     <p class="eyebrow">Personbeskyttelse</p><h3>Mine data</h3>
     <p class="info-intro">Her kan medarbejderen se de vigtigste oplysninger, der findes i appen, og sende en intern dataanmodning. I online-versionen gemmes anmodningen i databasen.</p>
     <section class="employee-privacy-notice compact">
@@ -6225,7 +6294,7 @@ function openSupportRequestModal() {
   const modal = document.createElement('div');
   modal.className = 'modal-backdrop';
   modal.innerHTML = `<section class="profile-modal support-request-modal">
-    <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
+    <button type="button" class="modal-close" data-action="close-modal" aria-label="Luk">${icon('close')}</button>
     <p class="eyebrow">Hjælp appen frem</p><h3>Meld fejl eller ønske</h3>
     <p class="info-intro">Skriv kort hvad der driller, eller hvad du mangler. Meldingen gemmes med side, appversion og tidspunkt, så creator kan følge op uden lange forklaringer.</p>
     <section class="support-report-status">
@@ -6297,7 +6366,7 @@ function openVehiclesModal() {
   const modal = document.createElement('div');
   modal.className = 'modal-backdrop';
   modal.innerHTML = `<section class="profile-modal vehicles-modal">
-    <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
+    <button type="button" class="modal-close" data-action="close-modal" aria-label="Luk">${icon('close')}</button>
     <p class="eyebrow">Flåde og status</p><h3>Køretøjsregister</h3>
     <p class="info-intro">Register over biler og enheder. I online drift bør det kobles til rigtige køretøjsdata, service, skade og chaufførtilknytning.</p>
     <div class="vehicle-list">
@@ -6326,7 +6395,7 @@ function openNotificationsModal() {
   const modal = document.createElement('div');
   modal.className = 'modal-backdrop';
   modal.innerHTML = `<section class="profile-modal notifications-modal">
-    <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
+    <button type="button" class="modal-close" data-action="close-modal" aria-label="Luk">${icon('close')}</button>
     <p class="eyebrow">Indbakke</p><h3>Opslag og beskeder</h3>
     <p class="info-intro">Kontoropslag, chat og vigtige driftsting samlet ét sted. Det vigtigste vises først, og resten ligger roligt nedenunder.</p>
     <div class="notification-hero-card ${latest ? '' : 'quiet'}">
@@ -6375,7 +6444,7 @@ function openTaskOverviewModal() {
   const modal = document.createElement('div');
   modal.className = 'modal-backdrop';
   modal.innerHTML = `<section class="profile-modal task-overview-modal">
-    <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
+    <button type="button" class="modal-close" data-action="close-modal" aria-label="Luk">${icon('close')}</button>
     <p class="eyebrow">Overblik</p><h3>Opgaver og kladder</h3>
     <p class="info-intro">Her samles det, der kræver handling fra dig. Tryk på en linje for at gå direkte til det rigtige sted.</p>
     <div class="request-list">
@@ -6391,7 +6460,7 @@ function openCommentsModal(postId) {
   const modal = document.createElement('div');
   modal.className = 'modal-backdrop';
   modal.innerHTML = `<section class="profile-modal comments-modal">
-    <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
+    <button type="button" class="modal-close" data-action="close-modal" aria-label="Luk">${icon('close')}</button>
     <p class="eyebrow">Internt opslag</p><h3>Kommentarer</h3>
     <div class="comment-list">${post.comments.length ? post.comments.map(comment => `<span><b>Kollega</b><small>${text(comment)}</small></span>`).join('') : '<p class="empty-state">Ingen kommentarer endnu.</p>'}</div>
     <form class="comment-form" data-post="${text(post.id)}"><label>Skriv kommentar<input name="comment" placeholder="Skriv en kort kommentar..." required /></label><button class="save-btn">Tilføj kommentar</button></form>
@@ -6403,7 +6472,7 @@ function openContactListModal() {
   const modal = document.createElement('div');
   modal.className = 'modal-backdrop';
   modal.innerHTML = `<section class="profile-modal contact-list-modal">
-    <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
+    <button type="button" class="modal-close" data-action="close-modal" aria-label="Luk">${icon('close')}</button>
     <p class="eyebrow">Information</p><h3>Kontaktliste</h3>
     <p class="info-intro">Hurtig adgang til drift, akut hjælp og kollegaer. Brug kun listen til arbejdsrelateret kontakt.</p>
     ${renderContactDirectory()}
@@ -6418,7 +6487,7 @@ function openInfoModal(id) {
   const modal = document.createElement('div');
   modal.className = 'modal-backdrop';
   modal.innerHTML = `<section class="profile-modal info-modal">
-    <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
+    <button type="button" class="modal-close" data-action="close-modal" aria-label="Luk">${icon('close')}</button>
     <p class="eyebrow">Intern information</p><h3>${text(section.title)}</h3>
     <p class="info-intro">${text(section.intro)}</p>
     <div class="info-detail-list">${section.rows.map(([title, description, href]) => href
@@ -6435,7 +6504,7 @@ function openRuleUpdatesModal() {
   const modal = document.createElement('div');
   modal.className = 'modal-backdrop';
   modal.innerHTML = `<section class="profile-modal rule-updates-modal">
-    <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
+    <button type="button" class="modal-close" data-action="close-modal" aria-label="Luk">${icon('close')}</button>
     <p class="eyebrow">Overvågede kilder</p><h3>Regelnyt</h3>
     <p class="info-intro">${canSeeDrafts ? 'Når appen forbindes online, kan den kontrollere udvalgte officielle kilder automatisk. Nye tekster bør godkendes internt, før medarbejderne får en besked.' : 'Her vises kun godkendte regelopdateringer, så medarbejderne får enkel og sikker information.'}</p>
     <div class="rule-update-list">${visibleRuleUpdates.map(update => `
@@ -6464,7 +6533,7 @@ function openAnnouncementModal(postId = null) {
   const modal = document.createElement('div');
   modal.className = 'modal-backdrop';
   modal.innerHTML = `<form class="profile-modal announcement-form" ${isEdit ? `data-edit-post="${text(existing.id)}"` : ''}>
-    <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
+    <button type="button" class="modal-close" data-action="close-modal" aria-label="Luk">${icon('close')}</button>
     <p class="eyebrow">Internt opslag</p><h3>${isEdit ? 'Rediger opslag' : 'Del med holdet'}</h3>
     <label>Overskrift<input name="title" placeholder="Hvad skal holdet vide?" value="${text(existing?.title || '')}" required /></label>
     <label>Besked<input name="body" placeholder="Skriv en kort besked..." value="${text(existing?.body || '')}" required /></label>
@@ -6490,7 +6559,7 @@ function openDispatchModal() {
   const modal = document.createElement('div');
   modal.className = 'modal-backdrop';
   modal.innerHTML = `<section class="profile-modal dispatch-modal">
-    <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
+    <button type="button" class="modal-close" data-action="close-modal" aria-label="Luk">${icon('close')}</button>
     <p class="eyebrow">Kun disponenter</p><h3>Driftsoverblik</h3>
     <div class="dispatch-stats"><span><b>${online.length}</b><small>online</small></span><span><b>${visiblePeople.length}</b><small>synlige GPS</small></span><span><b>${trucks.length}</b><small>lastbiler</small></span><span><b>${vans.length}</b><small>varebiler</small></span><span><b>${activePickupCount}</b><small>afhentning</small></span><span><b>${pendingRuleDrafts}</b><small>regelkladder</small></span></div>
     <div class="dispatch-actions">
@@ -6517,7 +6586,7 @@ function openAdminModal() {
   const modal = document.createElement('div');
   modal.className = 'modal-backdrop';
   modal.innerHTML = `<section class="profile-modal admin-modal">
-    <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
+    <button type="button" class="modal-close" data-action="close-modal" aria-label="Luk">${icon('close')}</button>
     <p class="eyebrow">${canManageEmployees() ? 'Chef/admin' : 'Sikkerhedsmodel'}</p><h3>Rettigheder og sikkerhed</h3>
     <section class="admin-stats">
       <span><b>${admins.length}</b><small>chef/admin</small></span>
@@ -6569,7 +6638,7 @@ function openLaunchChecklistModal() {
   const modal = document.createElement('div');
   modal.className = 'modal-backdrop';
   modal.innerHTML = `<section class="profile-modal launch-modal">
-    <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
+    <button type="button" class="modal-close" data-action="close-modal" aria-label="Luk">${icon('close')}</button>
     <p class="eyebrow">Go-live</p><h3>Klar til drift</h3>
     <section class="launch-score">
       <span><b>${readiness.percent}%</b><small>${readiness.done}/${readiness.total} punkter klar</small></span>
@@ -6609,7 +6678,7 @@ function openGdprGoLiveModal() {
   const modal = document.createElement('div');
   modal.className = 'modal-backdrop';
   modal.innerHTML = `<section class="profile-modal gdpr-modal">
-    <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
+    <button type="button" class="modal-close" data-action="close-modal" aria-label="Luk">${icon('close')}</button>
     <p class="eyebrow">GDPR go-live</p><h3>Persondata klar til drift</h3>
     <p class="info-intro">Samlet pakke til medarbejderinformation, slettefrister, dataanmodninger og intern risikovurdering. Den hjælper jer tættere på GDPR, men virksomheden skal stadig godkende det juridisk.</p>
     ${renderGdprGoLivePanel()}
@@ -6662,7 +6731,7 @@ function openSecurityCenterModal() {
   const modal = document.createElement('div');
   modal.className = 'modal-backdrop';
   modal.innerHTML = `<section class="profile-modal security-center-modal">
-    <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
+    <button type="button" class="modal-close" data-action="close-modal" aria-label="Luk">${icon('close')}</button>
     <p class="eyebrow">Creator / sikkerhed</p><h3>Sikkerhedscenter</h3>
     <p class="info-intro">Her samles hacking-beskyttelse, admin-adgang, mistet telefon, upload, audit-log og de Supabase-ting der skal kontrolleres før appen bruges bredt.</p>
     <section class="security-score-card">
@@ -6700,7 +6769,7 @@ function openLegalModal() {
   const modal = document.createElement('div');
   modal.className = 'modal-backdrop';
   modal.innerHTML = `<section class="profile-modal legal-modal">
-    <button type="button" class="modal-close" data-action="close-modal">${icon('close')}</button>
+    <button type="button" class="modal-close" data-action="close-modal" aria-label="Luk">${icon('close')}</button>
     <p class="eyebrow">Intern politik</p><h3>Sikkerhed, privatliv & brugsvilkår</h3>
     <section class="legal-status-card">
       <b>${text(legalStatusText())}</b>
@@ -7024,6 +7093,11 @@ document.addEventListener('click', async event => {
       input.value = `${input.value}${emoji}`;
       input.focus();
     }
+    return;
+  }
+  if (action === 'start-new-chat') {
+    event.preventDefault();
+    await submitNewChatForm(event.target.closest('.new-chat-form'));
     return;
   }
   if (tab) { activeTab = tab; activeChat = null; event.target.closest('.modal-backdrop')?.remove(); render(); }
@@ -7495,41 +7569,7 @@ document.addEventListener('submit', async event => {
   }
   if (event.target.matches('.new-chat-form')) {
     event.preventDefault();
-    const data = new FormData(event.target);
-    const employee = employees.find(item => item.id === data.get('employee'));
-    if (onlineBackendActive()) {
-      try {
-        const chatId = await startSupabaseDirectChat(employee, data.get('message'));
-        activeTab = 'chat';
-        activeChat = chatId;
-        event.target.closest('.modal-backdrop').remove();
-        render();
-        showToast('Direkte samtale er startet');
-      } catch (error) {
-        showToast(`Samtalen kunne ikke startes: ${error.message}`);
-      }
-      return;
-    }
-    const chatId = employee.id;
-    if (!chats.some(chat => chat.id === chatId)) chats.unshift({ id: chatId, name: employee.name, initials: employee.initials, preview: data.get('message'), time: 'Nu', unread: 0 });
-    save('chats', chats);
-    messages[chatId] = messages[chatId] || [];
-    messages[chatId].push({
-      side: 'me',
-      senderId: session?.userId || currentEmployee().id,
-      senderName: currentEmployee().name,
-      senderInitials: currentEmployee().initials,
-      senderRole: currentEmployee().role,
-      senderVehicle: currentEmployee().truck,
-      body: data.get('message'),
-      createdAt: new Date().toISOString(),
-      time: new Date().toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' }),
-    });
-    save('messages', messages);
-    activeTab = 'chat';
-    activeChat = chatId;
-    event.target.closest('.modal-backdrop').remove();
-    render();
+    await submitNewChatForm(event.target);
     return;
   }
   if (event.target.matches('.pickup-form')) {
@@ -7809,6 +7849,8 @@ window.addEventListener('appinstalled', () => {
   render();
 });
 setTimeout(() => {
+  clearStaleRequiredUpdate();
+  saveAppUpdateState();
   if (appUpdateState.required && appUpdateState.required.activeVersionCode !== APP_VERSION_CODE) {
     openAppUpdateModal(appUpdateState.required, { force: true, offline: true });
   }
@@ -7830,6 +7872,7 @@ document.addEventListener('visibilitychange', () => {
 });
 
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js').catch(() => {});
+
 
 
 

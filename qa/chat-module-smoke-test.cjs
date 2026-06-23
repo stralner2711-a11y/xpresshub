@@ -13,6 +13,12 @@ assert(app.includes('XpressIntraChat.messageFromSupabaseRow'), 'App should deleg
 assert(app.includes("const emojiChoices = ['\\u{1F44D}', '\\u{1F44C}', '\\u{1F60A}'"), 'Chat emoji choices should use stable unicode escapes instead of broken placeholder text');
 assert(app.includes('<div class="emoji-row">'), 'Conversation should render the emoji row');
 assert(app.includes('<button type="submit" aria-label="Send besked">'), 'Chat send button should remain the submit button after emoji controls');
+assert(app.includes('data-action="start-new-chat"'), 'New direct chat modal should use an explicit mobile-safe start action');
+assert(app.includes('<button class="save-btn" type="submit" data-action="start-new-chat">Start samtale</button>'), 'New direct chat start button should submit the form reliably on Android WebView');
+assert(app.includes('async function submitNewChatForm(form)'), 'New direct chat flow should share one robust submit handler');
+assert(app.includes("form.dataset.submitting === 'true'"), 'New direct chat flow should prevent duplicate submissions');
+assert(app.includes('event.preventDefault();\n    await submitNewChatForm'), 'New direct chat click path should prevent native double-submit');
+assert(app.includes("if (action === 'start-new-chat')"), 'New direct chat start button should be handled from tap/click events');
 
 assert(chatModule.includes('export function hasChannelAccess'), 'Chat module should export channel access logic');
 assert(chatModule.includes('export function chatFromConversationRow'), 'Chat module should export conversation mapping');

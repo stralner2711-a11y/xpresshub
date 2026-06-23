@@ -39,6 +39,10 @@ assert(app.includes('renderUpdateSummary'), 'Settings/creator UI should show upd
 assert(app.includes("data-action=\"check-update\""), 'UI should include manual update check');
 assert(app.includes("data-action=\"install-update\""), 'Update dialog should include install action');
 assert(app.includes('appUpdateState.required'), 'App should remember known required updates');
+assert(app.includes('function isStaleRequiredUpdate'), 'App should detect stale required updates from older builds');
+assert(app.includes('function clearStaleRequiredUpdate'), 'App should clear stale required updates before showing forced update UI');
+assert(app.includes('clearStaleRequiredUpdate();\n  saveAppUpdateState();\n  if (appUpdateState.required'), 'Startup should clear stale required updates before opening offline forced update modal');
+assert(app.includes("info.forceUpdate && info.activeVersionCode !== APP_VERSION_CODE"), 'Forced update UI should not trigger when installed build already matches active build');
 assert(app.includes('XpressIntraUpdateSystem.normalizeVersionInfo'), 'App should delegate version validation to the update module when loaded');
 assert(app.includes('XpressIntraUpdateSystem.shouldShowUpdate'), 'App should delegate update visibility rules to the update module when loaded');
 assert(updateSystem.includes('export function normalizeVersionInfo'), 'Update module should export version validation');
@@ -48,13 +52,13 @@ assert(updateSystem.includes('globalThis.XpressIntraUpdateSystem'), 'Update modu
 assert(styles.includes('.update-summary-card'), 'Update summary should be styled');
 assert(styles.includes('.force-update'), 'Forced update modal should be styled');
 
-assert(version.activeVersion === '1.3.35', 'version.json should expose activeVersion');
-assert(version.activeVersionCode === 48, 'version.json should expose activeVersionCode');
+assert(version.activeVersion === '1.3.37', 'version.json should expose activeVersion');
+assert(version.activeVersionCode === 50, 'version.json should expose activeVersionCode');
 assert(version.forceUpdate === true, 'Test release should force update visibility');
 assert(version.apkDownloadUrl.includes('github.com/stralner2711-a11y/xpresshub'), 'version.json should point to the official GitHub repo');
-assert(version.previousStableVersion === '1.3.34', 'version.json should keep the previous stable version for rollback');
-assert(version.previousStableApkDownloadUrl.includes('/v1.3.34/'), 'version.json should expose previous stable APK for rollback');
-assert(version.changelog.some(item => item.includes('build 48')), 'version.json should explain the direct-message recovery update');
+assert(version.previousStableVersion === '1.3.36', 'version.json should keep the previous stable version for rollback');
+assert(version.previousStableApkDownloadUrl.includes('/v1.3.36/'), 'version.json should expose previous stable APK for rollback');
+assert(version.changelog.some(item => item.includes('build 50')), 'version.json should explain the mobile direct-message update');
 assert(docsVersion.activeVersion === version.activeVersion, 'docs/version.json should match public version for GitHub Pages');
 assert(docsVersion.activeVersionCode === version.activeVersionCode, 'docs/version.json should match public build code');
 assert(rootVersion.activeVersion === version.activeVersion, 'root version.json should match public version for root-hosted Pages');
@@ -62,7 +66,7 @@ assert(rootVersion.activeVersionCode === version.activeVersionCode, 'root versio
 
 assert(download.includes('iPhone eller pc'), 'Download page should guide iPhone and PC users to the web app');
 assert(download.includes('Download Android APK'), 'Download page should still have a clear Android APK button');
-assert(download.includes('F?j til hjemmesk?rm'), 'Download page should guide iPhone home screen installation');
+assert(download.includes('Føj til hjemmeskærm'), 'Download page should guide iPhone home screen installation');
 assert(download.includes('Tillad installation fra ukendte kilder'), 'Download page should guide APK installation');
 assert(download.includes('Skriv aldrig adgangskoden andre steder'), 'Download page should include plain safety guidance');
 assert(download.includes(`/releases/download/v${version.activeVersion}/xpressintra.apk`), 'Download page should point directly to the latest APK');

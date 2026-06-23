@@ -47,4 +47,10 @@ for (const file of files) {
 
 assert.deepStrictEqual(findings, [], `Text quality problems found:\n${findings.join('\n')}`);
 
+const brokenDownloadText = /V\?lg|F\?j|f\?j|hjemmesk\?rm|\?bn|sp\?rger|P\? iPhone|p\? telefonen|p\? siden/;
+for (const relativePath of ['public/download.html', 'docs/download.html']) {
+  const downloadPage = fs.readFileSync(path.join(root, relativePath), 'utf8');
+  assert(!brokenDownloadText.test(downloadPage), `${relativePath} contains broken Danish download text`);
+}
+
 console.log(`Text quality smoke test passed (${files.length} files scanned)`);

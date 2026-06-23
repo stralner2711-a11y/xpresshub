@@ -1,5 +1,13 @@
 ﻿const fs = require('fs');
 const vm = require('vm');
+const appSourceText = fs.readFileSync('src/app.js', 'utf8');
+
+if (appSourceText.includes('class="modal-close" data-action="close-modal">${icon(\'close\')}</button>')) {
+  throw new Error('Modal close buttons should have an accessible label');
+}
+if (!appSourceText.includes('class="modal-close" data-action="close-modal" aria-label="Luk"')) {
+  throw new Error('Modal close buttons should be labelled in Danish');
+}
 
 function createHarness() {
   const code = fs.readFileSync('src/app.js', 'utf8');
@@ -117,6 +125,8 @@ assert(logbook.innerHTML.includes('Gem dagen som minde'), 'Logbook should offer 
 
 const styles = fs.readFileSync('src/styles.css', 'utf8');
 assert(styles.includes('font-size: 12px'), 'Styles should lift small mobile text');
+assert(styles.includes('padding: 18px 0 calc(84px + env(safe-area-inset-bottom))'), 'Modal sheets should leave room for the mobile bottom navigation');
+assert(styles.includes('max-height: calc(100vh - 122px - env(safe-area-inset-bottom))'), 'Modal sheets should remain scrollable above the mobile bottom navigation');
 assert(!styles.includes('.daily-assistant'), 'Styles should not keep removed daily assistant layout');
 
 console.log('User experience smoke test passed');

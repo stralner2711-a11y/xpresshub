@@ -1,4 +1,4 @@
-const CACHE_NAME = 'xpressintra-v96-direct-message-rest-fallback';
+const CACHE_NAME = 'xpressintra-v98-direct-chat-submit-fix';
 const APP_FILES = [
   './',
   './index.html',
@@ -84,3 +84,4 @@ self.addEventListener('notificationclick', event => {
     })
   );
 });
+

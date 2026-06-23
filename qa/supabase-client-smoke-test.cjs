@@ -252,6 +252,7 @@ function assert(condition, message) {
   await harness.run("getSupabaseClient().rpc = () => Promise.reject(new Error(\"Cannot read properties of null (reading 'body')\"))");
   await harness.run("startSupabaseDirectChat(employees.find(item => item.id === '11111111-1111-4111-8111-111111111111'), 'Direkte reserve')");
   assert(harness.insertedRows.some(item => item.table === 'messages' && item.row.conversation_id === 'direct-conversation-1' && item.row.body === 'Direkte reserve'), 'Direct chat should use REST fallback when Supabase RPC throws a null-body error');
+  assert(app.includes('if (restFallback && !restFallback.error) return restFallback;'), 'Direct chat should accept REST fallback success even when Supabase returns an empty body');
   const rpcCallCount = harness.rpcCalls.length;
   const invalidDirectChatError = await harness.run("(async () => { try { await startSupabaseDirectChat({ id: 'local-test-profile', name: 'Lokal Testprofil', initials: 'LT', employmentStatus: 'active' }, 'Hej'); return ''; } catch (error) { return error.message; } })()");
   assert(invalidDirectChatError.includes('ikke oprettet som aktiv onlinebruger'), 'Local/demo employee ids should be rejected with a clear direct-chat message');

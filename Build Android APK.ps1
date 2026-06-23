@@ -89,9 +89,16 @@ function Run-Logged($command, $arguments) {
 Write-Step "XpressIntra Android APK build"
 
 Add-PathIfExists "C:\Program Files\nodejs"
-if (Test-Path "C:\Program Files\Android\Android Studio\jbr") {
-  $env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"
-  Add-PathIfExists "C:\Program Files\Android\Android Studio\jbr\bin"
+$androidStudioJbrCandidates = @(
+  "C:\Program Files\Android\Android Studio\jbr",
+  "C:\Program Files\Android\Android Studio1\jbr"
+)
+foreach ($jbr in $androidStudioJbrCandidates) {
+  if (Test-Path -LiteralPath $jbr) {
+    $env:JAVA_HOME = $jbr
+    Add-PathIfExists (Join-Path $jbr "bin")
+    break
+  }
 }
 
 $sdk = Find-AndroidSdk

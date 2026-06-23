@@ -11,7 +11,7 @@ const manifest = fs.readFileSync('android/app/src/main/AndroidManifest.xml', 'ut
 const version = JSON.parse(fs.readFileSync('public/version.json', 'utf8'));
 
 for (const source of [worker, rootWorker]) {
-  assert(source.includes("CACHE_NAME = 'xpressintra-v96-direct-message-rest-fallback'"), 'Service worker cache version should be bumped');
+  assert(source.includes("CACHE_NAME = 'xpressintra-v98-direct-chat-submit-fix'"), 'Service worker cache version should be bumped');
   assert(source.includes("'./index.html'"), 'Service worker should precache index.html');
   assert(!source.includes('indep.html'), 'Service worker should not reference old indep.html fallback');
   assert(!source.includes('ppressbudet'), 'Service worker should not reference misspelled logo file');
@@ -33,7 +33,7 @@ assert(manifest.includes('android.hardware.camera" android:required="false"'), '
 assert(!manifest.includes('READ_EXTERNAL_STORAGE'), 'Legacy broad external storage permission should not be requested');
 assert(!manifest.includes('WRITE_EXTERNAL_STORAGE'), 'Legacy write storage permission should not be requested');
 
-assert(app.includes(`const APP_VERSION = '${version.activeVersion}-release-v96'`), 'App version should be visible in code');
+assert(app.includes(`const APP_VERSION = '${version.activeVersion}-release-v98'`), 'App version should be visible in code');
 assert(app.includes(`const APP_DISPLAY_VERSION = '${version.activeVersion}'`), 'APK display version should be visible in code');
 assert(app.includes(`const APP_VERSION_CODE = ${version.activeVersionCode}`), 'APK version code should be visible in code');
 assert(app.includes('!hasSupabaseConfigForMode && storedSessionForMode'), 'Demo mode should not override a configured production backend');

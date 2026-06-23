@@ -11,7 +11,7 @@ const manifest = fs.readFileSync('android/app/src/main/AndroidManifest.xml', 'ut
 const mainActivity = fs.readFileSync('android/app/src/main/java/dk/xpressbudet/xpressintra/MainActivity.java', 'utf8');
 const version = JSON.parse(fs.readFileSync('public/version.json', 'utf8'));
 
-assert(app.includes("const APP_VERSION = '1.3.35-release-v96'"), 'App should expose the notification release version');
+assert(app.includes("const APP_VERSION = '1.3.37-release-v98'"), 'App should expose the notification release version');
 assert(app.includes('function requestSystemNotifications'), 'App should request system notification permission from a user action');
 assert(app.includes('function showSystemNotification'), 'App should show system notifications');
 assert(app.includes('function safeSystemNotificationBody'), 'App should keep lock-screen chat text private');
@@ -37,14 +37,14 @@ assert(mainActivity.includes('requestNotificationPermissionOnFirstStart'), 'Andr
 assert(mainActivity.includes('Build.VERSION_CODES.TIRAMISU'), 'Android notification permission should be requested only on Android 13+');
 
 for (const source of [worker, publicWorker]) {
-  assert(source.includes("CACHE_NAME = 'xpressintra-v96-direct-message-rest-fallback'"), 'Service worker cache should be bumped for the direct-message release');
+  assert(source.includes("CACHE_NAME = 'xpressintra-v98-direct-chat-submit-fix'"), 'Service worker cache should be bumped for the mobile direct-message release');
   assert(source.includes("self.addEventListener('notificationclick'"), 'Service worker should handle notification clicks');
   assert(source.includes("clients.openWindow"), 'Service worker should open the app from a notification');
 }
 
-assert(version.activeVersion === '1.3.35', 'Release version should be 1.3.35');
-assert(version.activeVersionCode === 48, 'Release build should be 48');
-assert(version.changelog.some(item => item.includes('build 48')), 'Changelog should mention the direct-message recovery fix');
+assert(version.activeVersion === '1.3.37', 'Release version should be 1.3.37');
+assert(version.activeVersionCode === 50, 'Release build should be 50');
+assert(version.changelog.some(item => item.includes('build 50')), 'Changelog should mention the mobile direct-message fix');
 
 console.log('Background notifications smoke test passed');
 
