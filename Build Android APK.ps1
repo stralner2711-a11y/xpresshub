@@ -94,7 +94,8 @@ $androidStudioJbrCandidates = @(
   "C:\Program Files\Android\Android Studio1\jbr"
 )
 foreach ($jbr in $androidStudioJbrCandidates) {
-  if (Test-Path -LiteralPath $jbr) {
+  $javaExe = Join-Path $jbr "bin\java.exe"
+  if (Test-Path -LiteralPath $javaExe) {
     $env:JAVA_HOME = $jbr
     Add-PathIfExists (Join-Path $jbr "bin")
     break
