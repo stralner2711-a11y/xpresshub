@@ -919,6 +919,29 @@ begin
 end;
 $$;
 
+create or replace function private.protect_pickup_task_participants()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if new.driver_id is distinct from old.driver_id
+    or new.colleague_id is distinct from old.colleague_id then
+    if not private.is_admin() then
+      raise exception 'pickup_participants_locked';
+    end if;
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists protect_pickup_task_participants on public.pickup_tasks;
+create trigger protect_pickup_task_participants
+  before update on public.pickup_tasks
+  for each row execute procedure private.protect_pickup_task_participants();
+
 create policy "employees can read shared locations"
 on public.location_shares for select to authenticated using (
   user_id = auth.uid()
@@ -1128,6 +1151,8 @@ alter default privileges in schema public grant select, insert, update, delete o
 alter default privileges in schema public grant usage, select on sequences to authenticated;
 revoke execute on all functions in schema private from public, anon;
 grant execute on all functions in schema private to authenticated, service_role;
+revoke execute on function public.start_direct_conversation(uuid) from public, anon;
+revoke execute on function public.start_direct_conversation_v2(uuid) from public, anon;
 grant execute on function public.start_direct_conversation(uuid) to authenticated;
 grant execute on function public.start_direct_conversation_v2(uuid) to authenticated;
 grant execute on function public.purge_expired_operational_data() to authenticated;

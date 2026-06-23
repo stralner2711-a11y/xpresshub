@@ -6237,10 +6237,6 @@ function openNewChatModal() {
   document.body.append(modal);
   const form = modal.querySelector('.new-chat-form');
   const submitButton = form?.querySelector('[data-action="start-new-chat"]');
-  form?.addEventListener('submit', async event => {
-    event.preventDefault();
-    await submitNewChatForm(form);
-  });
   submitButton?.addEventListener('click', async event => {
     event.preventDefault();
     await submitNewChatForm(form);

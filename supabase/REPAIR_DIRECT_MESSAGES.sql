@@ -110,6 +110,8 @@ as $$
 $$;
 
 grant usage on schema public to authenticated;
+revoke execute on function public.start_direct_conversation(uuid) from public, anon;
+revoke execute on function public.start_direct_conversation_v2(uuid) from public, anon;
 grant execute on function public.start_direct_conversation(uuid) to authenticated;
 grant execute on function public.start_direct_conversation_v2(uuid) to authenticated;
 

@@ -111,8 +111,14 @@ if ($schema -notmatch 'create or replace function public\.start_direct_conversat
 if ($schema -notmatch 'create or replace function public\.start_direct_conversation_v2\(target_user_id uuid\)' -or $schema -notmatch 'grant execute on function public\.start_direct_conversation_v2\(uuid\) to authenticated;') {
   Fail "schema.sql mangler reserve-RPC til direkte beskeder"
 }
+if ($schema -notmatch 'revoke execute on function public\.start_direct_conversation\(uuid\) from public, anon;' -or $schema -notmatch 'revoke execute on function public\.start_direct_conversation_v2\(uuid\) from public, anon;') {
+  Fail "Direkte besked-RPC maa ikke kunne kaldes af ikke-loggede brugere"
+}
 if ($directMessagesRepair -notmatch 'create or replace function public\.start_direct_conversation\(target_user_id uuid\)' -or $directMessagesRepair -notmatch 'create or replace function public\.start_direct_conversation_v2\(target_user_id uuid\)' -or $directMessagesRepair -notmatch "notify pgrst, 'reload schema';") {
   Fail "REPAIR_DIRECT_MESSAGES.sql skal genoprette direkte besked RPC og reloade Supabase schema cache"
+}
+if ($directMessagesRepair -notmatch 'revoke execute on function public\.start_direct_conversation\(uuid\) from public, anon;' -or $directMessagesRepair -notmatch 'revoke execute on function public\.start_direct_conversation_v2\(uuid\) from public, anon;') {
+  Fail "REPAIR_DIRECT_MESSAGES.sql skal lukke direkte besked-RPC for ikke-loggede brugere"
 }
 if ($schema -notmatch 'function private\.protect_profile_security_fields\(\)' -or $schema -notmatch 'execute procedure private\.protect_profile_security_fields\(\)') {
   Fail "schema.sql skal laase profilens rolle/adgangsfelter med en private trigger"

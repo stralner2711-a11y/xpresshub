@@ -263,6 +263,29 @@ create policy "employees can create own pickup tasks"
 on public.pickup_tasks for insert to authenticated
 with check (driver_id = auth.uid() and driver_id <> colleague_id);
 
+create or replace function private.protect_pickup_task_participants()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if new.driver_id is distinct from old.driver_id
+    or new.colleague_id is distinct from old.colleague_id then
+    if not private.is_admin() then
+      raise exception 'pickup_participants_locked';
+    end if;
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists protect_pickup_task_participants on public.pickup_tasks;
+create trigger protect_pickup_task_participants
+  before update on public.pickup_tasks
+  for each row execute procedure private.protect_pickup_task_participants();
+
 create policy "pickup participants can update tasks"
 on public.pickup_tasks for update to authenticated
 using (driver_id = auth.uid() or colleague_id = auth.uid())
