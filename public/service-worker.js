@@ -1,4 +1,4 @@
-const CACHE_NAME = 'xpressintra-v99-direct-chat-rest-fix';
+const CACHE_NAME = 'xpressintra-v100-github-release-robustness';
 const APP_FILES = [
   './',
   './index.html',

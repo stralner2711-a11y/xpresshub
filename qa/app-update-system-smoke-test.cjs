@@ -19,10 +19,15 @@ const docs = fs.readFileSync('docs/APP_UPDATE_SYSTEM.md', 'utf8');
 const androidManifest = fs.readFileSync('android/app/src/main/AndroidManifest.xml', 'utf8');
 const mainActivity = fs.readFileSync('android/app/src/main/java/dk/xpressbudet/xpressintra/MainActivity.java', 'utf8');
 const updateInstallerPlugin = fs.readFileSync('android/app/src/main/java/dk/xpressbudet/xpressintra/UpdateInstallerPlugin.java', 'utf8');
+const appConfig = fs.readFileSync('public/app-config.js', 'utf8');
+const releaseCheck = fs.readFileSync('tools/github-release-check.ps1', 'utf8');
+const opdaterAlt = fs.readFileSync('tools/opdater-alt.ps1', 'utf8');
 
 assert(app.includes(`const APP_DISPLAY_VERSION = '${version.activeVersion}'`), 'App should expose human APK version');
 assert(app.includes(`const APP_VERSION_CODE = ${version.activeVersionCode}`), 'App should compare numeric Android version codes');
 assert(app.includes('window.XPRESSINTRA_UPDATE'), 'App should read update config from app-config');
+assert(app.includes('versionFallbackUrls'), 'App should support remote version fallback URLs');
+assert(app.includes('lastVersionSourceUrl'), 'App should store the update source URL for troubleshooting');
 assert(app.includes('fetchVersionInfo'), 'App should fetch version.json');
 assert(app.includes('normalizeVersionInfo'), 'App should validate version.json');
 assert(app.includes('isAllowedUpdateUrl'), 'App should validate update URLs');
@@ -52,13 +57,13 @@ assert(updateSystem.includes('globalThis.XpressIntraUpdateSystem'), 'Update modu
 assert(styles.includes('.update-summary-card'), 'Update summary should be styled');
 assert(styles.includes('.force-update'), 'Forced update modal should be styled');
 
-assert(version.activeVersion === '1.3.38', 'version.json should expose activeVersion');
-assert(version.activeVersionCode === 51, 'version.json should expose activeVersionCode');
+assert(version.activeVersion === '1.3.39', 'version.json should expose activeVersion');
+assert(version.activeVersionCode === 52, 'version.json should expose activeVersionCode');
 assert(version.forceUpdate === true, 'Test release should force update visibility');
 assert(version.apkDownloadUrl.includes('github.com/stralner2711-a11y/xpresshub'), 'version.json should point to the official GitHub repo');
-assert(version.previousStableVersion === '1.3.37', 'version.json should keep the previous stable version for rollback');
-assert(version.previousStableApkDownloadUrl.includes('/v1.3.37/'), 'version.json should expose previous stable APK for rollback');
-assert(version.changelog.some(item => item.includes('build 51')), 'version.json should explain the mobile direct-message REST update');
+assert(version.previousStableVersion === '1.3.38', 'version.json should keep the previous stable version for rollback');
+assert(version.previousStableApkDownloadUrl.includes('/v1.3.38/'), 'version.json should expose previous stable APK for rollback');
+assert(version.changelog.some(item => item.includes('build 52')), 'version.json should explain the GitHub release robustness update');
 assert(docsVersion.activeVersion === version.activeVersion, 'docs/version.json should match public version for GitHub Pages');
 assert(docsVersion.activeVersionCode === version.activeVersionCode, 'docs/version.json should match public build code');
 assert(rootVersion.activeVersion === version.activeVersion, 'root version.json should match public version for root-hosted Pages');
@@ -73,6 +78,9 @@ assert(download.includes(`/releases/download/v${version.activeVersion}/xpressint
 
 assert(configExample.includes('XPRESSINTRA_UPDATE'), 'Config example should document update config');
 assert(configExample.includes('stralner2711-a11y.github.io/xpresshub/version.json'), 'Config example should show official GitHub Pages version.json URL');
+assert(configExample.includes('versionFallbackUrls'), 'Config example should document version fallbacks');
+assert(appConfig.includes('versionFallbackUrls'), 'Production app config should include version fallbacks');
+assert(appConfig.includes('raw.githubusercontent.com/stralner2711-a11y/xpresshub/main/version.json'), 'Production app config should fall back to raw GitHub version.json');
 assert(!serviceWorker.includes("'./version.json'"), 'Service worker should not pre-cache version.json');
 assert(serviceWorker.includes("url.pathname.endsWith('/version.json')"), 'Service worker should bypass version.json cache');
 assert(serviceWorker.includes("'./index.html'"), 'Service worker should pre-cache index.html');
@@ -89,6 +97,12 @@ assert(mainActivity.includes('registerPlugin(UpdateInstallerPlugin.class)'), 'Ma
 assert(updateInstallerPlugin.includes('@CapacitorPlugin(name = "UpdateInstaller")'), 'Android update installer plugin should be registered for Capacitor');
 assert(updateInstallerPlugin.includes('ACTION_MANAGE_UNKNOWN_APP_SOURCES'), 'Update installer should guide users to unknown app source settings');
 assert(updateInstallerPlugin.includes('application/vnd.android.package-archive'), 'Update installer should launch the Android APK installer');
+assert(releaseCheck.includes('XpressIntra GitHub/release-kontrol'), 'Release check should exist as a standalone GitHub verification tool');
+assert(releaseCheck.includes('gh.exe'), 'Release check should verify GitHub CLI availability');
+assert(releaseCheck.includes("'release', 'view'"), 'Release check should verify the GitHub release');
+assert(releaseCheck.includes('xpressintra.apk'), 'Release check should verify the APK asset');
+assert(releaseCheck.includes('aapt2.exe'), 'Release check should verify local APK version when possible');
+assert(opdaterAlt.includes('[10/10] Verificerer GitHub release'), 'Main update script should run GitHub release verification before declaring success');
 
 console.log('App update system smoke test passed');
 

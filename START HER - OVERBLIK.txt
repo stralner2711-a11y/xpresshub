@@ -2,11 +2,13 @@ XPRESSINTRA - START HER
 =======================
 
 Kort sagt:
-Projektet er nu ryddet op, saa der kun er een hovedknap til release:
+Projektet har een hovedknap til release og een ekstra kontrolknap til GitHub:
 
   KLIK HER - OPDATER ALT.cmd
+  KLIK HER - TJEK GITHUB OG RELEASE.cmd
 
-Den samler web/pc, mobil/Android, GitHub, Vercel-grundlaget, APK-release og Supabase-kontrol i samme opdateringspakke.
+OPDATER ALT samler web/pc, mobil/Android, GitHub, Vercel-grundlaget, APK-release og Supabase-kontrol i samme opdateringspakke.
+TJEK GITHUB OG RELEASE kan bruges alene, hvis du vil kontrollere om GitHub, version.json, release og APK-link ligger korrekt.
 
 
 BRUG DEN HER
@@ -19,6 +21,9 @@ BRUG DEN HER
 
 2. Hvis den stopper, skal den ikke sendes ud endnu.
    Laes opdater-alt-log.txt og ret fejlen foerst.
+
+3. KLIK HER - TJEK GITHUB OG RELEASE.cmd
+   Brug den hvis en telefon ikke finder opdateringen, eller hvis du vil kontrollere GitHub uden at bygge en ny APK.
 
 
 DET VIGTIGE I SYSTEMET
@@ -37,6 +42,9 @@ supabase
 tools/supabase-release-check.ps1
    Release-kontrol der sikrer at Supabase-pakken, standardkode-login og sikkerhed er med,
    foer OPDATER ALT gaar videre.
+
+tools/github-release-check.ps1
+   Kontrollerer lokal version, GitHub-repo, version.json paa GitHub, release-tag og APK-asset.
 
 android
    Android/APK-delen.

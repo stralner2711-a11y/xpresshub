@@ -26,9 +26,9 @@ const icons = {
   search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>',
 };
 
-const APP_VERSION = '1.3.38-release-v99';
-const APP_DISPLAY_VERSION = '1.3.38';
-const APP_VERSION_CODE = 51;
+const APP_VERSION = '1.3.39-release-v100';
+const APP_DISPLAY_VERSION = '1.3.39';
+const APP_VERSION_CODE = 52;
 const TEMPORARY_EMPLOYEE_PASSWORD = 'xpress';
 const IMAGE_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
 const PROFILE_PHOTO_MAX_DIMENSION = 512;
@@ -41,6 +41,10 @@ const LOGIN_GUARD_LOCK_MINUTES = 10;
 const UPDATE_CONFIG_KEY = 'appUpdateState';
 const defaultUpdateConfig = {
   versionUrl: 'https://stralner2711-a11y.github.io/xpresshub/version.json',
+  versionFallbackUrls: [
+    'https://raw.githubusercontent.com/stralner2711-a11y/xpresshub/main/version.json',
+    'https://raw.githubusercontent.com/stralner2711-a11y/xpresshub/main/docs/version.json',
+  ],
   officialRepo: 'https://github.com/stralner2711-a11y/xpresshub',
   appUrl: 'https://xpresshub-seven.vercel.app/',
   allowLocalVersionFallback: false,
@@ -1391,8 +1395,12 @@ function shouldShowUpdate(info, manual = false) {
 }
 
 async function fetchVersionInfo() {
+  const fallbackUrls = Array.isArray(appUpdateConfig.versionFallbackUrls)
+    ? appUpdateConfig.versionFallbackUrls
+    : [];
   const urls = [
     appUpdateConfig.versionUrl || './version.json',
+    ...fallbackUrls,
     'https://raw.githubusercontent.com/stralner2711-a11y/xpresshub/main/version.json',
     'https://raw.githubusercontent.com/stralner2711-a11y/xpresshub/main/docs/version.json',
   ];
@@ -1404,7 +1412,9 @@ async function fetchVersionInfo() {
       const url = cacheBustedUpdateUrl(originalUrl);
       const response = await fetch(url, { cache: 'no-store', headers: { 'Cache-Control': 'no-cache' } });
       if (!response.ok) throw new Error(`Kunne ikke hente version.json (${response.status})`);
-      return normalizeVersionInfo(await response.json());
+      const info = normalizeVersionInfo(await response.json());
+      info.sourceUrl = originalUrl;
+      return info;
     } catch (error) {
       lastError = error;
     }
@@ -1425,7 +1435,13 @@ function cacheBustedUpdateUrl(url) {
 async function checkForAppUpdate({ manual = false, silent = false } = {}) {
   try {
     const info = await fetchVersionInfo();
-    appUpdateState = { ...appUpdateState, latest: info, lastCheckedAt: new Date().toISOString(), lastError: null };
+    appUpdateState = {
+      ...appUpdateState,
+      latest: info,
+      lastCheckedAt: new Date().toISOString(),
+      lastError: null,
+      lastVersionSourceUrl: info.sourceUrl || null,
+    };
     if (info.forceUpdate && info.activeVersionCode !== APP_VERSION_CODE) appUpdateState.required = info;
     else clearStaleRequiredUpdate();
     saveAppUpdateState();
@@ -1556,7 +1572,7 @@ function markCurrentVersionSuspect() {
   const fallbackInfo = {
     activeVersion: APP_DISPLAY_VERSION,
     activeVersionCode: APP_VERSION_CODE,
-    apkDownloadUrl: 'https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.25/xpressintra.apk',
+    apkDownloadUrl: `https://github.com/stralner2711-a11y/xpresshub/releases/download/v${APP_DISPLAY_VERSION}/xpressintra.apk`,
   };
   const info = appUpdateState.latest || normalizeVersionInfo(fallbackInfo);
   const defective = new Set([...(info.defectiveVersions || []).map(String), APP_DISPLAY_VERSION, String(APP_VERSION_CODE)]);
@@ -1654,6 +1670,9 @@ function renderUpdateSummary() {
 
 function openUpdateStatusModal() {
   const info = appUpdateState.latest;
+  const fallbackUrls = Array.isArray(appUpdateConfig.versionFallbackUrls)
+    ? appUpdateConfig.versionFallbackUrls.filter(Boolean)
+    : [];
   const modal = document.createElement('div');
   modal.className = 'modal-backdrop';
   modal.innerHTML = `<section class="profile-modal update-status-modal">
@@ -1662,6 +1681,8 @@ function openUpdateStatusModal() {
     ${renderUpdateSummary()}
     <section class="update-detail-list">
       <span><b>Version URL</b><small>${text(appUpdateConfig.versionUrl)}</small></span>
+      <span><b>Sidst hentet fra</b><small>${text(appUpdateState.lastVersionSourceUrl || info?.sourceUrl || 'Ikke hentet endnu')}</small></span>
+      <span><b>Reservekilder</b><small>${fallbackUrls.length ? fallbackUrls.map(url => text(url)).join('<br>') : 'Ingen'}</small></span>
       <span><b>Officielt repository</b><small>${text(appUpdateConfig.officialRepo)}</small></span>
       <span><b>Seneste aktive version</b><small>${info ? `${text(info.activeVersion)} · build ${info.activeVersionCode}` : 'Ikke hentet endnu'}</small></span>
       <span><b>Stabil version</b><small>${info ? `${text(info.stableVersion)} · build ${info.stableVersionCode}` : 'Ikke hentet endnu'}</small></span>

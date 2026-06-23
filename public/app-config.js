@@ -8,6 +8,10 @@ window.XPRESSINTRA_SUPABASE = {
 
 window.XPRESSINTRA_UPDATE = {
   versionUrl: 'https://stralner2711-a11y.github.io/xpresshub/version.json',
+  versionFallbackUrls: [
+    'https://raw.githubusercontent.com/stralner2711-a11y/xpresshub/main/version.json',
+    'https://raw.githubusercontent.com/stralner2711-a11y/xpresshub/main/docs/version.json',
+  ],
   officialRepo: 'https://github.com/stralner2711-a11y/xpresshub',
   appUrl: 'https://xpresshub-seven.vercel.app/',
   allowLocalVersionFallback: false,
