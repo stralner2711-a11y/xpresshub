@@ -1410,7 +1410,7 @@ async function fetchVersionInfo() {
     try {
       if (!isAllowedUpdateUrl(originalUrl)) throw new Error('version.json ligger ikke på en godkendt kilde');
       const url = cacheBustedUpdateUrl(originalUrl);
-      const response = await fetch(url, { cache: 'no-store', headers: { 'Cache-Control': 'no-cache' } });
+      const response = await fetch(url, { cache: 'no-store' });
       if (!response.ok) throw new Error(`Kunne ikke hente version.json (${response.status})`);
       const info = normalizeVersionInfo(await response.json());
       info.sourceUrl = originalUrl;
@@ -2065,15 +2065,81 @@ async function attachSignedMediaUrls(rows = []) {
   return rows;
 }
 
+async function fetchSupabaseRestRows(table, options = {}) {
+  const config = supabaseConfig();
+  const client = getSupabaseClient();
+  let token = '';
+  try {
+    const { data } = await client?.auth?.getSession?.();
+    token = data?.session?.access_token || '';
+  } catch {
+    token = '';
+  }
+  if (!config.url || !config.anonKey || !token || typeof fetch !== 'function') {
+    throw new Error('Supabase REST-reserve kunne ikke bruge den aktive login-session');
+  }
+  const params = new URLSearchParams();
+  params.set('select', options.select || '*');
+  if (options.order) params.set('order', options.order);
+  if (options.limit) params.set('limit', String(options.limit));
+  const response = await fetch(`${config.url}/rest/v1/${table}?${params.toString()}`, {
+    headers: {
+      apikey: config.anonKey,
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  const body = await response.text();
+  let data = null;
+  if (body) {
+    try {
+      data = JSON.parse(body);
+    } catch {
+      data = body;
+    }
+  }
+  if (!response.ok) throw new Error(data?.message || data?.msg || body || `HTTP ${response.status}`);
+  return Array.isArray(data) ? data : [];
+}
+
 async function loadSupabaseChats(authSession) {
   const client = getSupabaseClient();
   const userId = authSession?.user?.id;
   if (!client || !userId) return;
-  const [conversationsResult, messagesResult] = await Promise.all([
-    client.from('conversations').select('*').order('created_at', { ascending: true }),
-    client.from('messages').select('*, media_attachments(*)').order('created_at', { ascending: true }).limit(500),
-  ]);
+  let conversationsResult;
+  try {
+    conversationsResult = await client.from('conversations').select('*').order('created_at', { ascending: true });
+  } catch (error) {
+    conversationsResult = { data: null, error };
+  }
+  if (conversationsResult.error) {
+    console.warn('Chatkanaler kunne ikke hentes via Supabase-klienten. Prøver REST-reserve.', conversationsResult.error);
+    conversationsResult = {
+      data: await fetchSupabaseRestRows('conversations', { select: '*', order: 'created_at.asc' }),
+      error: null,
+    };
+  }
   if (conversationsResult.error) throw conversationsResult.error;
+  let messagesResult;
+  try {
+    messagesResult = await client.from('messages').select('*, media_attachments(*)').order('created_at', { ascending: true }).limit(500);
+  } catch (error) {
+    messagesResult = { data: null, error };
+  }
+  if (messagesResult.error) {
+    console.warn('Chatmedier kunne ikke hentes sammen med beskeder. Prøver uden billeder.', messagesResult.error);
+    try {
+      messagesResult = await client.from('messages').select('*').order('created_at', { ascending: true }).limit(500);
+    } catch (error) {
+      messagesResult = { data: null, error };
+    }
+  }
+  if (messagesResult.error) {
+    console.warn('Chatbeskeder kunne ikke hentes via Supabase-klienten. Prøver REST-reserve.', messagesResult.error);
+    messagesResult = {
+      data: await fetchSupabaseRestRows('messages', { select: '*', order: 'created_at.asc', limit: 500 }),
+      error: null,
+    };
+  }
   if (messagesResult.error) throw messagesResult.error;
   const messageRows = await attachSignedMediaUrls(messagesResult.data || []);
 
@@ -2308,7 +2374,9 @@ async function startSupabaseDirectChat(employee, firstMessage = '') {
   if (error) throw new Error(directChatErrorMessage(error, employee));
   let conversationId = normalizeRpcConversationId(rawConversationId);
 
-  await loadSupabaseChats(supabaseAuthSession());
+  await loadSupabaseChats(supabaseAuthSession()).catch(error => {
+    console.warn('Samtalen blev startet, men chatlisten kunne ikke genhentes med det samme.', error);
+  });
   if (!conversationId) conversationId = findExistingDirectChatId(employee);
   if (!conversationId) throw new Error('Samtalen blev oprettet, men appen kunne ikke hente samtale-id. Luk beskeder og prøv igen.');
   let chat = chats.find(item => item.id === conversationId);

@@ -114,7 +114,7 @@ export function logbookSuggestions({
       kind: 'vehicle-day',
       title: 'Gem dagens køretøj',
       place: employee.location || profile.department || 'På tur',
-      note: `${vehicle.unit || profile.truck || 'Køretøj'} · ${vehicle.status || employee.status || 'klar til arbejde'}.`,
+      note: `${vehicle?.unit || profile.truck || 'Køretøj'} · ${vehicle?.status || employee.status || 'klar til arbejde'}.`,
     });
   }
   if (logbookAutomation.autoMilestones) {

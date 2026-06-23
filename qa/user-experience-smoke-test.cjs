@@ -125,6 +125,7 @@ assert(logbook.innerHTML.includes('Gem dagen som minde'), 'Logbook should offer 
 
 const styles = fs.readFileSync('src/styles.css', 'utf8');
 assert(styles.includes('font-size: 12px'), 'Styles should lift small mobile text');
+assert(styles.includes('.bottom-nav { position: absolute; z-index: 12;'), 'Bottom navigation should sit above page content so mobile taps are not intercepted');
 assert(styles.includes('padding: 18px 0 calc(84px + env(safe-area-inset-bottom))'), 'Modal sheets should leave room for the mobile bottom navigation');
 assert(styles.includes('max-height: calc(100vh - 122px - env(safe-area-inset-bottom))'), 'Modal sheets should remain scrollable above the mobile bottom navigation');
 assert(!styles.includes('.daily-assistant'), 'Styles should not keep removed daily assistant layout');
