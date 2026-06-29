@@ -1,4 +1,4 @@
-﻿const fs = require('fs');
+const fs = require('fs');
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
@@ -58,7 +58,7 @@ assert(styles.includes('.update-summary-card'), 'Update summary should be styled
 assert(styles.includes('.force-update'), 'Forced update modal should be styled');
 
 assert(/^1\.3\.\d+$/.test(version.activeVersion), 'version.json should expose activeVersion');
-assert(Number.isInteger(version.activeVersionCode) && version.activeVersionCode >= 53, 'version.json should expose an incremented activeVersionCode');
+assert(Number.isInteger(version.activeVersionCode) && version.activeVersionCode >= 54, 'version.json should expose an incremented activeVersionCode');
 assert(version.forceUpdate === true, 'Test release should force update visibility');
 assert(version.apkDownloadUrl.includes('github.com/stralner2711-a11y/xpresshub'), 'version.json should point to the official GitHub repo');
 assert(version.previousStableVersion, 'version.json should keep the previous stable version for rollback');
@@ -106,6 +106,7 @@ assert(opdaterAlt.includes('github-release-check.ps1') && opdaterAlt.includes('F
 assert(opdaterAlt.indexOf('github-release-check.ps1') < opdaterAlt.indexOf('FAERDIG - Alt er opdateret og sendt ud'), 'Main update script should verify release before declaring success');
 
 console.log('App update system smoke test passed');
+
 
 
 

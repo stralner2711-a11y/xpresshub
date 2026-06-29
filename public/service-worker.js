@@ -1,4 +1,4 @@
-const CACHE_NAME = 'xpressintra-v100-github-release-robustness';
+const CACHE_NAME = 'xpressintra-v101-update-detection';
 const APP_FILES = [
   './',
   './index.html',
@@ -84,4 +84,5 @@ self.addEventListener('notificationclick', event => {
     })
   );
 });
+
 
