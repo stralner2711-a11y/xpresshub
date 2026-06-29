@@ -26,9 +26,9 @@ const icons = {
   search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>',
 };
 
-const APP_VERSION = '1.3.43-release-v103';
-const APP_DISPLAY_VERSION = '1.3.43';
-const APP_VERSION_CODE = 56;
+const APP_VERSION = '1.3.44-release-v104';
+const APP_DISPLAY_VERSION = '1.3.44';
+const APP_VERSION_CODE = 57;
 const TEMPORARY_EMPLOYEE_PASSWORD = 'xpress';
 const IMAGE_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
 const PROFILE_PHOTO_MAX_DIMENSION = 512;
@@ -4616,8 +4616,8 @@ function renderAccessRequestsPanel(options = {}) {
     <div class="section-title"><h3>Adgangsanmodninger</h3><span>${pending.length} venter</span></div>
     <p class="info-intro">Nye medarbejdere kan oprette profil, men kommer først ind i appen når chef eller creator godkender dem.</p>
     <div class="access-request-list">${pending.map(employee => `<article>
-      <span>${avatar(employee)}<b>${text(employee.name || employee.email || 'Ny medarbejder')}</b><small>${text(employee.email || 'Mail mangler')} · ${text(employee.role || 'Chauffør')}</small></span>
-      <div class="employee-action-pair"><button class="restore" data-reactivate-employee="${text(employee.id)}">Godkend</button><button data-remove-employee="${text(employee.id)}">Afvis</button></div>
+      <span>${avatar(employee)}<b>${text(employee.name || employee.email || 'Ny medarbejder')}</b><small>${text(employee.email || 'Mail mangler')} · ${text(employee.role || 'Chauffør')} · afventer adgang</small></span>
+      <div class="employee-action-pair"><button class="restore" data-approve-access-request="${text(employee.id)}">Godkend adgang</button><button class="danger" data-reject-access-request="${text(employee.id)}">Afvis</button></div>
     </article>`).join('')}</div>
   </section>`;
 }
@@ -6826,7 +6826,7 @@ function openAdminModal() {
         const onboarding = employeeOnboardingState(employee);
         return `<article class="${employee.employmentStatus === 'offboarded' ? 'offboarded' : ''}">
         <span><b>${text(employee.name)}</b><small>${text(employee.role)} · ${text(accessRoleLabel(employee.accessRole))} · ${text(employee.employmentStatus || 'active')}</small><i class="onboarding-pill ${text(onboarding.tone)}">${text(onboarding.label)}</i></span>
-        ${employee.id === 'th' ? '<em>Dig</em>' : employee.employmentStatus === 'offboarded' ? `<div class="employee-action-pair"><button class="restore" data-reactivate-employee="${text(employee.id)}">Aktivér igen</button><button class="danger" data-remove-employee="${text(employee.id)}">Slet helt</button></div>` : employee.employmentStatus === 'paused' ? `<div class="employee-action-pair"><button class="restore" data-reactivate-employee="${text(employee.id)}">Godkend adgang</button><button data-remove-employee="${text(employee.id)}">Afvis/deaktivér</button></div>` : `<div class="employee-action-pair"><button class="restore" data-open-employee-invite="${text(employee.id)}">Invitation</button><button data-remove-employee="${text(employee.id)}">Deaktivér</button></div>`}
+        ${employee.id === 'th' ? '<em>Dig</em>' : employee.employmentStatus === 'offboarded' ? `<div class="employee-action-pair"><button class="restore" data-reactivate-employee="${text(employee.id)}">Aktivér igen</button><button class="danger" data-remove-employee="${text(employee.id)}">Slet helt</button></div>` : employee.employmentStatus === 'paused' ? `<div class="employee-action-pair"><button class="restore" data-approve-access-request="${text(employee.id)}">Godkend adgang</button><button class="danger" data-reject-access-request="${text(employee.id)}">Afvis</button></div>` : `<div class="employee-action-pair"><button class="restore" data-open-employee-invite="${text(employee.id)}">Invitation</button><button data-remove-employee="${text(employee.id)}">Deaktivér</button></div>`}
       </article>`;
       }).join('')}
     </section>` : (DEMO_MODE ? `<button class="save-btn" type="button" data-action="demo-admin">Prøv chefvisning i demo</button>` : '<p class="security-inline-note">Chefvisning kan kun gives af en eksisterende chef/admin.</p>')}
@@ -7114,6 +7114,50 @@ function reactivateEmployee(employeeId) {
   showToast('Medarbejderen er aktiveret igen');
 }
 
+function approveAccessRequest(employeeId) {
+  if (!canManageEmployees() && !isCreatorOwner()) {
+    showToast('Kun chef eller creator kan godkende adgang');
+    return;
+  }
+  const employee = employees.find(item => item.id === employeeId);
+  if (!employee || employee.id === 'th') return;
+  employee.employmentStatus = 'active';
+  employee.status = 'Godkendt adgang';
+  employee.online = false;
+  employee.sharing = false;
+  recordAdminAudit('Adgang godkendt', `${employee.name || employee.email} blev godkendt til XpressIntra`);
+  if (onlineBackendActive()) {
+    updateSupabaseEmployeeProfile(employee).catch(error => showToast(`Adgangen blev godkendt lokalt, men ikke online: ${error.message}`));
+  }
+  save('employees', employees);
+  document.querySelector('.modal-backdrop')?.remove();
+  render();
+  openAccessRequestsModal();
+  showToast('Adgangen er godkendt');
+}
+
+function rejectAccessRequest(employeeId) {
+  if (!canManageEmployees() && !isCreatorOwner()) {
+    showToast('Kun chef eller creator kan afvise adgang');
+    return;
+  }
+  const employee = employees.find(item => item.id === employeeId);
+  if (!employee || employee.id === 'th') return;
+  employee.employmentStatus = 'offboarded';
+  employee.status = 'Afvist adgang';
+  employee.online = false;
+  employee.sharing = false;
+  recordAdminAudit('Adgang afvist', `${employee.name || employee.email} blev afvist/deaktiveret`);
+  if (onlineBackendActive()) {
+    updateSupabaseEmployeeProfile(employee).catch(error => showToast(`Adgangen blev afvist lokalt, men ikke online: ${error.message}`));
+  }
+  save('employees', employees);
+  document.querySelector('.modal-backdrop')?.remove();
+  render();
+  openAccessRequestsModal();
+  showToast('Adgangsanmodningen er afvist');
+}
+
 function enableDemoAdmin() {
   if (!DEMO_MODE) {
     showToast('Lokal test-admin er slået fra i denne version');
@@ -7234,6 +7278,8 @@ document.addEventListener('click', async event => {
   const emoji = event.target.closest('[data-emoji]')?.dataset.emoji;
   const removeEmployeeId = event.target.closest('[data-remove-employee]')?.dataset.removeEmployee;
   const reactivateEmployeeId = event.target.closest('[data-reactivate-employee]')?.dataset.reactivateEmployee;
+  const approveAccessRequestId = event.target.closest('[data-approve-access-request]')?.dataset.approveAccessRequest;
+  const rejectAccessRequestId = event.target.closest('[data-reject-access-request]')?.dataset.rejectAccessRequest;
   const pickupStatus = event.target.closest('[data-pickup-status]')?.dataset.pickupStatus;
   const pickupCheck = event.target.closest('[data-pickup-check]')?.dataset.pickupCheck;
   const logbookSuggestion = event.target.closest('[data-logbook-suggestion]')?.dataset.logbookSuggestion;
@@ -7266,6 +7312,14 @@ document.addEventListener('click', async event => {
   }
   if (reactivateEmployeeId) {
     reactivateEmployee(reactivateEmployeeId);
+    return;
+  }
+  if (approveAccessRequestId) {
+    approveAccessRequest(approveAccessRequestId);
+    return;
+  }
+  if (rejectAccessRequestId) {
+    rejectAccessRequest(rejectAccessRequestId);
     return;
   }
   if (resendConfirmationEmail) {

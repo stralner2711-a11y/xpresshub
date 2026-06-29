@@ -5,7 +5,7 @@
 do $$
 begin
   if to_regclass('public.profiles') is null then
-    raise exception 'public.profiles mangler. Kor supabase/schema.sql forst.';
+    raise exception 'public.profiles mangler. Kør supabase/schema.sql først.';
   end if;
 end;
 $$;
@@ -16,7 +16,7 @@ create table if not exists public.employee_invitations (
   full_name text not null,
   email text not null,
   phone text,
-  role text not null default 'Chauffor',
+  role text not null default 'Chauffør',
   access_role text not null default 'employee' check (access_role in ('employee', 'dispatcher', 'admin', 'owner')),
   vehicle_type text not null default 'van' check (vehicle_type in ('van', 'truck', 'dispatch')),
   truck text,
@@ -42,7 +42,7 @@ alter table public.profiles
   add column if not exists password_reset_required boolean not null default false;
 
 alter table public.employee_invitations
-  alter column role set default 'Chauffor',
+  alter column role set default 'Chauffør',
   add column if not exists onboarding_method text not null default 'standard_password' check (onboarding_method in ('standard_password', 'manual')),
   add column if not exists password_reset_required boolean not null default true;
 
@@ -118,7 +118,7 @@ begin
     invite.department,
     invite.license_summary,
     invite.languages,
-    coalesce(invite.role, 'Chauffor'),
+    coalesce(invite.role, 'Chauffør'),
     coalesce(invite.access_role, 'employee'),
     coalesce(invite.vehicle_type, 'van'),
     invite.truck,

@@ -56,11 +56,12 @@ foreach ($file in $files) {
   [void]$content.AppendLine("-- $file")
   [void]$content.AppendLine("-- ============================================================")
   [void]$content.AppendLine("")
-  [void]$content.AppendLine((Get-Content -LiteralPath $path -Raw))
+  [void]$content.AppendLine([System.IO.File]::ReadAllText($path, [System.Text.Encoding]::UTF8))
 }
 
 $sql = $content.ToString()
-Set-Content -LiteralPath $outputFile -Value $sql -Encoding UTF8
+$utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+[System.IO.File]::WriteAllText($outputFile, $sql, $utf8NoBom)
 Set-Clipboard -Value $sql
 
 Write-Host ""

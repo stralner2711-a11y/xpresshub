@@ -5,7 +5,7 @@
 do $$
 begin
   if to_regclass('public.profiles') is null then
-    raise exception 'public.profiles mangler. Kor supabase/schema.sql forst.';
+    raise exception 'public.profiles mangler. Kør supabase/schema.sql først.';
   end if;
 end;
 $$;

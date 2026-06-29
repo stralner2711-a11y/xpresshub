@@ -1,4 +1,4 @@
-﻿-- XpressIntra samlet Supabase-fix
+-- XpressIntra samlet Supabase-fix
 -- Oprettet automatisk fra projektets Supabase-fixfiler.
 -- Saadan bruges den:
 -- 1. Aabn Supabase SQL Editor.
@@ -36,7 +36,7 @@ alter table public.location_shares
 do $$
 begin
   if to_regclass('public.profiles') is null then
-    raise exception 'public.profiles mangler. Kor supabase/schema.sql forst.';
+    raise exception 'public.profiles mangler. Kør supabase/schema.sql først.';
   end if;
 end;
 $$;
@@ -47,7 +47,7 @@ create table if not exists public.employee_invitations (
   full_name text not null,
   email text not null,
   phone text,
-  role text not null default 'Chauffor',
+  role text not null default 'Chauffør',
   access_role text not null default 'employee' check (access_role in ('employee', 'dispatcher', 'admin', 'owner')),
   vehicle_type text not null default 'van' check (vehicle_type in ('van', 'truck', 'dispatch')),
   truck text,
@@ -59,9 +59,6 @@ create table if not exists public.employee_invitations (
   onboarding_method text not null default 'standard_password' check (onboarding_method in ('standard_password', 'manual')),
   password_reset_required boolean not null default true,
   status text not null default 'pending' check (status in ('pending', 'accepted', 'cancelled')),
-  expires_at timestamptz not null default (now() + interval '14 days'),
-  accepted_at timestamptz,
-  used_by uuid references public.profiles(id) on delete set null,
   created_at timestamptz not null default now()
 );
 
@@ -76,21 +73,9 @@ alter table public.profiles
   add column if not exists password_reset_required boolean not null default false;
 
 alter table public.employee_invitations
-  alter column role set default 'Chauffor',
+  alter column role set default 'Chauffør',
   add column if not exists onboarding_method text not null default 'standard_password' check (onboarding_method in ('standard_password', 'manual')),
-  add column if not exists password_reset_required boolean not null default true,
-  add column if not exists expires_at timestamptz not null default (now() + interval '14 days'),
-  add column if not exists accepted_at timestamptz,
-  add column if not exists used_by uuid references public.profiles(id) on delete set null;
-
-alter table public.media_attachments
-  add column if not exists visibility text not null default 'conversation'
-  check (visibility in ('conversation', 'announcement', 'private_log', 'profile'));
-
-create unique index if not exists employee_invitations_one_pending_email_idx
-on public.employee_invitations (lower(email))
-where status = 'pending';
-create index if not exists employee_invitations_used_by_idx on public.employee_invitations (used_by);
+  add column if not exists password_reset_required boolean not null default true;
 
 alter table public.employee_invitations enable row level security;
 alter table public.profile_private_details enable row level security;
@@ -137,8 +122,6 @@ begin
   from public.employee_invitations
   where lower(email) = lower(new.email)
     and status = 'pending'
-    and expires_at > now()
-    and id::text = coalesce(nullif(new.raw_user_meta_data ->> 'invitation_id', ''), 'missing-invitation-id')
   order by created_at desc
   limit 1;
 
@@ -166,7 +149,7 @@ begin
     invite.department,
     invite.license_summary,
     invite.languages,
-    coalesce(invite.role, 'Chauffor'),
+    coalesce(invite.role, 'Chauffør'),
     coalesce(invite.access_role, 'employee'),
     coalesce(invite.vehicle_type, 'van'),
     invite.truck,
@@ -191,9 +174,7 @@ begin
         updated_at = now();
 
     update public.employee_invitations
-    set status = 'accepted',
-        accepted_at = now(),
-        used_by = new.id
+    set status = 'accepted'
     where id = invite.id;
   end if;
 
@@ -222,7 +203,7 @@ revoke all on function public.handle_new_user() from authenticated;
 do $$
 begin
   if to_regclass('public.profiles') is null then
-    raise exception 'public.profiles mangler. Kor supabase/schema.sql forst.';
+    raise exception 'public.profiles mangler. Kør supabase/schema.sql først.';
   end if;
 end;
 $$;
@@ -262,29 +243,6 @@ using (driver_id = auth.uid() or colleague_id = auth.uid());
 create policy "employees can create own pickup tasks"
 on public.pickup_tasks for insert to authenticated
 with check (driver_id = auth.uid() and driver_id <> colleague_id);
-
-create or replace function private.protect_pickup_task_participants()
-returns trigger
-language plpgsql
-security definer
-set search_path = public
-as $$
-begin
-  if new.driver_id is distinct from old.driver_id
-    or new.colleague_id is distinct from old.colleague_id then
-    if not private.is_admin() then
-      raise exception 'pickup_participants_locked';
-    end if;
-  end if;
-
-  return new;
-end;
-$$;
-
-drop trigger if exists protect_pickup_task_participants on public.pickup_tasks;
-create trigger protect_pickup_task_participants
-  before update on public.pickup_tasks
-  for each row execute procedure private.protect_pickup_task_participants();
 
 create policy "pickup participants can update tasks"
 on public.pickup_tasks for update to authenticated
@@ -330,11 +288,12 @@ begin
 
   update public.profiles
   set
-    role = 'Creator',
+    role = 'Appansvarlig · Lastbilchauffør',
     access_role = 'owner',
-    vehicle_type = 'dispatch',
-    department = case when department is null or department = '' or department = 'Ledelse' then 'Creator' else department end,
-    truck = case when truck is null or truck = '' or truck = 'Ledelse' then 'Creator' else truck end,
+    vehicle_type = 'truck',
+    department = case when department is null or department = '' or department = 'Ledelse' or department = 'Creator' then 'Lastbil' else department end,
+    truck = case when truck is null or truck = '' or truck = 'Ledelse' or truck = 'Creator' or truck = 'Kontoret' then 'TR 42 918' else truck end,
+    license_summary = case when license_summary is null or license_summary = '' or license_summary = 'Kontor' or license_summary = 'Administrator' then 'C/E · EU kvalifikationsbevis' else license_summary end,
     employment_status = 'active',
     updated_at = now()
   where id = admin_user_id;
@@ -351,5 +310,4 @@ begin
     )
   );
 end $$;
-
 

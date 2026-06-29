@@ -107,9 +107,14 @@ harness.run("employees = employees.map(employee => employee.id === 'ma' ? { ...e
 const pendingModal = harness.modalNodes.at(-1);
 assert(pendingModal.innerHTML.includes('Adgangsanmodninger'), 'Pending access requests should be visible in admin operations');
 assert(pendingModal.innerHTML.includes('Godkend adgang') || pendingModal.innerHTML.includes('Godkend'), 'Pending access requests should be approvable from the app');
-harness.run("reactivateEmployee('ma');");
+assert(pendingModal.innerHTML.includes('data-approve-access-request'), 'Pending access requests should have a dedicated approve action');
+assert(pendingModal.innerHTML.includes('data-reject-access-request'), 'Pending access requests should have a dedicated reject action');
+harness.run("approveAccessRequest('ma');");
 assert(harness.run("employees.find(employee => employee.id === 'ma').employmentStatus") === 'active', 'Reactivating an employee should restore active employment status');
-assert(harness.run("adminAuditEvents.some(event => event.title === 'Medarbejder aktiveret')") === true, 'Reactivating an employee should write an admin audit event');
+assert(harness.run("adminAuditEvents.some(event => event.title === 'Adgang godkendt')") === true, 'Approving an access request should write an admin audit event');
+harness.run("employees = employees.map(employee => employee.id === 'ma' ? { ...employee, employmentStatus: 'paused', status: 'Afventer godkendelse' } : employee); rejectAccessRequest('ma');");
+assert(harness.run("employees.find(employee => employee.id === 'ma').employmentStatus") === 'offboarded', 'Rejecting an access request should close access by offboarding the profile');
+assert(harness.run("adminAuditEvents.some(event => event.title === 'Adgang afvist')") === true, 'Rejecting an access request should write an admin audit event');
 harness.run("employees = employees.map(employee => employee.id === 'ma' ? { ...employee, employmentStatus: 'offboarded', status: 'Deaktiveret' } : employee); removeEmployee('ma');");
 assert(harness.run("employees.some(employee => employee.id === 'ma')") === false, 'Removing an already offboarded employee should delete it from the local employee list');
 assert(harness.run("adminAuditEvents.some(event => event.title === 'Medarbejder fjernet')") === true, 'Deleting an offboarded employee should write an admin audit event');

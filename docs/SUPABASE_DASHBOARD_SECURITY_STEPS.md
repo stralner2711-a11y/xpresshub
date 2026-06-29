@@ -11,6 +11,7 @@ Der er stadig to Supabase Auth-punkter, som skal slås til og bekræftes i Supab
 
 1. Leaked password protection
 2. Flere MFA/to-faktor muligheder
+3. Custom SMTP til auth-mails
 
 Statusnotat: MFA er meldt slået til manuelt, men live Security Advisor viser stadig `Insufficient MFA Options`. Det betyder sandsynligvis, at der skal aktiveres flere MFA options i projektets Auth-indstillinger, eller at den aktiverede MFA kun gælder en bruger/konto og ikke projektets Auth-konfiguration.
 
@@ -57,3 +58,18 @@ Når de to ting er slået til:
 ## Det er vigtigt
 
 Appen kan godt være teknisk sikker i koden, men creator/admin-konti er stadig et svagt punkt uden to-faktor. For et medarbejdersystem bør MFA bruges på alle konti, der kan ændre roller, medarbejdere, sikkerhed eller database.
+
+## 4. Slå custom SMTP til for auth-mails
+
+Formål: Bekræftelsesmail, gensend bekræftelsesmail og reset password skal sendes stabilt fra XpressIntra, ikke via Supabases standardbegrænsninger eller en forkert projektidentitet.
+
+Anbefalet opsætning:
+
+1. Brug Brevo eller en tilsvarende transactional mailudbyder.
+2. Brug separat XpressIntra-afsender og separat SMTP-key.
+3. Slå `Enable custom SMTP` til i Supabase Auth -> Emails / SMTP.
+4. Brug `smtp-relay.brevo.com` og port `587`.
+5. Tjek at Brevo ikke omskriver Supabase auth-links med click tracking.
+6. Test med en rigtig testmail efter opsætning.
+
+Se den fulde mailopsætning i `docs/XPRESSINTRA_SUPABASE_BREVO_MAIL.md`.
