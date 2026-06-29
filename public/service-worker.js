@@ -1,4 +1,4 @@
-const CACHE_NAME = 'xpressintra-v101-update-detection';
+const CACHE_NAME = 'xpressintra-v102-update-source-priority';
 const APP_FILES = [
   './',
   './index.html',
@@ -84,5 +84,6 @@ self.addEventListener('notificationclick', event => {
     })
   );
 });
+
 
 

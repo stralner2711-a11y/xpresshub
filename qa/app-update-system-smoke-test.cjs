@@ -29,6 +29,8 @@ assert(app.includes('window.XPRESSINTRA_UPDATE'), 'App should read update config
 assert(app.includes('versionFallbackUrls'), 'App should support remote version fallback URLs');
 assert(app.includes('lastVersionSourceUrl'), 'App should store the update source URL for troubleshooting');
 assert(app.includes('fetchVersionInfo'), 'App should fetch version.json');
+assert(app.includes('let bestInfo = null'), 'App should compare all version sources before choosing update info');
+assert(app.includes('Number(info.activeVersionCode) > Number(bestInfo.activeVersionCode)'), 'App should choose the highest activeVersionCode from available sources');
 assert(app.includes('normalizeVersionInfo'), 'App should validate version.json');
 assert(app.includes('isAllowedUpdateUrl'), 'App should validate update URLs');
 assert(app.includes('forceUpdate'), 'App should support forced updates');
@@ -58,7 +60,7 @@ assert(styles.includes('.update-summary-card'), 'Update summary should be styled
 assert(styles.includes('.force-update'), 'Forced update modal should be styled');
 
 assert(/^1\.3\.\d+$/.test(version.activeVersion), 'version.json should expose activeVersion');
-assert(Number.isInteger(version.activeVersionCode) && version.activeVersionCode >= 54, 'version.json should expose an incremented activeVersionCode');
+assert(Number.isInteger(version.activeVersionCode) && version.activeVersionCode >= 55, 'version.json should expose an incremented activeVersionCode');
 assert(version.forceUpdate === true, 'Test release should force update visibility');
 assert(version.apkDownloadUrl.includes('github.com/stralner2711-a11y/xpresshub'), 'version.json should point to the official GitHub repo');
 assert(version.previousStableVersion, 'version.json should keep the previous stable version for rollback');
@@ -106,6 +108,7 @@ assert(opdaterAlt.includes('github-release-check.ps1') && opdaterAlt.includes('F
 assert(opdaterAlt.indexOf('github-release-check.ps1') < opdaterAlt.indexOf('FAERDIG - Alt er opdateret og sendt ud'), 'Main update script should verify release before declaring success');
 
 console.log('App update system smoke test passed');
+
 
 
 

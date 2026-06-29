@@ -26,9 +26,9 @@ const icons = {
   search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>',
 };
 
-const APP_VERSION = '1.3.41-release-v101';
-const APP_DISPLAY_VERSION = '1.3.41';
-const APP_VERSION_CODE = 54;
+const APP_VERSION = '1.3.42-release-v102';
+const APP_DISPLAY_VERSION = '1.3.42';
+const APP_VERSION_CODE = 55;
 const TEMPORARY_EMPLOYEE_PASSWORD = 'xpress';
 const IMAGE_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
 const PROFILE_PHOTO_MAX_DIMENSION = 512;
@@ -40,10 +40,10 @@ const LOGIN_GUARD_MAX_FAILED = 5;
 const LOGIN_GUARD_LOCK_MINUTES = 10;
 const UPDATE_CONFIG_KEY = 'appUpdateState';
 const defaultUpdateConfig = {
-  versionUrl: 'https://stralner2711-a11y.github.io/xpresshub/version.json',
+  versionUrl: 'https://raw.githubusercontent.com/stralner2711-a11y/xpresshub/main/version.json',
   versionFallbackUrls: [
-    'https://raw.githubusercontent.com/stralner2711-a11y/xpresshub/main/version.json',
     'https://raw.githubusercontent.com/stralner2711-a11y/xpresshub/main/docs/version.json',
+    'https://stralner2711-a11y.github.io/xpresshub/version.json',
   ],
   officialRepo: 'https://github.com/stralner2711-a11y/xpresshub',
   appUrl: 'https://xpresshub-seven.vercel.app/',
@@ -1406,6 +1406,7 @@ async function fetchVersionInfo() {
   ];
   if (appUpdateConfig.allowLocalVersionFallback && !urls.includes('./version.json')) urls.push('./version.json');
   let lastError = null;
+  let bestInfo = null;
   for (const originalUrl of [...new Set(urls.filter(Boolean))]) {
     try {
       if (!isAllowedUpdateUrl(originalUrl)) throw new Error('version.json ligger ikke på en godkendt kilde');
@@ -1414,11 +1415,12 @@ async function fetchVersionInfo() {
       if (!response.ok) throw new Error(`Kunne ikke hente version.json (${response.status})`);
       const info = normalizeVersionInfo(await response.json());
       info.sourceUrl = originalUrl;
-      return info;
+      if (!bestInfo || Number(info.activeVersionCode) > Number(bestInfo.activeVersionCode)) bestInfo = info;
     } catch (error) {
       lastError = error;
     }
   }
+  if (bestInfo) return bestInfo;
   throw lastError || new Error('Opdateringstjek fejlede');
 }
 
@@ -7965,6 +7967,7 @@ document.addEventListener('visibilitychange', () => {
 });
 
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js').catch(() => {});
+
 
 
 
