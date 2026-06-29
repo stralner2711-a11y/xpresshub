@@ -185,8 +185,11 @@ foreach ($versionTarget in @(
   Write-Log "Version synkroniseret: $versionTarget"
 }
 
+Invoke-LoggedCommand '[6/11] Bygger APK og opretter/overskriver release...' $project 'powershell.exe' @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', (Join-Path $project 'Udgiv APK til GitHub.ps1'))
+Invoke-LoggedCommand '[7/11] Verificerer lokal APK matcher ny version...' $project 'powershell.exe' @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', (Join-Path $project 'tools\github-release-check.ps1'), '-LocalOnly')
+
 Write-Log ''
-Write-Log '[6/10] Klargor GitHub-pakke...'
+Write-Log '[8/11] Klargor GitHub-pakke...'
 if (!(Test-Path -LiteralPath $ready)) { New-Item -ItemType Directory -Path $ready -Force | Out-Null }
 foreach ($folder in @('assets', 'docs', 'public', 'qa', 'src', 'supabase', 'tools')) {
   Copy-Folder $folder
@@ -236,13 +239,13 @@ foreach ($file in @(
 Copy-RootFile 'version.json'
 
 Write-Log ''
-Write-Log '[7/10] Kopierer pakken til GitHub-repo...'
+Write-Log '[9/11] Kopierer pakken til GitHub-repo...'
 & attrib -R (Join-Path $repo '*') /S /D *>> $log
 & icacls $repo /grant "$env:USERNAME`:(OI)(CI)F" /T /C *>> $log
 Invoke-Robocopy $ready $repo
 
 Write-Log ''
-Write-Log '[8/10] Committer og pusher til GitHub...'
+Write-Log '[10/11] Committer og pusher til GitHub...'
 $statusFile = Join-Path $env:TEMP 'xpressintra-status.txt'
 $statusCommand = ConvertTo-CmdLine $git @('-C', $repo, 'status', '--short')
 & cmd.exe /D /C "$statusCommand > `"$statusFile`" 2>&1"
@@ -258,8 +261,7 @@ if ([string]::IsNullOrWhiteSpace(($status -join "`n"))) {
   Invoke-Git -arguments @('push', 'origin', 'main') -failureMessage 'Git push fejlede'
 }
 
-Invoke-LoggedCommand '[9/10] Bygger APK og opretter/overskriver release...' $project 'powershell.exe' @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', (Join-Path $project 'Udgiv APK til GitHub.ps1'))
-Invoke-LoggedCommand '[10/10] Verificerer GitHub release, version.json og APK-link...' $project 'powershell.exe' @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', (Join-Path $project 'tools\github-release-check.ps1'))
+Invoke-LoggedCommand '[11/11] Verificerer GitHub release, version.json og APK-link...' $project 'powershell.exe' @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', (Join-Path $project 'tools\github-release-check.ps1'))
 
 Write-Log ''
 Write-Log '============================================================'

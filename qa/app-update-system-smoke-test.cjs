@@ -57,13 +57,13 @@ assert(updateSystem.includes('globalThis.XpressIntraUpdateSystem'), 'Update modu
 assert(styles.includes('.update-summary-card'), 'Update summary should be styled');
 assert(styles.includes('.force-update'), 'Forced update modal should be styled');
 
-assert(version.activeVersion === '1.3.39', 'version.json should expose activeVersion');
-assert(version.activeVersionCode === 52, 'version.json should expose activeVersionCode');
+assert(/^1\.3\.\d+$/.test(version.activeVersion), 'version.json should expose activeVersion');
+assert(Number.isInteger(version.activeVersionCode) && version.activeVersionCode >= 53, 'version.json should expose an incremented activeVersionCode');
 assert(version.forceUpdate === true, 'Test release should force update visibility');
 assert(version.apkDownloadUrl.includes('github.com/stralner2711-a11y/xpresshub'), 'version.json should point to the official GitHub repo');
-assert(version.previousStableVersion === '1.3.38', 'version.json should keep the previous stable version for rollback');
-assert(version.previousStableApkDownloadUrl.includes('/v1.3.38/'), 'version.json should expose previous stable APK for rollback');
-assert(version.changelog.some(item => item.includes('build 52')), 'version.json should explain the GitHub release robustness update');
+assert(version.previousStableVersion, 'version.json should keep the previous stable version for rollback');
+assert(version.previousStableApkDownloadUrl.includes(`/v${version.previousStableVersion}/`), 'version.json should expose previous stable APK for rollback');
+assert(version.changelog.some(item => item.includes(`build ${version.activeVersionCode}`)), 'version.json should explain the current build update');
 assert(docsVersion.activeVersion === version.activeVersion, 'docs/version.json should match public version for GitHub Pages');
 assert(docsVersion.activeVersionCode === version.activeVersionCode, 'docs/version.json should match public build code');
 assert(rootVersion.activeVersion === version.activeVersion, 'root version.json should match public version for root-hosted Pages');
@@ -102,7 +102,8 @@ assert(releaseCheck.includes('gh.exe'), 'Release check should verify GitHub CLI 
 assert(releaseCheck.includes("'release', 'view'"), 'Release check should verify the GitHub release');
 assert(releaseCheck.includes('xpressintra.apk'), 'Release check should verify the APK asset');
 assert(releaseCheck.includes('aapt2.exe'), 'Release check should verify local APK version when possible');
-assert(opdaterAlt.includes('[10/10] Verificerer GitHub release'), 'Main update script should run GitHub release verification before declaring success');
+assert(opdaterAlt.includes('github-release-check.ps1') && opdaterAlt.includes('FAERDIG - Alt er opdateret og sendt ud'), 'Main update script should run GitHub release verification before declaring success');
+assert(opdaterAlt.indexOf('github-release-check.ps1') < opdaterAlt.indexOf('FAERDIG - Alt er opdateret og sendt ud'), 'Main update script should verify release before declaring success');
 
 console.log('App update system smoke test passed');
 

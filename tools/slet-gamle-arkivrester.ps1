@@ -1,5 +1,6 @@
 param(
-  [switch]$DryRun
+  [switch]$DryRun,
+  [switch]$Force
 )
 
 $ErrorActionPreference = 'Stop'
@@ -8,6 +9,42 @@ $archiveRoot = (Resolve-Path (Join-Path $projectRoot 'arkiv')).Path
 $logPath = Join-Path $projectRoot 'slet-gamle-arkivrester-log.txt'
 
 $targets = @(
+  @{
+    Path = 'android\offline-maven'
+    Reason = 'Lokal offline-mappe fra Gradle-fejlfinding. Kan genskabes af tools\prepare-gradle-offline-repo.ps1.'
+  },
+  @{
+    Path = 'android\app\build'
+    Reason = 'Android build-output. Kan genskabes ved naeste APK-build.'
+  },
+  @{
+    Path = 'android\build'
+    Reason = 'Android build-output. Kan genskabes ved naeste APK-build.'
+  },
+  @{
+    Path = 'android\.gradle'
+    Reason = 'Lokal Gradle projekt-cache. Kan genskabes automatisk.'
+  },
+  @{
+    Path = 'github-upload-ready'
+    Reason = 'Midlertidig GitHub-klargoeringsmappe. Kan laves igen af Opdater Alt.'
+  },
+  @{
+    Path = 'qa\.edge-qa-profile'
+    Reason = 'Midlertidig testbrowser-profil. Kan genskabes ved QA-test.'
+  },
+  @{
+    Path = 'qa\screenshots'
+    Reason = 'Midlertidige QA-skaermbilleder. Kan genskabes ved QA-test.'
+  },
+  @{
+    Path = 'dist'
+    Reason = 'Bygget webapp-output. Kan genskabes med npm run build.'
+  },
+  @{
+    Path = '.npm-cache'
+    Reason = 'Lokal npm-cache i projektmappen. Kan genskabes automatisk.'
+  },
   @{
     Path = 'arkiv\oprydning-2026-06-04\.gradle-build-cache'
     Reason = 'Gammel Gradle build-cache. Kan genskabes automatisk.'
@@ -76,8 +113,8 @@ function Assert-SafeTarget {
   param([string]$Path)
 
   $resolved = (Resolve-Path -LiteralPath $Path).Path
-  if (!$resolved.StartsWith($archiveRoot, [System.StringComparison]::OrdinalIgnoreCase)) {
-    throw "Stopper: '$resolved' ligger ikke inde i arkiv-mappen."
+  if (!$resolved.StartsWith($projectRoot, [System.StringComparison]::OrdinalIgnoreCase)) {
+    throw "Stopper: '$resolved' ligger ikke inde i projektmappen."
   }
 
   return $resolved
@@ -159,15 +196,19 @@ if ($DryRun) {
   exit 0
 }
 
-Write-Host ""
-Write-Host "Dette sletter kun gamle arkiv-rester, build-cache og gamle uploadpakker."
-Write-Host "Nyeste app-kode og nyeste APK i release-klargjort bliver ikke slettet."
-Write-Host ""
-$answer = Read-Host 'Skriv SLET for at frigive plads'
+if (!$Force) {
+  Write-Host ""
+  Write-Host "Dette sletter kun gamle arkiv-rester, build-cache, midlertidige testmapper og gamle uploadpakker."
+  Write-Host "Nyeste app-kode, node_modules og nyeste APK i release-klargjort bliver ikke slettet."
+  Write-Host ""
+  $answer = Read-Host 'Skriv SLET for at frigive plads'
 
-if ($answer -ne 'SLET') {
-  "Afbrudt af bruger. Intet blev slettet." | Tee-Object -FilePath $logPath -Append
-  exit 0
+  if ($answer -ne 'SLET') {
+    "Afbrudt af bruger. Intet blev slettet." | Tee-Object -FilePath $logPath -Append
+    exit 0
+  }
+} else {
+  "Force: springer manuel SLET-bekraeftelse over." | Tee-Object -FilePath $logPath -Append
 }
 
 $deletedMb = 0

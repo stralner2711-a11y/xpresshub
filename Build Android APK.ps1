@@ -77,6 +77,36 @@ function Remove-UnusedGoogleServicesPlugin {
   [System.IO.File]::WriteAllText($appGradle, $appContent, [System.Text.UTF8Encoding]::new($false))
 }
 
+function Ensure-OfflineGradleSupport {
+  $patches = @(
+    @{
+      Path = Join-Path $PSScriptRoot "node_modules\@capacitor\android\capacitor\build.gradle"
+      BuildscriptNeedle = "repositories {`r`n        google()"
+      BuildscriptReplacement = "repositories {`r`n        def offlineRepoPath = System.getenv(`"XPRESSINTRA_GRADLE_OFFLINE_REPO`")`r`n        def offlineRepo = offlineRepoPath ? file(offlineRepoPath) : file(`"../../../../android/offline-maven`")`r`n        if (offlineRepo.exists()) {`r`n            maven { url offlineRepo }`r`n        }`r`n        google()"
+      RepositoriesNeedle = "`r`nrepositories {`r`n    google()"
+      RepositoriesReplacement = "`r`nrepositories {`r`n    def offlineRepoPath = System.getenv(`"XPRESSINTRA_GRADLE_OFFLINE_REPO`")`r`n    def offlineRepo = offlineRepoPath ? file(offlineRepoPath) : file(`"../../../../android/offline-maven`")`r`n    if (offlineRepo.exists()) {`r`n        maven { url offlineRepo }`r`n    }`r`n    google()"
+    },
+    @{
+      Path = Join-Path $PSScriptRoot "android\capacitor-cordova-android-plugins\build.gradle"
+      BuildscriptNeedle = "repositories {`r`n        google()"
+      BuildscriptReplacement = "repositories {`r`n        def offlineRepoPath = System.getenv(`"XPRESSINTRA_GRADLE_OFFLINE_REPO`")`r`n        def offlineRepo = offlineRepoPath ? file(offlineRepoPath) : file(`"../offline-maven`")`r`n        if (offlineRepo.exists()) {`r`n            maven { url offlineRepo }`r`n        }`r`n        google()"
+      RepositoriesNeedle = "`r`nrepositories {`r`n    google()"
+      RepositoriesReplacement = "`r`nrepositories {`r`n    def offlineRepoPath = System.getenv(`"XPRESSINTRA_GRADLE_OFFLINE_REPO`")`r`n    def offlineRepo = offlineRepoPath ? file(offlineRepoPath) : file(`"../offline-maven`")`r`n    if (offlineRepo.exists()) {`r`n        maven { url offlineRepo }`r`n    }`r`n    google()"
+    }
+  )
+
+  foreach ($patch in $patches) {
+    if (!(Test-Path -LiteralPath $patch.Path)) { continue }
+    $content = Get-Content -LiteralPath $patch.Path -Raw
+    $content = $content -replace "JavaVersion\.VERSION_21", "JavaVersion.VERSION_17"
+    if ($content -notmatch "XPRESSINTRA_GRADLE_OFFLINE_REPO") {
+      $content = $content.Replace($patch.BuildscriptNeedle, $patch.BuildscriptReplacement)
+      $content = $content.Replace($patch.RepositoriesNeedle, $patch.RepositoriesReplacement)
+    }
+    [System.IO.File]::WriteAllText($patch.Path, $content, [System.Text.UTF8Encoding]::new($false))
+  }
+}
+
 function Run-Logged($command, $arguments) {
   Write-Host "> $command $($arguments -join ' ')"
   Add-Content -LiteralPath $logPath -Value "> $command $($arguments -join ' ')"
@@ -86,12 +116,21 @@ function Run-Logged($command, $arguments) {
   }
 }
 
+function Get-GradleBuildArguments {
+  $arguments = @("assembleDebug", "--stacktrace", "--no-daemon", "--no-watch-fs", "--no-build-cache", "--max-workers=1")
+  if (Test-Path -LiteralPath (Join-Path $PSScriptRoot "android\offline-maven")) {
+    $arguments += "--offline"
+  }
+  return $arguments
+}
+
 Write-Step "XpressIntra Android APK build"
 
 Add-PathIfExists "C:\Program Files\nodejs"
 $androidStudioJbrCandidates = @(
   "C:\Program Files\Android\Android Studio\jbr",
-  "C:\Program Files\Android\Android Studio1\jbr"
+  "C:\Program Files\Android\Android Studio1\jbr",
+  "C:\Program Files\Android\Android Studio2\jbr"
 )
 foreach ($jbr in $androidStudioJbrCandidates) {
   $javaExe = Join-Path $jbr "bin\java.exe"
@@ -153,6 +192,13 @@ try {
   Write-Step "Synkroniserer webapp til Android"
   Run-Logged "npm.cmd" @("run", "android:sync")
   Remove-UnusedGoogleServicesPlugin
+  Ensure-OfflineGradleSupport
+
+  $offlinePrep = Join-Path $PSScriptRoot "tools\prepare-gradle-offline-repo.ps1"
+  if (Test-Path -LiteralPath $offlinePrep) {
+    Write-Step "Klargør lokal Gradle-cache"
+    Run-Logged "powershell.exe" @("-ExecutionPolicy", "Bypass", "-File", $offlinePrep)
+  }
 
   Write-Step "Bygger debug APK"
   $buildStartedAt = Get-Date
@@ -176,7 +222,7 @@ try {
       Write-Host "Bruger lokal Gradle: $localGradle"
       Add-Content -LiteralPath $logPath -Value "Bruger lokal Gradle: $localGradle"
       try {
-        Run-Logged $localGradle @("assembleDebug", "--stacktrace", "--no-daemon")
+        Run-Logged $localGradle (Get-GradleBuildArguments)
       } catch {
         if ((Test-Path -LiteralPath $apk) -and ((Get-Item -LiteralPath $apk).LastWriteTime -ge $buildStartedAt)) {
           Write-Host "Gradle meldte fejl (sandsynligvis ved rapport-generering), men APK'en er bygget."
@@ -186,7 +232,7 @@ try {
       }
     } else {
       try {
-        Run-Logged ".\gradlew.bat" @("assembleDebug", "--stacktrace", "--no-daemon")
+        Run-Logged ".\gradlew.bat" (Get-GradleBuildArguments)
       } catch {
         if ((Test-Path -LiteralPath $apk) -and ((Get-Item -LiteralPath $apk).LastWriteTime -ge $buildStartedAt)) {
           Write-Host "Gradle meldte fejl (sandsynligvis ved rapport-generering), men APK'en er bygget."

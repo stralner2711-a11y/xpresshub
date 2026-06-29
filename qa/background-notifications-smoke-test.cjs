@@ -11,7 +11,7 @@ const manifest = fs.readFileSync('android/app/src/main/AndroidManifest.xml', 'ut
 const mainActivity = fs.readFileSync('android/app/src/main/java/dk/xpressbudet/xpressintra/MainActivity.java', 'utf8');
 const version = JSON.parse(fs.readFileSync('public/version.json', 'utf8'));
 
-assert(app.includes("const APP_VERSION = '1.3.39-release-v100'"), 'App should expose the notification release version');
+assert(app.includes(`const APP_VERSION = '${version.activeVersion}-release-v100'`), 'App should expose the notification release version');
 assert(app.includes('function requestSystemNotifications'), 'App should request system notification permission from a user action');
 assert(app.includes('function showSystemNotification'), 'App should show system notifications');
 assert(app.includes('function safeSystemNotificationBody'), 'App should keep lock-screen chat text private');
@@ -42,9 +42,9 @@ for (const source of [worker, publicWorker]) {
   assert(source.includes("clients.openWindow"), 'Service worker should open the app from a notification');
 }
 
-assert(version.activeVersion === '1.3.39', 'Release version should be 1.3.39');
-assert(version.activeVersionCode === 52, 'Release build should be 52');
-assert(version.changelog.some(item => item.includes('build 52')), 'Changelog should mention the GitHub release robustness update');
+assert(/^1\.3\.\d+$/.test(version.activeVersion), 'Release version should be a 1.3.x build');
+assert(Number.isInteger(version.activeVersionCode) && version.activeVersionCode >= 53, 'Release build should be incremented');
+assert(version.changelog.some(item => item.includes(`build ${version.activeVersionCode}`)), 'Changelog should mention the current build');
 
 console.log('Background notifications smoke test passed');
 

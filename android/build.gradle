@@ -3,6 +3,11 @@
 buildscript {
     
     repositories {
+        def offlineRepoPath = System.getenv("XPRESSINTRA_GRADLE_OFFLINE_REPO")
+        def offlineRepo = offlineRepoPath ? file(offlineRepoPath) : file("offline-maven")
+        if (offlineRepo.exists()) {
+            maven { url offlineRepo }
+        }
         google()
         mavenCentral()
     }
@@ -17,8 +22,17 @@ apply from: "variables.gradle"
 
 allprojects {
     repositories {
+        def offlineRepoPath = System.getenv("XPRESSINTRA_GRADLE_OFFLINE_REPO")
+        def offlineRepo = offlineRepoPath ? file(offlineRepoPath) : rootProject.file("offline-maven")
+        if (offlineRepo.exists()) {
+            maven { url offlineRepo }
+        }
         google()
         mavenCentral()
+    }
+
+    tasks.withType(JavaCompile).configureEach {
+        options.fork = true
     }
 }
 
