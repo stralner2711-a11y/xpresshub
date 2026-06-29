@@ -201,6 +201,7 @@ Invoke-Robocopy (Join-Path $project 'android') (Join-Path $ready 'android') @(
   (Join-Path $project 'android\.gradle'),
   (Join-Path $project 'android\build'),
   (Join-Path $project 'android\app\build'),
+  (Join-Path $project 'android\offline-maven'),
   (Join-Path $project 'android\capacitor-cordova-android-plugins\build')
 )
 
