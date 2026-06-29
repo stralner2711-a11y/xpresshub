@@ -14,8 +14,8 @@
   "downloadPageUrl": "https://stralner2711-a11y.github.io/xpresshub/download.html",
   "changelog": [
     "build 53: ny databaseoprydning og sikkerhedsrettelse for direkte beskeder",
-    "Opdateringen f?r nyt buildnummer, s? telefoner p? build 52 kan se den automatisk",
-    "Release-tjekket stopper nu, hvis direkte besked-RPC igen ?bnes for ikke-loggede brugere"
+    "Opdateringen får nyt buildnummer, så telefoner på build 52 kan se den automatisk",
+    "Release-tjekket stopper nu, hvis direkte besked-RPC igen åbnes for ikke-loggede brugere"
   ],
   "forceUpdate": true,
   "rollbackReason": "",
