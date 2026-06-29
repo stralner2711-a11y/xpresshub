@@ -26,10 +26,10 @@ assert(loginBlock.includes('type="password"'), 'Password field should use passwo
 assert(!loginBlock.includes('data-action="test-supabase"'), 'Employee login should not expose Supabase diagnostics');
 assert(!loginBlock.includes('backend-status'), 'Employee login should not expose backend status banner');
 assert(!loginBlock.includes('data-action="open-settings"'), 'Employee login should not expose setup/settings');
-assert(loginBlock.includes('canUseStandardSignup'), 'Signup should only show for valid invite links');
+assert(loginBlock.includes('canUseStandardSignup'), 'Signup visibility should be controlled by online backend readiness');
 assert(loginBlock.includes('data-action="signup-standard-password"'), 'Signup should use the standard-password onboarding flow');
-assert(schema.includes('Din arbejdsmail er ikke oprettet i XpressIntra endnu'), 'Database trigger should reject non-invited employee emails');
-assert(fullSetup.includes('Din arbejdsmail er ikke oprettet i XpressIntra endnu'), 'Full SQL should reject non-invited employee emails');
+assert(schema.includes("else 'paused'"), 'Database trigger should park open signups until admin approval');
+assert(fullSetup.includes("else 'paused'"), 'Full SQL should park open signups until admin approval');
 
 assert(serviceWorker.includes("url.pathname.startsWith('/auth/')"), 'Service worker must bypass auth routes');
 assert(serviceWorker.includes("url.pathname.startsWith('/rest/')"), 'Service worker must bypass REST routes');
@@ -38,6 +38,7 @@ assert(serviceWorker.includes("url.pathname.endsWith('/app-config.js')"), 'Servi
 
 assert(!/auth\.jwt\(\).*raw_user_meta_data/is.test(schema), 'RLS must not trust user-editable raw_user_meta_data claims');
 assert(!/user_metadata/i.test(schema), 'RLS/schema should not authorize from user_metadata');
+assert(schema.includes("or employment_status = 'active'") && schema.includes('or private.is_admin()'), 'Profile reads should expose pending users only to admins and the user themself');
 assert(schema.includes("coalesce(invite.access_role, 'employee')"), 'New users should get access role from admin invitation, not self-claimed metadata');
 assert(schema.includes("coalesce(invite.vehicle_type, 'van')"), 'New users should get vehicle type from admin invitation, not self-claimed metadata');
 assert(schema.includes('on public.employee_invitations for all to authenticated using (private.is_admin())'), 'Only admins should manage employee invitations');

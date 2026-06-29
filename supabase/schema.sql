@@ -739,7 +739,11 @@ drop policy if exists "employees can read monitored sources" on public.regulator
 drop policy if exists "employees can read approved regulatory updates" on public.regulatory_updates;
 
 create policy "employees can read profiles"
-on public.profiles for select to authenticated using (true);
+on public.profiles for select to authenticated using (
+  id = auth.uid()
+  or employment_status = 'active'
+  or private.is_admin()
+);
 create policy "employees can update own profile"
 on public.profiles for update to authenticated using (id = auth.uid()) with check (id = auth.uid());
 create policy "admins can update employee profiles"
@@ -1129,10 +1133,6 @@ begin
   order by created_at desc
   limit 1;
 
-  if invite.id is null and exists (select 1 from public.profiles) then
-    raise exception 'Din arbejdsmail er ikke oprettet i XpressIntra endnu. Kontakt chef eller creator.';
-  end if;
-
   insert into public.profiles (
     id,
     full_name,
@@ -1161,7 +1161,11 @@ begin
     coalesce(invite.access_role, 'employee'),
     coalesce(invite.vehicle_type, 'van'),
     invite.truck,
-    'active',
+    case
+      when invite.id is not null then 'active'
+      when not exists (select 1 from public.profiles) then 'active'
+      else 'paused'
+    end,
     coalesce(invite.logbook_enabled, false),
     case
       when coalesce((new.raw_user_meta_data ->> 'first_personal_password')::boolean, false) then false

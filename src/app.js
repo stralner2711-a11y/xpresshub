@@ -26,9 +26,9 @@ const icons = {
   search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>',
 };
 
-const APP_VERSION = '1.3.42-release-v102';
-const APP_DISPLAY_VERSION = '1.3.42';
-const APP_VERSION_CODE = 55;
+const APP_VERSION = '1.3.43-release-v103';
+const APP_DISPLAY_VERSION = '1.3.43';
+const APP_VERSION_CODE = 56;
 const TEMPORARY_EMPLOYEE_PASSWORD = 'xpress';
 const IMAGE_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
 const PROFILE_PHOTO_MAX_DIMENSION = 512;
@@ -36,6 +36,7 @@ const PROFILE_PHOTO_QUALITY = 0.84;
 const SUPPORTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 const LOGIN_GUARD_KEY = 'loginGuard';
 const SECURITY_EVENTS_KEY = 'securityEvents';
+const ACCESS_REQUEST_NOTICE_KEY = 'accessRequestNoticeSeen';
 const LOGIN_GUARD_MAX_FAILED = 5;
 const LOGIN_GUARD_LOCK_MINUTES = 10;
 const UPDATE_CONFIG_KEY = 'appUpdateState';
@@ -847,6 +848,7 @@ let supportRequests = stored('supportRequests') || [];
 let adminAuditEvents = stored('adminAuditEvents') || [];
 let securityEvents = stored(SECURITY_EVENTS_KEY) || [];
 let loginGuard = stored(LOGIN_GUARD_KEY) || {};
+let accessRequestNoticeSeen = stored(ACCESS_REQUEST_NOTICE_KEY) || {};
 let feedLikes = stored('feedLikes') || {};
 let appUpdateState = stored(UPDATE_CONFIG_KEY) || { lastCheckedAt: null, latest: null, required: null, lastError: null, dismissedVersionCode: null };
 function isStaleRequiredUpdate(info = null) {
@@ -1878,7 +1880,7 @@ function currentEmployee() {
     department: profile.department || '',
     license: profile.license || '',
     languages: profile.languages || '',
-    employmentStatus: 'active',
+    employmentStatus: profile.employmentStatus || 'active',
     online: Boolean(session),
     sharing: false,
   };
@@ -1969,6 +1971,7 @@ function profileFromSupabase(row, user, privateDetails) {
     emergencyContact: privateDetails?.emergency_contact || profile.emergencyContact || '',
     languages: row?.languages || profile.languages || '',
     logbook: Boolean(row?.logbook_enabled ?? profile.logbook),
+    employmentStatus: row?.employment_status || profile.employmentStatus || 'active',
     passwordResetRequired: Boolean(row?.password_reset_required),
   };
 }
@@ -2959,7 +2962,6 @@ async function loadSupabaseData(authSession) {
   const [
     profileResult,
     privateResult,
-    employeesResult,
     vehiclesResult,
     notificationsResult,
     notificationPrefsResult,
@@ -2972,7 +2974,6 @@ async function loadSupabaseData(authSession) {
   ] = await Promise.all([
     client.from('profiles').select('*').eq('id', user.id).maybeSingle(),
     client.from('profile_private_details').select('*').eq('user_id', user.id).maybeSingle(),
-    client.from('profiles').select('*').eq('employment_status', 'active').order('full_name'),
     client.from('vehicles').select('*').order('unit'),
     client.from('notifications').select('*').order('created_at', { ascending: false }).limit(40),
     client.from('notification_preferences').select('*').eq('user_id', user.id).maybeSingle(),
@@ -2988,6 +2989,11 @@ async function loadSupabaseData(authSession) {
   profile = profileFromSupabase(profileResult.data, user, privateResult.data);
   save('profile', profile);
 
+  let employeesQuery = client.from('profiles').select('*').order('full_name');
+  employeesQuery = ['admin', 'owner'].includes(profile.accessRole)
+    ? employeesQuery.neq('employment_status', 'offboarded')
+    : employeesQuery.eq('employment_status', 'active');
+  const employeesResult = await employeesQuery;
   if (employeesResult.data?.length) {
     employees = employeesResult.data.map(row => employeeFromSupabase(row, user.id));
     save('employees', employees);
@@ -3090,13 +3096,20 @@ async function applySupabaseSession(authSession) {
   session = { email: authSession.user.email, userId: authSession.user.id, mode: 'supabase', signedInAt: new Date().toISOString() };
   save('session', session);
   await loadSupabaseData(authSession);
+  if (currentProfileAccessBlocked()) {
+    render();
+    showToast(profileAccessBlockedMessage());
+    return false;
+  }
   sanitizeCreatorRoleTester();
+  notifyPendingAccessRequestsOnce();
   subscribeSupabaseChat();
   subscribeSupabaseNotifications();
   subscribeSupabaseLocations();
   subscribeSupabasePickupTasks();
   render();
   if (profile.passwordResetRequired) openTemporaryPasswordModal();
+  return true;
 }
 
 async function restoreSupabaseSession() {
@@ -3126,8 +3139,10 @@ async function signInSupabase(email, password) {
   const { data, error } = await client.auth.signInWithPassword({ email, password });
   if (error) throw error;
   if (!data.session) throw new Error('Login lykkedes ikke. Tjek mail og adgangskode.');
-  await applySupabaseSession(data.session);
+  const active = await applySupabaseSession(data.session);
+  if (!active) return 'blocked';
   if (String(password || '') === TEMPORARY_EMPLOYEE_PASSWORD || profile.passwordResetRequired) openTemporaryPasswordModal();
+  return 'active';
 }
 
 function personalPasswordError(password) {
@@ -3160,6 +3175,7 @@ async function signUpSupabase(email, password, options = {}) {
       data: {
         invited_to_xpressintra: true,
         invitation_id: String(options.invitationId || '').trim(),
+        requested_xpressintra_access: !options.invitationId,
         temporary_password_flow: !options.personalPasswordReady,
         first_personal_password: Boolean(options.personalPasswordReady),
       },
@@ -3167,7 +3183,10 @@ async function signUpSupabase(email, password, options = {}) {
   });
   if (error) throw error;
   if (data.session) {
-    await applySupabaseSession(data.session);
+    const active = await applySupabaseSession(data.session);
+    if (!active) {
+      return 'Kontoen er oprettet. Chef eller creator skal godkende profilen, før appen kan bruges.';
+    }
     if (options.personalPasswordReady) {
       await markSupabasePasswordReady();
       return 'Kontoen er oprettet. Du er logget ind med din personlige kode.';
@@ -3700,6 +3719,9 @@ function employeeOnboardingState(employee = {}) {
   const isSelf = employee.id === (session?.userId || 'th') || employee.id === 'th';
   const hasInvite = Boolean(employee.invitationId || employee.invitationEmail || employee.invitationStatus);
   const email = normalizeEmployeeEmail(employee.email || employee.invitationEmail);
+  if (employee.employmentStatus === 'paused') {
+    return { key: 'approval-pending', label: 'Afventer godkendelse', tone: 'warn', step: 'Profilen er oprettet, men appen er ikke åbnet endnu.', next: 'Godkend adgang eller afvis/deaktivér.' };
+  }
   if (employee.employmentStatus === 'offboarded') {
     return { key: 'offboarded', label: 'Deaktiveret', tone: 'neutral', step: 'Brugeren er lukket i appen.', next: 'Aktivér igen hvis personen skal tilbage.' };
   }
@@ -3716,7 +3738,7 @@ function employeeOnboardingState(employee = {}) {
     return { key: 'local-only', label: 'Kun lokalt', tone: 'warn', step: 'Invitationen er klar på denne enhed, men ikke bekræftet online.', next: 'Tjek Supabase og opret invitationen igen hvis nødvendigt.' };
   }
   if (employee.passwordResetRequired) {
-    return { key: 'needs-password', label: 'Mangler personlig kode', tone: 'warn', step: 'Kollegaen skal logge ind via invitationslink og vælge egen kode.', next: 'Send invitation eller gensend bekræftelsesmail.' };
+    return { key: 'needs-password', label: 'Mangler personlig kode', tone: 'warn', step: 'Kollegaen skal oprette/logge ind og vælge egen kode.', next: 'Send invitation eller gensend bekræftelsesmail.' };
   }
   if (employee.online) {
     return { key: 'ready', label: 'I brug', tone: 'good', step: 'Kollegaen er aktiv i appen.', next: 'Ingen handling.' };
@@ -4550,6 +4572,71 @@ function addNotification(notification, options = {}) {
   return item;
 }
 
+function pendingAccessRequests() {
+  if (!canManageEmployees() && !isCreatorOwner()) return [];
+  return employees.filter(employee => String(employee.employmentStatus || '').toLowerCase() === 'paused');
+}
+
+function accessRequestNoticeId(employee = {}) {
+  return String(employee.id || employee.email || employee.name || '').trim();
+}
+
+function notifyPendingAccessRequestsOnce() {
+  const pending = pendingAccessRequests().filter(employee => {
+    const key = accessRequestNoticeId(employee);
+    return key && !accessRequestNoticeSeen[key];
+  });
+  if (!pending.length) return;
+  pending.forEach(employee => {
+    const key = accessRequestNoticeId(employee);
+    accessRequestNoticeSeen[key] = new Date().toISOString();
+  });
+  save(ACCESS_REQUEST_NOTICE_KEY, accessRequestNoticeSeen);
+  addNotification({
+    id: `access-request-${Date.now()}`,
+    type: 'admin_access_request',
+    level: 'urgent',
+    title: pending.length === 1 ? 'Ny adgangsanmodning' : `${pending.length} nye adgangsanmodninger`,
+    body: pending.length === 1
+      ? `${pending[0].name || pending[0].email || 'En ny medarbejder'} afventer godkendelse.`
+      : `${pending.length} medarbejdere afventer godkendelse i Drift.`,
+    action: 'open-access-requests',
+    time: 'Nu',
+  });
+}
+
+function renderAccessRequestsPanel(options = {}) {
+  const pending = pendingAccessRequests();
+  if (!pending.length) {
+    return options.always
+      ? `<section class="access-request-panel quiet"><h4>Adgangsanmodninger</h4><p class="empty-state">Ingen venter på godkendelse lige nu.</p></section>`
+      : '';
+  }
+  return `<section class="access-request-panel">
+    <div class="section-title"><h3>Adgangsanmodninger</h3><span>${pending.length} venter</span></div>
+    <p class="info-intro">Nye medarbejdere kan oprette profil, men kommer først ind i appen når chef eller creator godkender dem.</p>
+    <div class="access-request-list">${pending.map(employee => `<article>
+      <span>${avatar(employee)}<b>${text(employee.name || employee.email || 'Ny medarbejder')}</b><small>${text(employee.email || 'Mail mangler')} · ${text(employee.role || 'Chauffør')}</small></span>
+      <div class="employee-action-pair"><button class="restore" data-reactivate-employee="${text(employee.id)}">Godkend</button><button data-remove-employee="${text(employee.id)}">Afvis</button></div>
+    </article>`).join('')}</div>
+  </section>`;
+}
+
+function openAccessRequestsModal() {
+  if (!canManageEmployees() && !isCreatorOwner()) {
+    showToast('Kun chef eller creator kan godkende adgang');
+    return;
+  }
+  const modal = document.createElement('div');
+  modal.className = 'modal-backdrop';
+  modal.innerHTML = `<section class="profile-modal access-requests-modal">
+    <button type="button" class="modal-close" data-action="close-modal" aria-label="Luk">${icon('close')}</button>
+    <p class="eyebrow">Chef/creator</p><h3>Adgangsanmodninger</h3>
+    ${renderAccessRequestsPanel({ always: true })}
+  </section>`;
+  document.body.append(modal);
+}
+
 function notificationCategory(notification) {
   const type = `${notification.type || ''} ${notification.level || ''}`.toLowerCase();
   if (type.includes('regel') || type.includes('rule')) return 'rules';
@@ -4619,6 +4706,7 @@ function renderNotificationCard(notification = {}, options = {}) {
     <small>${text(notificationLabel(notification))} · ${text(notification.time || 'Nu')} · ${text(notificationStatusText(notification))}</small>
     <b>${text(notification.title || 'Besked')}</b>
     <span>${text(notification.body || 'Åbn beskeden for flere detaljer.')}</span>
+    ${notification.action ? `<button type="button" data-action="${text(notification.action)}">${text(notification.actionLabel || 'Åbn')}</button>` : ''}
   </article>`;
 }
 
@@ -5240,7 +5328,7 @@ function renderLogin() {
   const demoCredentials = DEMO_MODE && !backend.ready;
   const inviteContext = loginInviteContext();
   const invitedEmail = inviteContext.email;
-  const canUseStandardSignup = Boolean(backend.ready && inviteContext.valid);
+  const canUseStandardSignup = Boolean(backend.ready);
   return `<section class="login-shell">
     <div class="login-brand">${brandLogo()}<small>XpressIntra · internt medarbejdersystem</small></div>
     <div class="login-copy"><h1>Godt at se dig.</h1><p>Log ind for at finde kollegaer, dele din position og skrive med holdet.</p></div>
@@ -5253,9 +5341,34 @@ function renderLogin() {
       <label>Arbejdsmail<input name="email" type="email" value="${text(invitedEmail || (demoCredentials ? 'demo@xpressintra.local' : ''))}" ${inviteContext.valid ? 'readonly' : ''} required /></label>
       <label>Adgangskode<input name="password" type="password" value="${demoCredentials ? 'demo1234' : ''}" minlength="6" required /></label>
       <button>Log ind</button>
-      ${canUseStandardSignup ? '<button class="login-secondary" data-action="signup-standard-password">Opret konto med standardkode</button>' : ''}
-      <span>${text(canUseStandardSignup ? 'Du er åbnet via invitationslink. Skriv standardkoden xpress og lav derefter din egen kode. Har du allerede oprettet kontoen, skal du logge ind med din personlige kode.' : backend.ready ? 'Ny medarbejder? Brug det personlige invitationslink fra chef eller creator. Standardkode-oprettelse vises kun første gang via link. Har du allerede oprettet konto, logger du ind med din personlige kode.' : 'Har du ikke adgang endnu, skal din chef eller creator oprette dig først.')}</span>
+      ${canUseStandardSignup ? '<button class="login-secondary" data-action="signup-standard-password">Opret profil med standardkode</button>' : ''}
+      <span>${text(canUseStandardSignup ? 'Ny medarbejder? Skriv din arbejdsmail og standardkoden xpress. Du laver din egen kode med det samme, og chef eller creator skal godkende profilen før appen åbner.' : 'Har du ikke adgang endnu, skal din chef eller creator oprette dig først.')}</span>
     </form>
+  </section>`;
+}
+
+function currentProfileAccessBlocked() {
+  if (!session || session.mode !== 'supabase') return false;
+  return ['paused', 'pending', 'approval_pending', 'offboarded'].includes(String(profile.employmentStatus || '').toLowerCase());
+}
+
+function profileAccessBlockedMessage() {
+  const status = String(profile.employmentStatus || '').toLowerCase();
+  if (status === 'offboarded') return 'Din adgang til XpressIntra er lukket. Kontakt chef eller creator.';
+  return 'Din profil afventer godkendelse fra chef eller creator.';
+}
+
+function renderApprovalPending() {
+  const email = profile.email || session?.email || '';
+  return `<section class="login-shell">
+    <div class="login-brand">${brandLogo()}<small>XpressIntra · adgang afventer</small></div>
+    <div class="login-copy"><h1>Profilen er oprettet.</h1><p>${text(profileAccessBlockedMessage())}</p></div>
+    <div class="pwa-install-card">
+      <b>Hvad sker der nu?</b>
+      <span>Din profil ligger klar i medarbejderlisten. Når chef eller creator aktiverer dig, kan du logge ind og bruge appen.</span>
+      ${email ? `<small>Arbejdsmail: ${text(email)}</small>` : ''}
+    </div>
+    <button class="login-secondary" type="button" data-action="logout">Log ud</button>
   </section>`;
 }
 
@@ -5985,7 +6098,7 @@ function openEmployeeInviteResultModal(employee, invitationId = '') {
     <h3>${text(employee.name)} kan oprette sig</h3>
     <section class="invite-help">
       <b>${text(inviteState)}</b>
-      <span>Kollegaen skal åbne invitationslinket. Standardkode-knappen vises ikke på den almindelige login-side.</span>
+      <span>Kollegaen kan bruge linket, eller skrive arbejdsmail og standardkoden xpress på login-siden. Adgang kræver stadig godkendelse fra chef eller creator.</span>
       <span>Invitationslink: <strong>${text(invite.invitationUrl)}</strong></span>
       <span>Downloadside ved behov: <strong>${text(invite.downloadUrl)}</strong></span>
     </section>
@@ -6023,7 +6136,7 @@ function openStandardSignupPasswordModal(email, invitationId = '') {
     <h3>Lav din personlige kode</h3>
     <section class="invite-help">
       <b>Standardkoden er godkendt</b>
-      <span>Du opretter kontoen for <strong>${text(pendingStandardSignupEmail)}</strong>. Vælg nu din egen adgangskode, så Supabase ikke skal gemme standardkoden.</span>
+      <span>Du opretter profilen for <strong>${text(pendingStandardSignupEmail)}</strong>. Vælg nu din egen adgangskode. Chef eller creator godkender derefter adgangen.</span>
     </section>
     <label>Ny adgangskode<input name="newPassword" type="password" minlength="8" autocomplete="new-password" required /></label>
     <label>Gentag ny adgangskode<input name="confirmPassword" type="password" minlength="8" autocomplete="new-password" required /></label>
@@ -6688,6 +6801,7 @@ function openAdminModal() {
       <span><b>${dispatchers.length}</b><small>disponenter</small></span>
       <span><b>${lockedChannels}</b><small>låste kanaler</small></span>
       <span><b>${activeEmployees.length}</b><small>aktive profiler</small></span>
+      <span><b>${pendingAccessRequests().length}</b><small>adgang venter</small></span>
     </section>
     <section class="permission-grid">
       <span><b>Medarbejder</b><small>Kan redigere egne kontaktoplysninger, logbog og GPS-deling. Kan ikke ændre egen rettighed.</small></span>
@@ -6706,12 +6820,13 @@ function openAdminModal() {
       <button class="save-btn">Gem kernefunktioner</button>
     </form>
     <section class="admin-employee-list">
+      ${renderAccessRequestsPanel()}
       <h4>Medarbejdere</h4>
       ${employees.map(employee => {
         const onboarding = employeeOnboardingState(employee);
         return `<article class="${employee.employmentStatus === 'offboarded' ? 'offboarded' : ''}">
         <span><b>${text(employee.name)}</b><small>${text(employee.role)} · ${text(accessRoleLabel(employee.accessRole))} · ${text(employee.employmentStatus || 'active')}</small><i class="onboarding-pill ${text(onboarding.tone)}">${text(onboarding.label)}</i></span>
-        ${employee.id === 'th' ? '<em>Dig</em>' : employee.employmentStatus === 'offboarded' ? `<div class="employee-action-pair"><button class="restore" data-reactivate-employee="${text(employee.id)}">Aktivér igen</button><button class="danger" data-remove-employee="${text(employee.id)}">Slet helt</button></div>` : `<div class="employee-action-pair"><button class="restore" data-open-employee-invite="${text(employee.id)}">Invitation</button><button data-remove-employee="${text(employee.id)}">Deaktivér</button></div>`}
+        ${employee.id === 'th' ? '<em>Dig</em>' : employee.employmentStatus === 'offboarded' ? `<div class="employee-action-pair"><button class="restore" data-reactivate-employee="${text(employee.id)}">Aktivér igen</button><button class="danger" data-remove-employee="${text(employee.id)}">Slet helt</button></div>` : employee.employmentStatus === 'paused' ? `<div class="employee-action-pair"><button class="restore" data-reactivate-employee="${text(employee.id)}">Godkend adgang</button><button data-remove-employee="${text(employee.id)}">Afvis/deaktivér</button></div>` : `<div class="employee-action-pair"><button class="restore" data-open-employee-invite="${text(employee.id)}">Invitation</button><button data-remove-employee="${text(employee.id)}">Deaktivér</button></div>`}
       </article>`;
       }).join('')}
     </section>` : (DEMO_MODE ? `<button class="save-btn" type="button" data-action="demo-admin">Prøv chefvisning i demo</button>` : '<p class="security-inline-note">Chefvisning kan kun gives af en eksisterende chef/admin.</p>')}
@@ -7071,7 +7186,7 @@ function render(options = {}) {
   enforceLocationExpiry();
   enforceWorkdayExpiry();
   enforcePickupExpiry();
-  document.querySelector('#app').innerHTML = session ? appShell(routes[activeTab]()) : renderLogin();
+  document.querySelector('#app').innerHTML = session ? (currentProfileAccessBlocked() ? renderApprovalPending() : appShell(routes[activeTab]())) : renderLogin();
   if (!document.querySelector('.toast')) document.body.insertAdjacentHTML('beforeend', '<div class="toast"></div>');
   if (scrollState) {
     const nextFrame = window.requestAnimationFrame || (callback => setTimeout(callback, 0));
@@ -7334,6 +7449,7 @@ document.addEventListener('click', async event => {
   if (action === 'open-my-data') openMyDataModal();
   if (action === 'open-vehicles') openVehiclesModal();
   if (action === 'open-notifications') openNotificationsModal();
+  if (action === 'open-access-requests') openAccessRequestsModal();
   if (action === 'open-support-request') openSupportRequestModal();
   if (action === 'open-offline-queue') openOfflineQueueModal();
   if (action === 'copy-support-report') {
@@ -7596,15 +7712,11 @@ document.addEventListener('submit', async event => {
           const inviteContext = loginInviteContext();
           const email = String(data.get('email') || '').trim().toLowerCase();
           const standardPassword = String(data.get('password') || '');
-          if (!inviteContext.valid) {
-            showToast('Opret konto kræver et invitationslink fra chef eller creator');
-            return;
-          }
           if (!email) {
             showToast('Skriv arbejdsmailen først');
             return;
           }
-          if (email !== inviteContext.email) {
+          if (inviteContext.valid && email !== inviteContext.email) {
             showToast('Arbejdsmailen skal matche invitationslinket');
             return;
           }
@@ -7612,13 +7724,14 @@ document.addEventListener('submit', async event => {
             showToast('Skriv standardkoden xpress for at oprette kontoen');
             return;
           }
-          openStandardSignupPasswordModal(email, inviteContext.invite);
+          openStandardSignupPasswordModal(email, inviteContext.valid ? inviteContext.invite : '');
         } else {
           if (String(data.get('password') || '') === TEMPORARY_EMPLOYEE_PASSWORD) {
-            showToast('Standardkoden bruges kun til første oprettelse via invitationslink. Har du allerede oprettet konto, skal du bruge din personlige kode.');
+            showToast('Standardkoden bruges kun til første oprettelse. Har du allerede oprettet konto, skal du bruge din personlige kode.');
             return;
           }
-          await signInSupabase(data.get('email'), data.get('password'));
+          const loginStatus = await signInSupabase(data.get('email'), data.get('password'));
+          if (loginStatus === 'blocked') return;
           registerLoginSuccess(data.get('email'));
           showToast('Du er logget ind på XpressIntra');
         }

@@ -15,7 +15,7 @@ assert(source.includes("employee.invitationStatus = 'online'"), 'App should mark
 assert(source.includes('createSupabaseEmployeeInvitation(employee)'), 'App should create Supabase invitations when online');
 assert(source.includes('Arbejdsmail<input name="email" type="email"'), 'Employee profile modal should include work email');
 assert(source.includes("${isNew ? 'required' : ''}"), 'Work email should be required for new employee invitations');
-assert(source.includes('Opret konto med standardkode'), 'Invite result should explain the standard-password flow');
+assert(source.includes('Opret profil med standardkode'), 'Login should expose the standard-password profile request flow');
 assert(source.includes('employeeDownloadPageUrl'), 'Invite flow should include the official app download page');
 assert(source.includes('function officialAppUrl'), 'Invite flow should generate links from the official app URL');
 assert(source.includes("appUrl: 'https://xpresshub-seven.vercel.app/'"), 'Invite links should default to the working web app URL');
@@ -34,6 +34,7 @@ assert(source.includes("onboarding_method: 'standard_password'"), 'Supabase invi
 assert(source.includes('password_reset_required: true'), 'New employees should be forced to change the temporary password');
 assert(source.includes('pendingStandardSignupInvitationId'), 'Standard signup should remember the exact invitation id from the link');
 assert(source.includes('invitation_id: String(options.invitationId'), 'Signup metadata should bind account creation to the invitation id');
+assert(source.includes('requested_xpressintra_access'), 'Open signup should mark that the profile needs approval');
 
 const storage = new Map([['roadlog:session', JSON.stringify({ email: 'demo@xpressintra.local', mode: 'demo' })]]);
 const document = {

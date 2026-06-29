@@ -1,4 +1,4 @@
-const CACHE_NAME = 'xpressintra-v102-update-source-priority';
+const CACHE_NAME = 'xpressintra-v103-access-approval';
 const APP_FILES = [
   './',
   './index.html',

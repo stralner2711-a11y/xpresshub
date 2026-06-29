@@ -34,6 +34,7 @@ export function profileFromSupabaseRow(row, user, privateDetails, currentProfile
     emergencyContact: privateDetails.emergency_contact || currentProfile.emergencyContact || '',
     languages: row.languages || currentProfile.languages || '',
     logbook: Boolean(row.logbook_enabled ?? currentProfile.logbook),
+    employmentStatus: row.employment_status || currentProfile.employmentStatus || 'active',
     passwordResetRequired: Boolean(row.password_reset_required),
   };
 }

@@ -65,11 +65,11 @@ assert(vm.runInContext('employees.length', context) === 0, 'Fresh production app
 assert(vm.runInContext('vehicles.length', context) === 0, 'Fresh production app should start without demo vehicles');
 assert(vm.runInContext('announcements.length', context) === 0, 'Fresh production app should start without demo posts');
 assert(!appElement.innerHTML.includes('demo@xpressintra.local'), 'Production login should not prefill demo email');
-assert(!appElement.innerHTML.includes('Opret konto med standardkode'), 'Public production login should not expose standard-password onboarding');
-assert(appElement.innerHTML.includes('Standardkode-oprettelse vises kun første gang via link'), 'Public production login should explain first-time invite-only signup');
+assert(appElement.innerHTML.includes('Opret profil med standardkode'), 'Public production login should expose approval-based standard-code signup');
+assert(appElement.innerHTML.includes('chef eller creator skal godkende profilen'), 'Public production login should explain that signup waits for approval');
 
 const invited = createHarness('https://stralner2711-a11y.github.io/xpresshub/?invite=test-123&email=ny@example.com');
-assert(invited.appElement.innerHTML.includes('Opret konto med standardkode'), 'Invite link should expose standard-password onboarding');
+assert(invited.appElement.innerHTML.includes('Opret profil med standardkode'), 'Invite link should still expose standard-password onboarding');
 assert(invited.appElement.innerHTML.includes('ny@example.com'), 'Invite link should prefill the invited email');
 assert(invited.appElement.innerHTML.includes('readonly'), 'Invite email should be locked on the signup screen');
 

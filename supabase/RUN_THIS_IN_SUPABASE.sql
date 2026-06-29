@@ -142,10 +142,6 @@ begin
   order by created_at desc
   limit 1;
 
-  if invite.id is null and exists (select 1 from public.profiles) then
-    raise exception 'Din arbejdsmail er ikke oprettet i XpressIntra endnu. Kontakt chef eller creator.';
-  end if;
-
   insert into public.profiles (
     id,
     full_name,
@@ -174,7 +170,11 @@ begin
     coalesce(invite.access_role, 'employee'),
     coalesce(invite.vehicle_type, 'van'),
     invite.truck,
-    'active',
+    case
+      when invite.id is not null then 'active'
+      when not exists (select 1 from public.profiles) then 'active'
+      else 'paused'
+    end,
     coalesce(invite.logbook_enabled, false),
     case
       when coalesce((new.raw_user_meta_data ->> 'first_personal_password')::boolean, false) then false

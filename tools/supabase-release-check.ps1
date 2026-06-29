@@ -129,7 +129,7 @@ if ($schema -match 'function public\.(is_admin|is_dispatcher_or_admin|is_convers
 if ($fullSetup -notmatch 'drop schema if exists private cascade' -or $fullSetup -notmatch 'function private\.is_admin\(\)') {
   Fail "Fuld Supabase SQL mangler reset/oprettelse af private RLS-hjaelpefunktioner"
 }
-foreach ($requiredText in @('password_reset_required', 'onboarding_method', 'standard_password', 'invitation_id', 'expires_at', 'used_by', 'Din arbejdsmail er ikke oprettet i XpressIntra endnu')) {
+foreach ($requiredText in @('password_reset_required', 'onboarding_method', 'standard_password', 'invitation_id', 'expires_at', 'used_by', "else 'paused'")) {
   if ($schema -notmatch [regex]::Escape($requiredText)) {
     Fail "schema.sql mangler standardkode-onboarding: $requiredText"
   }
@@ -141,7 +141,7 @@ foreach ($requiredText in @('password_reset_required', 'onboarding_method', 'sta
 Pass "Supabase config peger paa $supabaseUrl"
 Pass "Kun offentlig publishable/anon key bruges i app-config.js"
 Pass "Supabase SQL, RLS, Storage og standardchat er med i pakken"
-Pass "Standardkode-login er med i Supabase SQL og afviser ikke-oprettede mails"
+Pass "Standardkode-login er med i Supabase SQL og parkerer nye profiler til chef/creator-godkendelse"
 Pass "Interne RLS-hjaelpefunktioner ligger i private schema, ikke som public RPC"
 Pass "Direkte beskeder har sikker RPC og en separat reparationsfil"
 Pass "Login-sikkerhed tjekket: ingen gemte adgangskoder og ingen hemmelige noegler i appen"
