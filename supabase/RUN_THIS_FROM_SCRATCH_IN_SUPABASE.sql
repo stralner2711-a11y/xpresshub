@@ -1257,7 +1257,6 @@ begin
     coalesce(invite.vehicle_type, 'van'),
     invite.truck,
     case
-      when invite.id is not null then 'active'
       when not exists (select 1 from public.profiles) then 'active'
       else 'paused'
     end,

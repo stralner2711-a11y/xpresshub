@@ -84,7 +84,7 @@ assert(harness.appElement.innerHTML.includes('home-makeover'), 'Home should use 
 assert(harness.appElement.innerHTML.includes('home-next-action'), 'Home should show one clear next action');
 assert(!harness.appElement.innerHTML.includes('home-profile'), 'Home should not duplicate the profile initials button');
 assert(harness.appElement.innerHTML.includes('Kontor og fællesskab'), 'Home should keep office and community as a compact hint');
-assert(harness.appElement.innerHTML.includes('Dagens værktøjer'), 'Home should show daily driver tools');
+assert(harness.appElement.innerHTML.includes('Hurtigt i dag'), 'Home should show a calm primary shortcut area');
 assert(harness.appElement.innerHTML.includes('home-driver-tools'), 'Home should show large daily driver tool cards');
 assert(!harness.appElement.innerHTML.includes('Meld fejl'), 'Home should not promote support/admin-style actions');
 assert(!harness.appElement.innerHTML.includes('home-simple-actions'), 'Home should not keep the old shortcut block');
@@ -93,7 +93,7 @@ assert(!harness.appElement.innerHTML.includes('Logbogskladder'), 'Home should no
 assert(harness.appElement.innerHTML.includes('Hent nøgle ved porten'), 'Home task card should show active pickup note');
 assert(!/home-day-tools[\s\S]*<b>Hent for kollega<\/b>/.test(harness.appElement.innerHTML), 'Home day tools should not duplicate active pickup when it is already the top action');
 assert(!harness.appElement.innerHTML.includes('Gem pause eller stop'), 'Home should not surface private logbook draft title');
-assert(harness.appElement.innerHTML.indexOf('Dagens værktøjer') < harness.appElement.innerHTML.indexOf('Kontor og fællesskab'), 'Driver tools should appear before the compact community hint');
+assert(harness.appElement.innerHTML.indexOf('Hurtigt i dag') < harness.appElement.innerHTML.indexOf('Kontor og fællesskab'), 'Driver tools should appear before the compact community hint');
 
 harness.run("activePickup = null; workday = { ...workday, active: true }; notifications = [{ id: 'message-test', type: 'Direkte besked', title: 'Testbesked', body: 'Test', time: '10:00', level: 'message', unread: true }]; render();");
 assert(harness.appElement.innerHTML.includes('<b>Tjek beskeder</b>'), 'Home should promote messages as the next action when unread items exist');

@@ -80,8 +80,7 @@ messages = { all: [{ side: 'them', body: 'Testbesked', time: '10:00', senderName
 `);
 
 harness.run("activeTab = 'home'; render();");
-assert(harness.appElement.innerHTML.includes('screen-guide'), 'Every main screen should show a simple guide');
-assert(harness.appElement.innerHTML.includes('Start her'), 'Home guide should explain the screen');
+assert(!harness.appElement.innerHTML.includes('screen-guide'), 'Home should avoid extra guide cards and stay focused');
 assert(harness.appElement.innerHTML.includes('home-clean-hero'), 'Home should have a clean status hero');
 assert(harness.appElement.innerHTML.includes('Arbejde'), 'Bottom navigation should include the new work screen');
 assert(harness.appElement.innerHTML.includes('Kontor og fællesskab'), 'Home should group office and community content compactly');
@@ -97,12 +96,16 @@ assert(harness.appElement.innerHTML.includes('Administration'), 'Control center 
 assert(harness.appElement.innerHTML.includes('control-detail-group'), 'Control center should tuck longer groups into collapsible sections');
 
 harness.run("activeTab = 'work'; render();");
-assert(harness.appElement.innerHTML.includes('Arbejde og tur'), 'Work guide should explain workday controls');
+assert(!harness.appElement.innerHTML.includes('screen-guide'), 'Work should avoid duplicate guide cards');
 assert(harness.appElement.innerHTML.includes('work-primary-grid'), 'Work screen should have primary work actions');
+assert(harness.appElement.innerHTML.includes('work-overview-strip'), 'Work screen should summarize workday status clearly');
 assert(harness.appElement.innerHTML.includes('Gem logbog'), 'Work screen should include logbook saving');
 
 harness.run("activeTab = 'chat'; activeChat = null; render();");
-assert(harness.appElement.innerHTML.includes('Beskeder samlet'), 'Chat guide should explain messages');
+assert(!harness.appElement.innerHTML.includes('Beskeder samlet'), 'Chat should avoid an extra guide card above the inbox');
+assert(harness.appElement.innerHTML.includes('<h2>Beskeder</h2>'), 'Chat should use a clear inbox heading');
+assert(harness.appElement.innerHTML.includes('chat-inbox-summary'), 'Chat should show a simple inbox summary');
+assert(harness.appElement.innerHTML.includes('chat-feature-card'), 'Chat should promote the shared chat as a clear feature card');
 assert(harness.appElement.innerHTML.includes('chat-more-section'), 'Chat should tuck overview details behind a more section');
 assert(!harness.appElement.innerHTML.includes('announcement-section'), 'Chat should not mix news posts into messages');
 assert(harness.appElement.innerHTML.includes('Kanaler'), 'Chat should label internal channels');
@@ -112,10 +115,12 @@ harness.run("activeTab = 'chat'; activeChat = 'all'; render();");
 assert(!harness.appElement.innerHTML.includes('screen-guide'), 'Open conversations should not waste space with the screen guide');
 
 harness.run("activeTab = 'map'; render();");
-assert(harness.appElement.innerHTML.includes('Livekort med frivillig GPS'), 'Map guide should explain voluntary sharing');
+assert(!harness.appElement.innerHTML.includes('screen-guide'), 'Map should not waste space with the screen guide');
+assert(harness.appElement.innerHTML.includes('Frivillig positionsdeling'), 'Map should explain voluntary sharing');
 assert(harness.appElement.innerHTML.includes('map-hero-card'), 'Map should start with a simple GPS status card');
-assert(harness.appElement.innerHTML.includes('Deling'), 'Map should label sharing controls');
-assert(harness.appElement.innerHTML.includes('Rigtigt kort'), 'Map should explain the live map');
+assert(harness.appElement.innerHTML.includes('map-quick-controls'), 'Map should group filters and quick sharing');
+assert(harness.appElement.innerHTML.includes('Hurtig deling'), 'Map should label sharing controls');
+assert(harness.appElement.innerHTML.includes('<span>Kort</span>'), 'Map should explain the live map');
 assert(harness.appElement.innerHTML.includes('Synlige kollegaer'), 'Map should label visible colleagues');
 
 harness.run("activeTab = 'info'; render();");

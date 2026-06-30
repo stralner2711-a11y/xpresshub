@@ -35,6 +35,10 @@ assert(source.includes('password_reset_required: true'), 'New employees should b
 assert(source.includes('pendingStandardSignupInvitationId'), 'Standard signup should remember the exact invitation id from the link');
 assert(source.includes('invitation_id: String(options.invitationId'), 'Signup metadata should bind account creation to the invitation id');
 assert(source.includes('requested_xpressintra_access'), 'Open signup should mark that the profile needs approval');
+assert(source.includes('requested_xpressintra_access: true'), 'Every new signup should become an approval request');
+assert(source.includes('Din profil afventer godkendelse fra chef eller creator'), 'Pending users should see a clear approval message');
+assert(source.includes('data-approve-access-request'), 'Admins should be able to approve access requests in app');
+assert(source.includes('data-reject-access-request'), 'Admins should be able to reject access requests in app');
 
 const storage = new Map([['roadlog:session', JSON.stringify({ email: 'demo@xpressintra.local', mode: 'demo' })]]);
 const document = {

@@ -26,9 +26,9 @@ const icons = {
   search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>',
 };
 
-const APP_VERSION = '1.3.44-release-v104';
-const APP_DISPLAY_VERSION = '1.3.44';
-const APP_VERSION_CODE = 57;
+const APP_VERSION = '1.3.45-release-v105';
+const APP_DISPLAY_VERSION = '1.3.45';
+const APP_VERSION_CODE = 58;
 const TEMPORARY_EMPLOYEE_PASSWORD = 'xpress';
 const IMAGE_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
 const PROFILE_PHOTO_MAX_DIMENSION = 512;
@@ -3175,7 +3175,7 @@ async function signUpSupabase(email, password, options = {}) {
       data: {
         invited_to_xpressintra: true,
         invitation_id: String(options.invitationId || '').trim(),
-        requested_xpressintra_access: !options.invitationId,
+        requested_xpressintra_access: true,
         temporary_password_flow: !options.personalPasswordReady,
         first_personal_password: Boolean(options.personalPasswordReady),
       },
@@ -5275,6 +5275,7 @@ function toggleLocation() {
 
 function renderScreenGuide() {
   if (activeTab === 'chat' && activeChat) return '';
+  if (activeTab === 'home' || activeTab === 'work' || activeTab === 'map' || activeTab === 'chat') return '';
   const guides = {
     home: { title: 'Start her', body: 'Se dagens vigtigste beskeder, opgaver og hurtige handlinger.', action: 'open-notifications', label: 'Tjek beskeder' },
     work: { title: 'Arbejde og tur', body: 'Mød ind, del tur, hent for kollega og gem logbog fra ét roligt sted.', action: workday.active ? 'end-workday' : 'start-workday', label: workday.active ? 'Slut dag' : 'Mød ind' },
@@ -5308,7 +5309,7 @@ function appShell(content) {
           ['work', 'check', 'Arbejde'],
           ['map', 'map', 'Live-kort'],
           ['chat', 'chat', 'Beskeder'],
-          ['more', 'more', 'Kontrol'],
+          ['more', 'more', 'Mere'],
         ].map(([id, iconName, label]) => `
           <button class="nav-item ${activeTab === id ? 'active' : ''}" data-tab="${id}">
             ${icon(iconName)}<span>${label}</span>
@@ -5387,18 +5388,17 @@ function renderHome() {
   const nextAction = activePickup
     ? { title: 'Afhentning i gang', body: activePickup.note || 'Følg status og live noter', action: 'open-pickup', icon: 'pin' }
     : !workday.active
-      ? { title: 'Start arbejdsdag', body: 'Mød ind, vælg deling og få dagens værktøjer samlet', action: 'open-work', icon: 'check' }
+      ? { title: 'Start arbejdsdag', body: 'Mød ind og styr dine arbejdsvalg samlet', action: 'open-work', icon: 'check' }
       : unreadNotifications
         ? { title: 'Tjek beskeder', body: `${unreadNotifications} ulæste ting venter`, action: 'open-notifications', icon: 'chat' }
         : { title: 'Se live-kort', body: location.sharing ? locationExpiryText() : `${sharingEmployees} deler position lige nu`, action: 'open-map', icon: 'map' };
   const driverTools = [
-    { label: 'Arbejde', hint: workday.active ? 'Styr arbejdsdag og deling' : 'Mød ind og start dagen', action: 'open-work', icon: 'check' },
-    { label: 'Del position', hint: location.sharing ? locationExpiryText() : 'Start frivillig deling', tab: 'map', icon: 'map' },
-    { label: 'Hent for kollega', hint: activePickup ? 'Opgave i gang' : 'Start hurtig hjælp under Arbejde', action: 'open-work', icon: 'pin' },
+    { label: 'Arbejde', hint: workday.active ? 'Tur, logbog og kollegahjælp' : 'Mød ind og start dagen', action: 'open-work', icon: 'check' },
+    { label: 'Live-kort', hint: location.sharing ? locationExpiryText() : 'Se frivillig deling', tab: 'map', icon: 'map' },
     { label: 'Beskeder', hint: unreadNotifications ? `${unreadNotifications} ulæst` : 'Fælles og privat', chat: 'all', icon: 'chat' },
     { label: 'Information', hint: 'Regler og kontakter', tab: 'info', icon: 'info' },
-    { label: 'Logbog', hint: 'Gem dagens noter under Arbejde', action: 'open-work', icon: 'truck' },
-  ].filter(item => item.action !== nextAction.action && !(activePickup && item.label === 'Hent for kollega') && !(item.chat && nextAction.action === 'open-notifications') && !(item.tab === 'map' && nextAction.action === 'open-map')).slice(0, 6);
+    { label: 'Kollegaer', hint: `${onlineEmployees.length} online`, tab: 'team', icon: 'users' },
+  ].filter(item => item.action !== nextAction.action && !(item.chat && nextAction.action === 'open-notifications') && !(item.tab === 'map' && nextAction.action === 'open-map')).slice(0, 4);
   const officeItem = officePosts[0];
   const communityHint = unreadNotifications
     ? `${unreadNotifications} ulæste beskeder eller opslag`
@@ -5422,12 +5422,11 @@ function renderHome() {
         <span><b>${workday.active ? 'Aktiv' : 'Ikke mødt ind'}</b><small>Arbejde</small></span>
         <span><b>${location.sharing ? 'Live' : 'Skjult'}</b><small>GPS</small></span>
         <span><b>${unreadNotifications}</b><small>Ulæst</small></span>
-        <span><b>${savedItems.length}</b><small>Gemt</small></span>
         <span><b>${offlinePending}</b><small>Venter</small></span>
       </div>
     </section>
     <section class="home-day-tools screen-section" aria-label="Dagens værktøjer">
-      <div class="screen-section-head"><span>Dagens værktøjer</span></div>
+      <div class="screen-section-head"><span>Hurtigt i dag</span></div>
       <div class="home-driver-tools">
         ${driverTools.map(item => `<button ${item.tab ? `data-tab="${text(item.tab)}"` : item.chat ? `data-chat="${text(item.chat)}"` : `data-action="${text(item.action)}"`}>
           <span>${icon(item.icon)}</span><b>${text(item.label)}</b><small>${text(item.hint)}</small>
@@ -5464,6 +5463,12 @@ function renderWork() {
         <span>${workday.active ? `Slukker automatisk kl. ${text(workday.endLabel || '19.00')} dansk tid` : 'Start dagen her. Tilladelser styres i Indstillinger.'}</span>
       </div>
       <button data-action="${workday.active ? 'end-workday' : 'start-workday'}">${workday.active ? 'Slut dag' : 'Mød ind'}</button>
+    </section>
+    <section class="work-status-strip work-overview-strip" aria-label="Arbejdsstatus">
+      <div><span>GPS</span><b>${location.sharing ? 'Deler' : 'Skjult'}</b><small>${text(location.sharing ? locationExpiryText() : `Synlig for: ${audienceText}`)}</small></div>
+      <div><span>Afhentning</span><b>${activePickup ? 'Aktiv' : 'Ingen'}</b><small>${text(activePickup ? pickupStatusLabel(activePickup.status) : 'Startes når du hjælper en kollega')}</small></div>
+      <div><span>Logbog</span><b>${logbookDrafts.length}</b><small>${logbookDrafts.length === 1 ? 'kladde venter' : 'kladder venter'}</small></div>
+      <div><span>Deling</span><b>${text(audienceText)}</b><small>Kan ændres i indstillinger</small></div>
     </section>
     <section class="work-primary-grid">
       <button data-action="toggle-location"><span>${icon(location.sharing ? 'check' : 'map')}</span><b>${location.sharing ? 'Stop GPS' : 'Del tur'}</b><small>${location.sharing ? locationExpiryText() : 'Bruger dine valg fra Indstillinger'}</small></button>
@@ -5638,42 +5643,44 @@ async function initializeMaps() {
 function renderMap() {
   const visiblePeople = visibleMapPeople();
   const statuses = workStatusCounts();
+  const sharingLabel = location.sharing ? locationExpiryText() : 'Din position er skjult';
   return `
-    <div class="page-heading"><div><p class="eyebrow">Frivillig positionsdeling</p><h2>Live-kort</h2></div></div>
-    <section class="map-hero-card surface-card">
+    <div class="page-heading map-heading"><div><p class="eyebrow">Frivillig positionsdeling</p><h2>Live-kort</h2><small>Se kun kollegaer der frivilligt deler position.</small></div></div>
+    <section class="map-hero-card map-control-card surface-card">
       <div>
         <p class="eyebrow">GPS status</p>
         <h3>${location.sharing ? 'Du deler position' : 'Du er skjult'}</h3>
-        <span>${visiblePeople.length} synlige på kortet · ${location.sharing ? `${location.speed} km/t` : 'GPS er slukket'}</span>
+        <span>${visiblePeople.length} synlige på kortet · ${text(sharingLabel)}</span>
       </div>
       <button data-action="toggle-location">${location.sharing ? 'Stop deling' : 'Del position'}</button>
     </section>
-    <section class="map-filter-row" aria-label="Kortfilter">
-      ${[
-        ['all', 'Alle'],
-        ['sharing', 'Deler nu'],
-        ['truck', 'Lastbil'],
-        ['van', 'Varebil'],
-      ].map(([id, label]) => `<button class="${mapFilter === id ? 'active' : ''}" data-map-filter="${id}">${label}</button>`).join('')}
+    <section class="map-quick-controls surface-card">
+      <div class="map-filter-row" aria-label="Kortfilter">
+        ${[
+          ['all', 'Alle'],
+          ['sharing', 'Deler nu'],
+          ['truck', 'Lastbil'],
+          ['van', 'Varebil'],
+        ].map(([id, label]) => `<button class="${mapFilter === id ? 'active' : ''}" data-map-filter="${id}">${label}</button>`).join('')}
+      </div>
+      <div class="map-share-timer">
+        <b>Hurtig deling</b>
+        <button data-location-duration="15">Del i 15 min</button>
+        <button data-location-duration="30">Del i 30 min</button>
+        <button data-location-duration="60">Del i 60 min</button>
+      </div>
     </section>
-    <section class="map-share-timer screen-section">
-      <div class="screen-section-head"><span>Deling</span><small>Start og stop hurtigt</small></div>
-      <div><b>Hurtig deling</b><span>Start GPS i en fast periode, fx når du henter noget for en kollega.</span></div>
-      <button data-location-duration="15">Del i 15 min</button>
-      <button data-location-duration="30">Del i 30 min</button>
-      <button data-location-duration="60">Del i 60 min</button>
-    </section>
-    <div class="screen-section-head map-section-head"><span>Rigtigt kort</span><small>OpenStreetMap med Google Maps-links</small></div>
+    <div class="screen-section-head map-section-head"><span>Kort</span><small>OpenStreetMap med Google Maps-links</small></div>
     <section class="map-legend-panel">
       <span><i class="legend-dot self"></i>Dig</span>
       <span><i class="legend-dot truck"></i>Lastbil</span>
       <span><i class="legend-dot van"></i>Varebil</span>
       <span><i class="legend-dot dispatch"></i>Kontor</span>
-      <small>Kun kollegaer med aktiv deling vises. Brug "Deler nu" hvis kortet skal være helt rent.</small>
+      <small>Kun kollegaer med aktiv deling vises. Brug "Deler nu" for et helt rent kort.</small>
     </section>
     ${teamMap(true)}
     <section class="map-actions">
-      <p class="map-expiry-line">${locationExpiryText()}</p>
+      <p class="map-expiry-line">${text(sharingLabel)}</p>
       <div><b>${location.sharing ? 'Din position er synlig' : 'Du er skjult på kortet'}</b><span>${location.sharing ? (location.demo ? 'Lokal GPS-test bruges, fordi rigtig GPS ikke er tilgængelig' : 'Opdateres automatisk fra din GPS') : 'Du bestemmer selv, hvornår kollegaerne kan se dig'}</span></div>
       <button data-action="toggle-location">${location.sharing ? 'Stop deling' : 'Del position'}</button>
       <small class="map-person-legend">Status · Sidst opdateret</small>
@@ -5700,15 +5707,22 @@ function renderChat() {
   const directChats = chats.filter(chat => !chat.community && !chat.channel)
     .filter(chat => !chatSearch || searchable(`${chat.name} ${chat.preview}`).includes(chatSearch));
   const pinnedChat = community || channels[0] || directChats[0];
+  const unreadTotal = chats.reduce((sum, chat) => sum + Number(chat.unread || 0), 0);
+  const allDirectCount = chats.filter(chat => !chat.community && !chat.channel).length;
   const communityCard = community
-    ? `<button class="community-chat" data-chat="${text(community.id)}">
+    ? `<button class="community-chat chat-feature-card" data-chat="${text(community.id)}">
       <span class="community-icon">${icon('users')}</span>
-      <span><small>Hele holdet</small><b>Fælleschat</b><em>${text(community.preview)}</em></span>
+      <span><small>Hele holdet</small><b>Fælleschat</b><em>${text(community.preview || 'Skriv til hele holdet')}</em></span>
       ${community.unread ? `<i>${text(community.unread)}</i>` : icon('arrow', 'row-arrow')}
     </button>`
     : '<section class="important-message"><span>Fælleschat</span><b>Ikke oprettet endnu</b><small>Kør Supabase schema igen for at oprette standardkanalerne.</small></section>';
   return `
-    <div class="page-heading"><div><p class="eyebrow">XpressBudet internt</p><h2>Fællesskab</h2></div><button class="round-btn" data-action="new-chat" aria-label="Ny besked">${icon('plus')}</button></div>
+    <div class="page-heading chat-heading"><div><p class="eyebrow">XpressBudet internt</p><h2>Beskeder</h2><small>Fælles, hold og direkte beskeder samlet uden opslag.</small></div><button class="round-btn" data-action="new-chat" aria-label="Ny besked">${icon('plus')}</button></div>
+    <section class="chat-inbox-summary surface-card">
+      <div><span>Ulæst</span><b>${unreadTotal}</b><small>beskeder</small></div>
+      <div><span>Kanaler</span><b>${channels.length}</b><small>synlige</small></div>
+      <div><span>Direkte</span><b>${allDirectCount}</b><small>samtaler</small></div>
+    </section>
     ${communityCard}
     <label class="search-box chat-search"><input data-chat-search placeholder="Søg i beskeder..." value="${text(chatQuery)}" /><span>${directChats.length} hits</span></label>
     <section class="channel-section screen-section">
@@ -5719,7 +5733,7 @@ function renderChat() {
         ${chat.unread ? `<i>${text(chat.unread)}</i>` : icon('arrow', 'row-arrow')}
       </button>`).join('')}
     </section>
-    <div class="section-title chat-title"><h3>Direkte</h3></div>
+    <div class="section-title chat-title"><h3>Direkte</h3><button data-action="new-chat">Ny samtale</button></div>
     <section class="chat-list screen-section">${directChats.map(chat => `
       <button class="chat-row" data-chat="${chat.id}">
         <span class="person-avatar">${text(chat.initials)}</span>
@@ -6347,7 +6361,7 @@ function openNewChatModal() {
       ? `<label>Vælg kollega<select name="employee">${availableEmployees.map(employee => `<option value="${text(employee.id)}">${text(employee.name)}</option>`).join('')}</select></label>
     <label>Besked<input name="message" placeholder="Skriv din første besked..." required /></label>
     <button class="save-btn" type="submit" data-action="start-new-chat">Start samtale</button>`
-      : '<section class="invite-help"><b>Ingen online kollegaer klar</b><span>Direkte beskeder kræver, at kollegaen er oprettet via invitation, har logget ind første gang og står som aktiv medarbejder.</span></section>'}
+      : '<section class="invite-help"><b>Ingen aktive kollegaer klar</b><span>Direkte beskeder kræver, at kollegaen er oprettet via invitation, har logget ind første gang og står som aktiv medarbejder. Online-status er ikke et krav.</span></section>'}
   </form>`;
   document.body.append(modal);
   const form = modal.querySelector('.new-chat-form');
@@ -8134,6 +8148,7 @@ document.addEventListener('visibilitychange', () => {
 });
 
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js').catch(() => {});
+
 
 
 

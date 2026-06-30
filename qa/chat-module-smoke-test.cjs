@@ -20,6 +20,8 @@ assert(app.includes("form.dataset.submitting === 'true'"), 'New direct chat flow
 assert(app.includes('event.preventDefault();\n    await submitNewChatForm'), 'New direct chat click path should prevent native double-submit');
 assert(app.includes("if (action === 'start-new-chat')"), 'New direct chat start button should be handled from tap/click events');
 assert(!app.includes("form?.addEventListener('submit', async event => {\n    event.preventDefault();\n    await submitNewChatForm(form);"), 'New direct chat modal should not also attach a local submit handler that can double-send');
+assert(app.includes('Ingen aktive kollegaer klar'), 'Direct chat empty state should talk about active colleagues, not online-only availability');
+assert(app.includes('Online-status er ikke et krav'), 'Direct messages should not imply that colleagues must be online');
 
 assert(chatModule.includes('export function hasChannelAccess'), 'Chat module should export channel access logic');
 assert(chatModule.includes('export function chatFromConversationRow'), 'Chat module should export conversation mapping');

@@ -7,6 +7,7 @@ function assert(condition, message) {
 const schema = fs.readFileSync('supabase/schema.sql', 'utf8');
 const firstAdmin = fs.readFileSync('supabase/first-admin.sql', 'utf8');
 const fullBootstrap = fs.readFileSync('supabase/RUN_THIS_FROM_SCRATCH_IN_SUPABASE.sql', 'utf8');
+const updateSql = fs.readFileSync('supabase/RUN_THIS_IN_SUPABASE.sql', 'utf8');
 const resetSql = fs.readFileSync('supabase/RESET_XPRESSINTRA_SUPABASE.sql', 'utf8');
 const locationRepair = fs.readFileSync('supabase/REPAIR_LOCATION_SHARES.sql', 'utf8');
 const directMessageRepair = fs.readFileSync('supabase/REPAIR_DIRECT_MESSAGES.sql', 'utf8');
@@ -83,6 +84,10 @@ assert(schema.includes("expires_at timestamptz not null default (now() + interva
 assert(schema.includes('accepted_at timestamptz'), 'Invitations should record when they are used');
 assert(schema.includes('used_by uuid references public.profiles(id)'), 'Invitations should record which user consumed them');
 assert(schema.includes("and id::text = coalesce(nullif(new.raw_user_meta_data ->> 'invitation_id', ''), 'missing-invitation-id')"), 'Auth trigger should require the exact invitation id from the private link');
+assert(!schema.includes("when invite.id is not null then 'active'"), 'Invited users should still wait for chef/creator approval');
+assert(!fullBootstrap.includes("when invite.id is not null then 'active'"), 'Full bootstrap should not auto-activate invited users');
+assert(!updateSql.includes("when invite.id is not null then 'active'"), 'Update SQL should not auto-activate invited users');
+assert(schema.includes("when not exists (select 1 from public.profiles) then 'active'"), 'Only the first bootstrap profile should be auto-active');
 assert(schema.includes('employee_invitations_one_pending_email_idx'), 'Only one pending invitation per email should be allowed');
 assert(schema.includes('employee_invitations_used_by_idx'), 'Invitation used_by foreign key should have a covering index');
 assert(schema.includes('media_attachments_announcement_idx'), 'Announcement media foreign key should have a covering index');

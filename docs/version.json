@@ -1,25 +1,25 @@
 {
-  "latestVersion": "1.3.44",
-  "stableVersion": "1.3.44",
-  "activeVersion": "1.3.44",
-  "previousStableVersion": "1.3.43",
-  "latestVersionCode": 57,
-  "stableVersionCode": 57,
-  "activeVersionCode": 57,
-  "apkDownloadUrl": "https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.44/xpressintra.apk",
-  "stableApkDownloadUrl": "https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.44/xpressintra.apk",
-  "previousStableApkDownloadUrl": "https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.43/xpressintra.apk",
-  "releasePageUrl": "https://github.com/stralner2711-a11y/xpresshub/releases/tag/v1.3.44",
-  "stableReleasePageUrl": "https://github.com/stralner2711-a11y/xpresshub/releases/tag/v1.3.44",
+  "latestVersion": "1.3.45",
+  "stableVersion": "1.3.45",
+  "activeVersion": "1.3.45",
+  "previousStableVersion": "1.3.44",
+  "latestVersionCode": 58,
+  "stableVersionCode": 58,
+  "activeVersionCode": 58,
+  "apkDownloadUrl": "https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.45/xpressintra.apk",
+  "stableApkDownloadUrl": "https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.45/xpressintra.apk",
+  "previousStableApkDownloadUrl": "https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.44/xpressintra.apk",
+  "releasePageUrl": "https://github.com/stralner2711-a11y/xpresshub/releases/tag/v1.3.45",
+  "stableReleasePageUrl": "https://github.com/stralner2711-a11y/xpresshub/releases/tag/v1.3.45",
   "downloadPageUrl": "https://stralner2711-a11y.github.io/xpresshub/download.html",
   "changelog": [
-    "build 57: tydelig godkend/afvis af nye adgangsanmodninger",
-    "Chef og creator kan godkende eller afvise nye profiler direkte i Drift",
-    "XpressIntra mail er koblet på Brevo og Supabase custom SMTP",
-    "Supabase bekræftelsesmail og reset-mail er testet med 200 OK"
+    "build 58: ny forenklet live-kort visning og frisk mobilpakning",
+    "Direkte beskeder viser nu en korrekt forklaring når ingen aktiv kollega kan vælges",
+    "Nye profiler parkeres til chef/creator-godkendelse, også ved invitation",
+    "Android, iPhone/PWA og release-tjek er synkroniseret til samme version"
   ],
   "forceUpdate": true,
   "rollbackReason": "",
   "defectiveVersions": [],
-  "updatedAt": "2026-06-29"
+  "updatedAt": "2026-06-30"
 }
