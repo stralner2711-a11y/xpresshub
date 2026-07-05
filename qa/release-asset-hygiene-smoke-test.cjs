@@ -10,13 +10,17 @@ const serviceWorker = fs.readFileSync('service-worker.js', 'utf8');
 const publicServiceWorker = fs.readFileSync('public/service-worker.js', 'utf8');
 const gitignore = fs.readFileSync('.gitignore', 'utf8');
 const releaseScript = fs.readFileSync('tools/opdater-alt.ps1', 'utf8');
+const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
 
-const supabaseImports = index.match(/@supabase\/supabase-js/g) || [];
-assert(supabaseImports.length === 1, 'index.html should load Supabase CDN exactly once');
+assert(!index.includes('unpkg.com/@supabase/supabase-js'), 'index.html should not load Supabase from CDN');
+assert(index.includes('src/lib/runtime-deps.js'), 'index.html should bundle Supabase through Vite runtime deps');
+assert(packageJson.devDependencies?.['@supabase/supabase-js'], 'package.json should declare bundled Supabase dependency');
+assert(packageJson.devDependencies?.leaflet, 'package.json should declare bundled Leaflet dependency');
+assert(fs.existsSync('vite.config.js'), 'vite.config.js should exist for bundled dependencies');
 
 assert(!index.includes('leaflet@1.9.4'), 'index.html should not preload Leaflet; the app lazy-loads the map library once');
-assert(app.includes('https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js'), 'app should lazy-load Leaflet JS when a real map is shown');
-assert(app.includes('https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css'), 'app should lazy-load Leaflet CSS when a real map is shown');
+assert(fs.existsSync('src/modules/leaflet-loader.js'), 'leaflet-loader module should exist for bundled map library');
+assert(app.includes('XpressIntraLeaflet?.ensureLeaflet'), 'app should delegate Leaflet loading to the bundled loader module');
 
 for (const source of [serviceWorker, publicServiceWorker]) {
   assert(source.includes('./index.html'), 'service worker should cache and fall back to index.html');

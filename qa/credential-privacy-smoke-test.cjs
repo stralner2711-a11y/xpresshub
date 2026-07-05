@@ -26,8 +26,8 @@ assert(loginBlock.includes('type="password"'), 'Password field should use passwo
 assert(!loginBlock.includes('data-action="test-supabase"'), 'Employee login should not expose Supabase diagnostics');
 assert(!loginBlock.includes('backend-status'), 'Employee login should not expose backend status banner');
 assert(!loginBlock.includes('data-action="open-settings"'), 'Employee login should not expose setup/settings');
-assert(loginBlock.includes('canUseStandardSignup'), 'Signup visibility should be controlled by online backend readiness');
-assert(loginBlock.includes('data-action="signup-standard-password"'), 'Signup should use the standard-password onboarding flow');
+assert(loginBlock.includes('canUseInviteSignup'), 'Signup visibility should require a valid invite link');
+assert(loginBlock.includes('data-action="signup-invite-profile"'), 'Signup should use the invite-link onboarding flow');
 assert(schema.includes("else 'paused'"), 'Database trigger should park open signups until admin approval');
 assert(fullSetup.includes("else 'paused'"), 'Full SQL should park open signups until admin approval');
 

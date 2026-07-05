@@ -1,12 +1,13 @@
 {
   "name": "xpressintra-employee-app",
   "private": true,
-  "version": "1.3.49",
+  "version": "1.3.50",
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "build": "vite build",
     "qa": "node tools/run-qa.cjs",
+    "bump": "node tools/bump-version.cjs",
     "native:sync": "npm run build && cap sync android && cap sync ios",
     "android:add": "cap add android",
     "android:sync": "npm run build && cap sync android",
@@ -23,8 +24,8 @@
     "@capacitor/cli": "^7.0.0",
     "@capacitor/core": "^7.0.0",
     "@capacitor/ios": "^7.6.5",
+    "@supabase/supabase-js": "^2.110.0",
+    "leaflet": "^1.9.4",
     "vite": "^7.0.0"
   }
 }
-
-

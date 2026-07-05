@@ -13,7 +13,7 @@ Selve signering, test på rigtig iPhone og upload kræver stadig Mac med Xcode o
 - `@capacitor/ios` er installeret.
 - `ios/`-mappen findes og har Xcode workspace.
 - Bundle id er `dk.xpressbudet.xpressintra`.
-- iOS-projektet matcher fælles version: `1.3.49` / build `62`.
+- iOS-projektet matcher fælles version: `1.3.50` / build `63`.
 - Apple-tilladelsestekster for GPS, kamera og billeder er sat på dansk.
 - `npm run native:sync` bygger web og synkroniserer både Android og iOS-assets.
 - `Build Apple iOS paa Mac.command` og `tools/build-ios-mac.sh` findes til Mac-flow.

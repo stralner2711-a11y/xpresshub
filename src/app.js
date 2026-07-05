@@ -26,10 +26,9 @@ const icons = {
   search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>',
 };
 
-const APP_VERSION = '1.3.49-release-v109';
-const APP_DISPLAY_VERSION = '1.3.49';
-const APP_VERSION_CODE = 62;
-const TEMPORARY_EMPLOYEE_PASSWORD = 'xpress';
+const APP_VERSION = '1.3.50-release-v63';
+const APP_DISPLAY_VERSION = '1.3.50';
+const APP_VERSION_CODE = 63;
 const IMAGE_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
 const PROFILE_PHOTO_MAX_DIMENSION = 512;
 const PROFILE_PHOTO_QUALITY = 0.84;
@@ -436,7 +435,7 @@ async function runSupabaseDiagnostics() {
 
   add('URL', Boolean(config.url), config.url || 'Mangler Supabase URL');
   add('Publishable key', Boolean(config.anonKey), config.anonKey ? `${config.anonKey.slice(0, 16)}...` : 'Mangler offentlig nøgle');
-  add('Supabase bibliotek', Boolean(window.supabase?.createClient), window.supabase?.createClient ? 'Indlæst i appen' : 'Biblioteket kunne ikke hentes fra CDN');
+  add('Supabase bibliotek', Boolean(window.supabase?.createClient), window.supabase?.createClient ? 'Indlæst i appen' : 'Biblioteket kunne ikke hentes');
 
   if (!config.url || !config.anonKey) return checks;
 
@@ -1741,6 +1740,12 @@ function officialAppUrl() {
 }
 
 function inviteLink(employee, invitationId = '') {
+  if (globalThis.XpressIntraAuth?.inviteLink) {
+    return globalThis.XpressIntraAuth.inviteLink(employee, invitationId, {
+      appUrl: officialAppUrl(),
+      localInvitationId,
+    });
+  }
   const url = new URL(officialAppUrl());
   const email = normalizeEmployeeEmail(employee?.email || employee?.invitationEmail || '');
   url.searchParams.set('invite', String(invitationId || employee?.invitationId || localInvitationId()).trim());
@@ -1749,17 +1754,27 @@ function inviteLink(employee, invitationId = '') {
 }
 
 function inviteMessage(employee, invitationId = '') {
+  if (globalThis.XpressIntraAuth?.inviteMessage) {
+    return globalThis.XpressIntraAuth.inviteMessage(employee, invitationId, {
+      appUrl: officialAppUrl(),
+      downloadPageUrl: employeeDownloadPageUrl(),
+      localInvitationId,
+    });
+  }
   const invitationUrl = inviteLink(employee, invitationId || employee?.invitationId || '');
   const downloadUrl = employeeDownloadPageUrl();
   return {
     subject: 'XpressIntra konto',
     invitationUrl,
     downloadUrl,
-    body: `Hej ${employee?.name || ''}\n\nDu er oprettet til XpressIntra.\n\n1. Åbn dette personlige invitationslink:\n${invitationUrl}\n\n2. Skriv standardkoden: ${TEMPORARY_EMPLOYEE_PASSWORD}\n\n3. Vælg din egen personlige kode med det samme.\n\nHvis appen ikke er installeret endnu, kan du bruge downloadsiden her:\n${downloadUrl}\n\nVigtigt: linket og standardkoden er kun til første oprettelse.\n\nHilsen XpressBudet`,
+    body: `Hej ${employee?.name || ''}\n\nDu er oprettet til XpressIntra.\n\n1. Åbn dette personlige invitationslink:\n${invitationUrl}\n\n2. Vælg din egen personlige adgangskode med det samme.\n\nHvis appen ikke er installeret endnu, kan du bruge downloadsiden her:\n${downloadUrl}\n\nVigtigt: linket er kun til første oprettelse og virker kun med din arbejdsmail.\n\nHilsen XpressBudet`,
   };
 }
 
 function loginInviteContext() {
+  if (globalThis.XpressIntraAuth?.loginInviteContext) {
+    return globalThis.XpressIntraAuth.loginInviteContext(window.location.href);
+  }
   try {
     const url = new URL(window.location.href);
     const invite = String(url.searchParams.get('invite') || '').trim();
@@ -3142,16 +3157,18 @@ async function signInSupabase(email, password) {
   if (!data.session) throw new Error('Login lykkedes ikke. Tjek mail og adgangskode.');
   const active = await applySupabaseSession(data.session);
   if (!active) return 'blocked';
-  if (String(password || '') === TEMPORARY_EMPLOYEE_PASSWORD || profile.passwordResetRequired) openTemporaryPasswordModal();
+  if (profile.passwordResetRequired) openTemporaryPasswordModal();
   return 'active';
 }
 
 function personalPasswordError(password) {
+  if (globalThis.XpressIntraAuth?.personalPasswordError) {
+    return globalThis.XpressIntraAuth.personalPasswordError(password);
+  }
   if (String(password || '').length < 8) return 'Din personlige kode skal være mindst 8 tegn';
   if (!/[a-z]/.test(password)) return 'Din personlige kode skal have mindst ét lille bogstav';
   if (!/[A-Z]/.test(password)) return 'Din personlige kode skal have mindst ét stort bogstav';
   if (!/[0-9]/.test(password)) return 'Din personlige kode skal have mindst ét tal';
-  if (password === TEMPORARY_EMPLOYEE_PASSWORD) return 'Vælg en personlig kode - ikke standardkoden';
   return '';
 }
 
@@ -3546,7 +3563,7 @@ async function createSupabaseEmployeeInvitation(employee) {
     languages: employee.languages || null,
     emergency_contact: employee.emergencyContact || null,
     logbook_enabled: Boolean(employee.logbook),
-    onboarding_method: 'standard_password',
+    onboarding_method: 'invite_link',
     password_reset_required: true,
   };
   let { data, error } = await client.from('employee_invitations').insert(payload).select('id').maybeSingle();
@@ -3561,6 +3578,9 @@ async function createSupabaseEmployeeInvitation(employee) {
 }
 
 function normalizeEmployeeEmail(value = '') {
+  if (globalThis.XpressIntraAuth?.normalizeEmployeeEmail) {
+    return globalThis.XpressIntraAuth.normalizeEmployeeEmail(value);
+  }
   return String(value || '').trim().toLowerCase();
 }
 
@@ -3594,7 +3614,7 @@ function employeeFromProfileForm(data) {
     invitationId: localInvitationId(),
     invitationEmail: email,
     invitationStatus: 'local',
-    onboardingMethod: 'standard_password',
+    onboardingMethod: 'invite_link',
     passwordResetRequired: true,
     invitationCreatedAt: new Date().toISOString(),
   };
@@ -3706,7 +3726,7 @@ function securityReadinessItems() {
     { id: 'lost_phone', title: 'Mistet telefon-procedure', body: 'Virksomheden skal have en kort procedure: deaktiver bruger, skift kode, log ud/revoker session og tjek aktivitet.', done: false },
     { id: 'mfa', title: 'MFA på ejer/admin', body: 'Supabase owner/admin-konti bør have 2-faktor login før rigtig drift.', done: false },
     { id: 'advisor', title: 'Supabase Security Advisor', body: 'Kør Security Advisor i Supabase dashboard og ret eventuelle advarsler før medarbejdere inviteres bredt.', done: false },
-    { id: 'dependencies', title: 'Eksterne biblioteker', body: 'Leaflet og Supabase-js bør på sigt pakkes ind i buildet i stedet for at hentes fra CDN.', done: false },
+    { id: 'dependencies', title: 'Eksterne biblioteker', body: 'Leaflet og Supabase-js pakkes nu ind i buildet i stedet for at hentes fra CDN.', done: true },
   ];
 }
 
@@ -5337,7 +5357,7 @@ function renderLogin() {
   const demoCredentials = DEMO_MODE && !backend.ready;
   const inviteContext = loginInviteContext();
   const invitedEmail = inviteContext.email;
-  const canUseStandardSignup = Boolean(backend.ready);
+  const canUseInviteSignup = Boolean(backend.ready && inviteContext.valid);
   return `<section class="login-shell">
     <div class="login-brand">${brandLogo()}<small>XpressIntra · internt medarbejdersystem</small></div>
     <div class="login-copy"><h1>Godt at se dig.</h1><p>Log ind for at finde kollegaer, dele din position og skrive med holdet.</p></div>
@@ -5350,8 +5370,8 @@ function renderLogin() {
       <label>Arbejdsmail<input name="email" type="email" value="${text(invitedEmail || (demoCredentials ? 'demo@xpressintra.local' : ''))}" ${inviteContext.valid ? 'readonly' : ''} required /></label>
       <label>Adgangskode<input name="password" type="password" value="${demoCredentials ? 'demo1234' : ''}" minlength="6" required /></label>
       <button>Log ind</button>
-      ${canUseStandardSignup ? '<button class="login-secondary" data-action="signup-standard-password">Opret profil med standardkode</button>' : ''}
-      <span>${text(canUseStandardSignup ? 'Ny medarbejder? Skriv din arbejdsmail og standardkoden xpress. Du laver din egen kode med det samme, og chef eller creator skal godkende profilen før appen åbner.' : 'Har du ikke adgang endnu, skal din chef eller creator oprette dig først.')}</span>
+      ${canUseInviteSignup ? '<button type="submit" class="login-secondary" data-action="signup-invite-profile" formnovalidate>Opret profil med invitationslink</button>' : ''}
+      <span>${text(canUseInviteSignup ? 'Du har et invitationslink. Opret din personlige kode her. Chef eller creator skal godkende profilen før appen åbner.' : backend.ready ? 'Har du ikke adgang endnu, skal din chef eller creator oprette dig og sende et personligt invitationslink.' : 'Har du ikke adgang endnu, skal din chef eller creator oprette dig først.')}</span>
     </form>
   </section>`;
 }
@@ -5571,6 +5591,9 @@ function loadExternalAsset(tagName, attributes) {
 }
 
 function ensureLeaflet() {
+  if (globalThis.XpressIntraLeaflet?.ensureLeaflet) {
+    return globalThis.XpressIntraLeaflet.ensureLeaflet();
+  }
   if (globalThis.L) return Promise.resolve(globalThis.L);
   if (!leafletLoadPromise) {
     leafletLoadPromise = Promise.all([
@@ -6137,7 +6160,7 @@ function openEmployeeInviteResultModal(employee, invitationId = '') {
     <h3>${text(employee.name)} kan oprette sig</h3>
     <section class="invite-help">
       <b>${text(inviteState)}</b>
-      <span>Kollegaen kan bruge linket, eller skrive arbejdsmail og standardkoden xpress på login-siden. Adgang kræver stadig godkendelse fra chef eller creator.</span>
+      <span>Kollegaen skal åbne invitationslinket og vælge en personlig adgangskode. Adgang kræver stadig godkendelse fra chef eller creator.</span>
       <span>Invitationslink: <strong>${text(invite.invitationUrl)}</strong></span>
       <span>Downloadside ved behov: <strong>${text(invite.downloadUrl)}</strong></span>
     </section>
@@ -6174,12 +6197,12 @@ function openStandardSignupPasswordModal(email, invitationId = '') {
     <p class="eyebrow">Opret konto</p>
     <h3>Lav din personlige kode</h3>
     <section class="invite-help">
-      <b>Standardkoden er godkendt</b>
+      <b>Invitationslinket er klar</b>
       <span>Du opretter profilen for <strong>${text(pendingStandardSignupEmail)}</strong>. Vælg nu din egen adgangskode. Chef eller creator godkender derefter adgangen.</span>
     </section>
     <label>Ny adgangskode<input name="newPassword" type="password" minlength="8" autocomplete="new-password" required /></label>
     <label>Gentag ny adgangskode<input name="confirmPassword" type="password" minlength="8" autocomplete="new-password" required /></label>
-    <p class="security-inline-note">Brug mindst 8 tegn, små bogstaver, store bogstaver og tal. Vælg ikke standardkoden igen.</p>
+    <p class="security-inline-note">Brug mindst 8 tegn, små bogstaver, store bogstaver og tal. Del aldrig din personlige kode med andre.</p>
     <button class="save-btn">Opret konto</button>
   </form>`;
   document.body.append(modal);
@@ -6194,12 +6217,12 @@ function openTemporaryPasswordModal() {
     <p class="eyebrow">Første login</p>
     <h3>Lav din personlige kode</h3>
     <section class="invite-help">
-      <b>Standardkoden er kun til oprettelse</b>
-      <span>Du er logget ind med den midlertidige kode. Vælg nu din egen adgangskode, før du bruger appen videre.</span>
+      <b>Skift til personlig kode</b>
+      <span>Du skal vælge din egen adgangskode, før du bruger appen videre.</span>
     </section>
     <label>Ny adgangskode<input name="newPassword" type="password" minlength="8" autocomplete="new-password" required /></label>
     <label>Gentag ny adgangskode<input name="confirmPassword" type="password" minlength="8" autocomplete="new-password" required /></label>
-    <p class="security-inline-note">Brug mindst 8 tegn, små bogstaver, store bogstaver og tal. Vælg ikke standardkoden igen, og del aldrig din personlige kode med andre.</p>
+    <p class="security-inline-note">Brug mindst 8 tegn, små bogstaver, store bogstaver og tal. Del aldrig din personlige kode med andre.</p>
     <button class="save-btn">Gem personlig kode</button>
   </form>`;
   document.body.append(modal);
@@ -7801,28 +7824,23 @@ document.addEventListener('submit', async event => {
           showToast(loginBlocked);
           return;
         }
-        if (event.submitter?.dataset.action === 'signup-standard-password') {
+        if (event.submitter?.dataset.action === 'signup-invite-profile') {
           const inviteContext = loginInviteContext();
+          if (!inviteContext.valid) {
+            showToast('Opret konto kræver et invitationslink fra chef eller creator');
+            return;
+          }
           const email = String(data.get('email') || '').trim().toLowerCase();
-          const standardPassword = String(data.get('password') || '');
           if (!email) {
             showToast('Skriv arbejdsmailen først');
             return;
           }
-          if (inviteContext.valid && email !== inviteContext.email) {
+          if (email !== inviteContext.email) {
             showToast('Arbejdsmailen skal matche invitationslinket');
             return;
           }
-          if (standardPassword !== TEMPORARY_EMPLOYEE_PASSWORD) {
-            showToast('Skriv standardkoden xpress for at oprette kontoen');
-            return;
-          }
-          openStandardSignupPasswordModal(email, inviteContext.valid ? inviteContext.invite : '');
+          openStandardSignupPasswordModal(email, inviteContext.invite);
         } else {
-          if (String(data.get('password') || '') === TEMPORARY_EMPLOYEE_PASSWORD) {
-            showToast('Standardkoden bruges kun til første oprettelse. Har du allerede oprettet konto, skal du bruge din personlige kode.');
-            return;
-          }
           const loginStatus = await signInSupabase(data.get('email'), data.get('password'));
           if (loginStatus === 'blocked') return;
           registerLoginSuccess(data.get('email'));

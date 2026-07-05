@@ -4,7 +4,8 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
-const app = fs.readFileSync('src/app.js', 'utf8');
+const appSource = fs.readFileSync('src/app.js', 'utf8');
+const app = appSource.replace(/\r\n/g, '\n');
 const updateSystem = fs.readFileSync('src/modules/update-system.js', 'utf8');
 const styles = fs.readFileSync('src/styles.css', 'utf8');
 const version = JSON.parse(fs.readFileSync('public/version.json', 'utf8'));
@@ -91,7 +92,8 @@ assert(!serviceWorker.includes('ppressbudet'), 'Service worker should not refere
 assert(serviceWorker.includes("caches.match('./index.html')"), 'Service worker should use index.html as offline navigation fallback');
 assert(serviceWorker.includes('./download.html'), 'Service worker should cache download page for fallback');
 assert(rootServiceWorker === serviceWorker, 'Root service worker should match public service worker');
-assert((indexHtml.match(/@supabase\/supabase-js@2/g) || []).length === 1, 'Index should only load Supabase CDN once');
+assert(indexHtml.includes('src/lib/runtime-deps.js'), 'Index should bundle Supabase through Vite runtime deps');
+assert(!indexHtml.includes('unpkg.com/@supabase/supabase-js'), 'Index should not load Supabase from CDN');
 assert(docs.includes('Officielt repository'), 'Docs should document official repository');
 assert(docs.includes('Rollback'), 'Docs should document rollback workflow');
 assert(androidManifest.includes('REQUEST_INSTALL_PACKAGES'), 'Android app should request install packages permission');

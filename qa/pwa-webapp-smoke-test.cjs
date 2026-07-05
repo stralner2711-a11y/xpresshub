@@ -40,7 +40,7 @@ for (const html of [download, docsDownload]) {
 }
 
 assert(serviceWorker === publicServiceWorker, 'root and public service workers should match');
-assert(serviceWorker.includes('xpressintra-v109-webapp-polish'), 'service worker cache should be bumped for webapp polish');
+assert(serviceWorker.includes('xpressintra-web-login-sync-v110'), 'service worker cache should be bumped for webapp login sync');
 assert(serviceWorker.includes('./download.html'), 'service worker should cache the install/download page');
 assert(app.includes('På iPhone åbner du siden i Safari'), 'login install card should guide iPhone users clearly');
 

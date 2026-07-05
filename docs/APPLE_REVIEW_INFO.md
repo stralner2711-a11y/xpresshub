@@ -12,7 +12,7 @@ XpressIntra
 
 ## Version
 
-`1.3.49` / build `62`
+`1.3.50` / build `63`
 
 ## Review notes
 

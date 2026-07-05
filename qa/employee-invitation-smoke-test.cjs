@@ -15,7 +15,7 @@ assert(source.includes("employee.invitationStatus = 'online'"), 'App should mark
 assert(source.includes('createSupabaseEmployeeInvitation(employee)'), 'App should create Supabase invitations when online');
 assert(source.includes('Arbejdsmail<input name="email" type="email"'), 'Employee profile modal should include work email');
 assert(source.includes("${isNew ? 'required' : ''}"), 'Work email should be required for new employee invitations');
-assert(source.includes('Opret profil med standardkode'), 'Login should expose the standard-password profile request flow');
+assert(source.includes('data-action="signup-invite-profile"'), 'Login should expose invite-link profile signup');
 assert(source.includes('employeeDownloadPageUrl'), 'Invite flow should include the official app download page');
 assert(source.includes('function officialAppUrl'), 'Invite flow should generate links from the official app URL');
 assert(source.includes("appUrl: 'https://xpresshub-seven.vercel.app/'"), 'Invite links should default to the working web app URL');
@@ -30,7 +30,7 @@ assert(source.includes('openEmailConfirmationModal(normalizedEmail)'), 'Signup w
 assert(source.includes('resend-pending-confirmation'), 'Pending users should be able to resend their own confirmation email');
 assert(source.includes('Åbn dette personlige invitationslink'), 'Shared invite message should include the private invitation link');
 assert(source.includes('Invitationslink:'), 'Invite result should show the private invitation link before sending');
-assert(source.includes("onboarding_method: 'standard_password'"), 'Supabase invitations should store the onboarding method');
+assert(source.includes("onboarding_method: 'invite_link'"), 'Supabase invitations should store the invite-link onboarding method');
 assert(source.includes('password_reset_required: true'), 'New employees should be forced to change the temporary password');
 assert(source.includes('pendingStandardSignupInvitationId'), 'Standard signup should remember the exact invitation id from the link');
 assert(source.includes('invitation_id: String(options.invitationId'), 'Signup metadata should bind account creation to the invitation id');
@@ -111,7 +111,7 @@ assert(employee.email === 'ny.kollega@xpressbudet.dk', 'Employee email should be
 assert(employee.invitationEmail === employee.email, 'Invitation should be bound to the typed work email');
 assert(employee.invitationId.startsWith('local-'), 'New employees should always receive a local invitation id');
 assert(employee.status === 'Invitation klar', 'New employee should show invite-ready status');
-assert(employee.onboardingMethod === 'standard_password', 'New employee should use standard password onboarding');
+assert(employee.onboardingMethod === 'invite_link', 'New employee should use invite-link onboarding');
 assert(employee.passwordResetRequired === true, 'New employee should be forced to change temporary password');
 
 const link = vm.runInContext("inviteLink({ email: 'NY.KOLLEGA@XPRESSBUDET.DK', invitationId: 'abc-123' }, 'abc-123')", context);
@@ -122,7 +122,8 @@ assert(link.includes('email=ny.kollega%40xpressbudet.dk'), 'Invite link should i
 const message = vm.runInContext("inviteMessage({ name: 'Test Chauffør', email: 'ny@example.com', invitationId: 'abc-123' }, 'abc-123')", context);
 assert(message.invitationUrl.startsWith('https://xpresshub-seven.vercel.app/'), 'Invite message should include the working app URL');
 assert(message.body.includes('Åbn dette personlige invitationslink'), 'Invite message should explain where to click');
-assert(message.body.includes('downloadsiden her'), 'Invite message should keep the download page as fallback only');
+assert(message.body.includes('Vælg din egen personlige adgangskode'), 'Invite message should explain personal password setup');
+assert(!message.body.includes('standardkoden'), 'Invite message should not expose a shared onboarding password');
 
 console.log('Employee invitation smoke test passed');
 
