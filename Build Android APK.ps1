@@ -124,6 +124,22 @@ function Get-GradleBuildArguments {
   return $arguments
 }
 
+function Clear-BuiltWebAssets {
+  foreach ($relativePath in @(
+    "dist",
+    "android\app\src\main\assets\public"
+  )) {
+    $target = Join-Path $PSScriptRoot $relativePath
+    if (!(Test-Path -LiteralPath $target)) { continue }
+    $resolved = (Resolve-Path -LiteralPath $target).Path
+    if (!$resolved.StartsWith($PSScriptRoot, [StringComparison]::OrdinalIgnoreCase)) {
+      throw "Sikkerhedsstop: vil ikke rydde udenfor projektmappen: $resolved"
+    }
+    Remove-Item -LiteralPath $resolved -Recurse -Force
+    Add-Content -LiteralPath $logPath -Value "Ryddet gammel web-build: $resolved"
+  }
+}
+
 Write-Step "XpressIntra Android APK build"
 
 Add-PathIfExists "C:\Program Files\nodejs"
@@ -188,6 +204,8 @@ try {
     Write-Step "Opretter Android-projekt"
     Run-Logged "npx.cmd" @("cap", "add", "android")
   }
+
+  Clear-BuiltWebAssets
 
   Write-Step "Synkroniserer webapp til Android"
   Run-Logged "npm.cmd" @("run", "android:sync")

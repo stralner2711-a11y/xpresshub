@@ -92,6 +92,15 @@ assert(work.includes('data-action="toggle-location"'), 'Work should own GPS trip
 assert(work.includes('data-action="open-logbook"'), 'Work should own quick logbook access');
 assert(work.includes('data-action="open-pickup"'), 'Work should own pickup/help tasks');
 
+harness.run("activeTab = 'map'; location = { ...location, sharing: false }; render();");
+const hiddenMap = harness.appElement.innerHTML;
+assert(!hiddenMap.includes('data-action="toggle-location"'), 'Map should not duplicate persistent trip sharing while hidden');
+assert(hiddenMap.includes('data-location-duration="15"'), 'Map should offer temporary location sharing');
+
+harness.run("activeTab = 'map'; location = { ...location, sharing: true, shareMode: '30 min', expiresAt: new Date(Date.now() + 1800000).toISOString() }; render();");
+const sharingMap = harness.appElement.innerHTML;
+assert(count(sharingMap, 'data-action="toggle-location"') === 1, 'Map should show only one stop sharing control when sharing is active');
+
 harness.run("profile = { ...profile, name: 'Tommy Hansen', email: 'stralner2711@gmail.com', role: 'Appansvarlig · Lastbilchauffør', accessRole: 'owner', vehicleType: 'truck' }; openAdminModal();");
 const creatorAdmin = harness.modalNodes.at(-1).innerHTML;
 assert(count(creatorAdmin, 'Medarbejdere ind i appen') === 1, 'Creator admin modal should show onboarding in one place only');

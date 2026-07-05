@@ -78,12 +78,17 @@ function assert(condition, message) {
 }
 
 const harness = createHarness();
+const source = fs.readFileSync('src/app.js', 'utf8');
+
+assert(source.includes('navigator.geolocation.getCurrentPosition(updateLocation'), 'Location sharing should request a first GPS position before waiting for live updates');
 
 harness.run("activeTab = 'map'; render();");
 
+assert(harness.appElement.innerHTML.includes('Kortvarig deling'), 'Live map should explain that sharing here is temporary');
 assert(harness.appElement.innerHTML.includes('Del i 15 min'), 'Live map should offer 15 minute sharing');
 assert(harness.appElement.innerHTML.includes('Del i 30 min'), 'Live map should offer 30 minute sharing');
 assert(harness.appElement.innerHTML.includes('Del i 60 min'), 'Live map should offer 60 minute sharing');
+assert(!harness.appElement.innerHTML.includes('data-action="toggle-location"'), 'Hidden live map should not duplicate the persistent GPS trip sharing button');
 assert(harness.appElement.innerHTML.includes('Sidst opdateret'), 'Live map should show last update text');
 assert(harness.appElement.innerHTML.includes('Status'), 'Live map should show person status labels');
 assert(harness.appElement.innerHTML.includes('Google Maps'), 'Live map should keep working Google Maps links');
@@ -92,11 +97,14 @@ assert(harness.appElement.innerHTML.includes('Kun kollegaer med aktiv deling vis
 
 harness.run('startTimedLocationSharing(30);');
 assert(harness.run('location.sharing') === true, 'Timed sharing should start location sharing');
+assert(Array.isArray(harness.run('location.coords')), 'Timed sharing should set usable coordinates for the map');
+assert(harness.run('visibleMapPeople().some(person => person.id === (session?.userId || currentEmployee().id))') === true, 'Live map should include your own marker when sharing is active');
 assert(harness.run('Boolean(location.expiresAt)') === true, 'Timed sharing should set an expiry time');
 assert(harness.run('location.shareMode') === '30 min', 'Timed sharing should record the selected duration');
 
 harness.run("activeTab = 'map'; render();");
 assert(harness.appElement.innerHTML.includes('Stopper'), 'Active timed sharing should show when it stops');
+assert((harness.appElement.innerHTML.match(/data-action="toggle-location"/g) || []).length === 1, 'Active live map should show one stop sharing button only');
 
 harness.run("enforceLocationExpiry(new Date(new Date(location.expiresAt).getTime() + 1000));");
 assert(harness.run('location.sharing') === false, 'Timed sharing should stop automatically after expiry');

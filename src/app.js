@@ -26,9 +26,9 @@ const icons = {
   search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>',
 };
 
-const APP_VERSION = '1.3.45-release-v105';
-const APP_DISPLAY_VERSION = '1.3.45';
-const APP_VERSION_CODE = 58;
+const APP_VERSION = '1.3.47-release-v107';
+const APP_DISPLAY_VERSION = '1.3.47';
+const APP_VERSION_CODE = 60;
 const TEMPORARY_EMPLOYEE_PASSWORD = 'xpress';
 const IMAGE_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
 const PROFILE_PHOTO_MAX_DIMENSION = 512;
@@ -918,6 +918,7 @@ let pendingStandardSignupInvitationId = '';
 let creatorRoleTester = stored('creatorRoleTester') || { active: false, originalProfile: null, currentRole: null };
 let profile = stored('profile') || (DEMO_MODE ? clone(emptyLocalProfile) : clone(productionProfile));
 let location = { sharing: false, demo: false, speed: 0, points: 0, watchId: null, timer: null, coords: null, startedAt: null, expiresAt: null, lastUpdatedAt: null, shareMode: null };
+const DEFAULT_DEMO_COORDS = [56.1055, 10.0065];
 let activePickup = stored('activePickup');
 let pickupHistory = stored('pickupHistory') || [];
 let mapZoom = 1;
@@ -5193,18 +5194,22 @@ function updateLocation(position) {
   location.lastUpdatedAt = new Date().toISOString();
   syncLogbookDrafts();
   syncSupabaseLocation().catch(error => showToast(`GPS kunne ikke opdateres online: ${error.message}`));
+  if (activeTab === 'map') render({ preserveScroll: true });
 }
 
 function startDemoLocation() {
   if (location.timer) return;
   location.demo = true;
+  location.coords = currentEmployee().coords || location.coords || DEFAULT_DEMO_COORDS;
+  location.lastUpdatedAt = new Date().toISOString();
   location.timer = setInterval(() => {
     location.speed = Math.max(0, Math.round(78 + Math.sin(Date.now() / 2500) * 7));
-    location.coords = currentEmployee().coords;
+    location.coords = currentEmployee().coords || location.coords || DEFAULT_DEMO_COORDS;
     location.points += 1;
     location.lastUpdatedAt = new Date().toISOString();
     syncLogbookDrafts();
     syncSupabaseLocation().catch(() => {});
+    if (activeTab === 'map') render({ preserveScroll: true });
   }, 1000);
 }
 
@@ -5231,6 +5236,9 @@ function startLocationSharing(message = 'Din live-position deles nu med kolleger
   if (!navigator.geolocation) {
     startDemoLocation();
   } else {
+    navigator.geolocation.getCurrentPosition(updateLocation, startDemoLocation, {
+      enableHighAccuracy: true, maximumAge: 3000, timeout: 5000,
+    });
     location.watchId = navigator.geolocation.watchPosition(updateLocation, startDemoLocation, {
       enableHighAccuracy: true, maximumAge: 3000, timeout: 5000,
     });
@@ -5280,7 +5288,7 @@ function renderScreenGuide() {
     home: { title: 'Start her', body: 'Se dagens vigtigste beskeder, opgaver og hurtige handlinger.', action: 'open-notifications', label: 'Tjek beskeder' },
     work: { title: 'Arbejde og tur', body: 'Mød ind, del tur, hent for kollega og gem logbog fra ét roligt sted.', action: workday.active ? 'end-workday' : 'start-workday', label: workday.active ? 'Slut dag' : 'Mød ind' },
     team: { title: 'Find en kollega', body: 'Søg efter navn, bil eller rolle. Profiler viser kun det, kollegaen må dele.', action: 'new-employee', label: 'Registrer kollega', adminOnly: true },
-    map: { title: 'Livekort med frivillig GPS', body: 'Del kun din position når det giver mening. Stop deling når du er færdig.', action: 'toggle-location', label: location.sharing ? 'Stop deling' : 'Del position' },
+    map: { title: 'Livekort med frivillig GPS', body: 'Se kollegaer på kortet og brug kortvarig deling, når nogen skal finde dig.', action: 'open-map', label: 'Åbn kort' },
     chat: { title: 'Beskeder samlet', body: 'Brug fælleschat, din køretøjskanal eller direkte beskeder uden at blande opslag ind.', action: 'new-chat', label: 'Ny besked' },
     info: { title: 'Hurtig information', body: 'Find drift, telefonnumre, regler, dokumenter og praktiske svar fra vejen.', action: 'open-info', label: 'Nød og drift', info: 'operations' },
     more: { title: isCreatorOwner() ? 'Styr appen professionelt' : 'Din konto og privatliv', body: isCreatorOwner() ? 'Tjek drift, rettigheder, Supabase, sikkerhed og de vigtigste styringer.' : 'Ret profil, privatliv, notifikationer og dine egne data.', action: isCreatorOwner() ? 'open-admin' : 'open-profile', label: isCreatorOwner() ? 'Appens drift' : 'Min profil' },
@@ -5644,6 +5652,19 @@ function renderMap() {
   const visiblePeople = visibleMapPeople();
   const statuses = workStatusCounts();
   const sharingLabel = location.sharing ? locationExpiryText() : 'Din position er skjult';
+  const sharingControls = location.sharing
+    ? `<div class="map-sharing-active">
+        <b>Du deler lige nu</b>
+        <span>${text(sharingLabel)}. Stop her, eller styr fast turdeling under Arbejde.</span>
+        <button data-action="toggle-location">Stop deling</button>
+      </div>`
+    : `<div class="map-sharing-help">
+        <b>Kortvarig deling</b>
+        <span>Brug dette når en kollega bare skal kunne finde dig i en kort periode. Fast turdeling styres under Arbejde.</span>
+      </div>
+      <button data-location-duration="15">Del i 15 min</button>
+      <button data-location-duration="30">Del i 30 min</button>
+      <button data-location-duration="60">Del i 60 min</button>`;
   return `
     <div class="page-heading map-heading"><div><p class="eyebrow">Frivillig positionsdeling</p><h2>Live-kort</h2><small>Se kun kollegaer der frivilligt deler position.</small></div></div>
     <section class="map-hero-card map-control-card surface-card">
@@ -5652,7 +5673,6 @@ function renderMap() {
         <h3>${location.sharing ? 'Du deler position' : 'Du er skjult'}</h3>
         <span>${visiblePeople.length} synlige på kortet · ${text(sharingLabel)}</span>
       </div>
-      <button data-action="toggle-location">${location.sharing ? 'Stop deling' : 'Del position'}</button>
     </section>
     <section class="map-quick-controls surface-card">
       <div class="map-filter-row" aria-label="Kortfilter">
@@ -5664,10 +5684,7 @@ function renderMap() {
         ].map(([id, label]) => `<button class="${mapFilter === id ? 'active' : ''}" data-map-filter="${id}">${label}</button>`).join('')}
       </div>
       <div class="map-share-timer">
-        <b>Hurtig deling</b>
-        <button data-location-duration="15">Del i 15 min</button>
-        <button data-location-duration="30">Del i 30 min</button>
-        <button data-location-duration="60">Del i 60 min</button>
+        ${sharingControls}
       </div>
     </section>
     <div class="screen-section-head map-section-head"><span>Kort</span><small>OpenStreetMap med Google Maps-links</small></div>
@@ -5682,7 +5699,6 @@ function renderMap() {
     <section class="map-actions">
       <p class="map-expiry-line">${text(sharingLabel)}</p>
       <div><b>${location.sharing ? 'Din position er synlig' : 'Du er skjult på kortet'}</b><span>${location.sharing ? (location.demo ? 'Lokal GPS-test bruges, fordi rigtig GPS ikke er tilgængelig' : 'Opdateres automatisk fra din GPS') : 'Du bestemmer selv, hvornår kollegaerne kan se dig'}</span></div>
-      <button data-action="toggle-location">${location.sharing ? 'Stop deling' : 'Del position'}</button>
       <small class="map-person-legend">Status · Sidst opdateret</small>
     </section>
     <details class="map-more-section">
@@ -8148,6 +8164,7 @@ document.addEventListener('visibilitychange', () => {
 });
 
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js').catch(() => {});
+
 
 
 

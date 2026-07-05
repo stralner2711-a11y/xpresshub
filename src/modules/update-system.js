@@ -91,10 +91,10 @@ export function rollbackReadiness(info, options = {}) {
     stableUrl,
     recommended,
     currentMarked,
-    label: recommended ? 'Rollback anbefalet' : stableUrl ? 'Backup klar' : 'Klarg?r backup',
+    label: recommended ? 'Rollback anbefalet' : stableUrl ? 'Backup klar' : 'Klargør backup',
     detail: stableUrl
-      ? 'Creator kan ?bne eller installere sidste stabile appversion uden at slette Supabase-data.'
-      : 'Tilf?j stableApkDownloadUrl eller previousStableApkDownloadUrl i version.json for ?n-tryk rollback.',
+      ? 'Creator kan åbne eller installere sidste stabile appversion uden at slette Supabase-data.'
+      : 'Tilføj stableApkDownloadUrl eller previousStableApkDownloadUrl i version.json for én-tryk rollback.',
   };
 }
 

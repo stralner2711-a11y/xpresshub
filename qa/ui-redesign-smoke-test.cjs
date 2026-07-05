@@ -119,7 +119,7 @@ assert(!harness.appElement.innerHTML.includes('screen-guide'), 'Map should not w
 assert(harness.appElement.innerHTML.includes('Frivillig positionsdeling'), 'Map should explain voluntary sharing');
 assert(harness.appElement.innerHTML.includes('map-hero-card'), 'Map should start with a simple GPS status card');
 assert(harness.appElement.innerHTML.includes('map-quick-controls'), 'Map should group filters and quick sharing');
-assert(harness.appElement.innerHTML.includes('Hurtig deling'), 'Map should label sharing controls');
+assert(harness.appElement.innerHTML.includes('Kortvarig deling'), 'Map should label temporary sharing controls');
 assert(harness.appElement.innerHTML.includes('<span>Kort</span>'), 'Map should explain the live map');
 assert(harness.appElement.innerHTML.includes('Synlige kollegaer'), 'Map should label visible colleagues');
 
