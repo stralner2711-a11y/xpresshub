@@ -26,9 +26,9 @@ const icons = {
   search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>',
 };
 
-const APP_VERSION = '1.3.47-release-v107';
-const APP_DISPLAY_VERSION = '1.3.47';
-const APP_VERSION_CODE = 60;
+const APP_VERSION = '1.3.48-release-v108';
+const APP_DISPLAY_VERSION = '1.3.48';
+const APP_VERSION_CODE = 61;
 const TEMPORARY_EMPLOYEE_PASSWORD = 'xpress';
 const IMAGE_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
 const PROFILE_PHOTO_MAX_DIMENSION = 512;
@@ -5194,7 +5194,7 @@ function updateLocation(position) {
   location.lastUpdatedAt = new Date().toISOString();
   syncLogbookDrafts();
   syncSupabaseLocation().catch(error => showToast(`GPS kunne ikke opdateres online: ${error.message}`));
-  if (activeTab === 'map') render({ preserveScroll: true });
+  if (activeTab === 'map') initializeMaps();
 }
 
 function startDemoLocation() {
@@ -5209,7 +5209,7 @@ function startDemoLocation() {
     location.lastUpdatedAt = new Date().toISOString();
     syncLogbookDrafts();
     syncSupabaseLocation().catch(() => {});
-    if (activeTab === 'map') render({ preserveScroll: true });
+    if (activeTab === 'map') initializeMaps();
   }, 1000);
 }
 
@@ -5624,9 +5624,18 @@ async function initializeMaps() {
       fallbackLiveMap(container, people);
       return;
     }
-    if (leafletInstances[container.id]) leafletInstances[container.id].remove();
     const large = container.dataset.large === 'true';
-    const map = leaflet.map(container, { zoomControl: true, attributionControl: true, scrollWheelZoom: large }).setView([55.25, 9.6], large ? 6 : 5);
+    const existingMap = leafletInstances[container.id];
+    const previousView = existingMap
+      ? { center: existingMap.getCenter(), zoom: existingMap.getZoom() }
+      : null;
+    if (existingMap) existingMap.remove();
+    const map = leaflet.map(container, { zoomControl: true, attributionControl: true, scrollWheelZoom: large });
+    if (previousView?.center && typeof previousView.zoom === 'number') {
+      map.setView(previousView.center, previousView.zoom);
+    } else {
+      map.setView([55.25, 9.6], large ? 6 : 5);
+    }
     leafletInstances[container.id] = map;
     leaflet.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 18,
@@ -5643,7 +5652,7 @@ async function initializeMaps() {
       }).addTo(map);
       marker.bindPopup(`<strong>${text(person.name)}</strong><br>${text(vehicleLabel(person.vehicleType))} · ${text(person.status)}<br>${text(person.truck)}`);
     });
-    if (large && people.length) map.fitBounds(people.map(person => person.coords), { padding: [34, 34], maxZoom: 9 });
+    if (large && people.length && !previousView) map.fitBounds(people.map(person => person.coords), { padding: [34, 34], maxZoom: 9 });
     setTimeout(() => map.invalidateSize(), 80);
   });
 }
