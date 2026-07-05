@@ -37,7 +37,7 @@ assert(mainActivity.includes('requestNotificationPermissionOnFirstStart'), 'Andr
 assert(mainActivity.includes('Build.VERSION_CODES.TIRAMISU'), 'Android notification permission should be requested only on Android 13+');
 
 for (const source of [worker, publicWorker]) {
-  assert(source.includes("CACHE_NAME = 'xpressintra-v103-access-approval'"), 'Service worker cache should be bumped for the access approval update');
+  assert(source.includes("CACHE_NAME = 'xpressintra-v109-webapp-polish'"), 'Service worker cache should be bumped for the webapp install update');
   assert(source.includes("self.addEventListener('notificationclick'"), 'Service worker should handle notification clicks');
   assert(source.includes("clients.openWindow"), 'Service worker should open the app from a notification');
 }

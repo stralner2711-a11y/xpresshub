@@ -12,7 +12,7 @@ XpressIntra
 
 ## Version
 
-`1.3.28` / build `41`
+`1.3.49` / build `62`
 
 ## Review notes
 
@@ -22,7 +22,7 @@ The app requires login. Please use the provided test account during review. Loca
 
 ## Testbruger
 
-Udfyld fr upload:
+Udfyld før upload:
 
 - Email:
 - Password:
@@ -30,7 +30,7 @@ Udfyld fr upload:
 
 ## Privacy policy URL
 
-Udfyld fr upload:
+Udfyld før upload:
 
 - URL:
 
@@ -41,4 +41,4 @@ Udfyld fr upload:
 - User Content: chat, opslag, billeder, logbog og opgaver.
 - Identifiers: Supabase Auth-bruger og interne profil-id'er.
 - Usage Data: kun det der faktisk gemmes om opgaver, arbejdsdag og appbrug.
-- Diagnostics: kun hvis der senere tilfjes egentlig crash- eller diagnostiksporing.
+- Diagnostics: kun hvis der senere tilføjes egentlig crash- eller diagnostiksporing.

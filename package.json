@@ -1,7 +1,7 @@
 {
   "name": "xpressintra-employee-app",
   "private": true,
-  "version": "1.3.48",
+  "version": "1.3.49",
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
@@ -15,7 +15,8 @@
     "android:aab": "npm run android:sync && cd android && gradlew.bat bundleRelease",
     "ios:add": "cap add ios",
     "ios:sync": "npm run build && cap sync ios",
-    "ios:open": "cap open ios"
+    "ios:open": "cap open ios",
+    "ios:check": "powershell -ExecutionPolicy Bypass -File \"./tools/ios-readiness-check.ps1\""
   },
   "devDependencies": {
     "@capacitor/android": "^7.0.0",

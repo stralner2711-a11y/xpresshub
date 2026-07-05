@@ -11,7 +11,7 @@ const manifest = fs.readFileSync('android/app/src/main/AndroidManifest.xml', 'ut
 const version = JSON.parse(fs.readFileSync('public/version.json', 'utf8'));
 
 for (const source of [worker, rootWorker]) {
-  assert(source.includes("CACHE_NAME = 'xpressintra-v103-access-approval'"), 'Service worker cache version should be bumped');
+  assert(source.includes("CACHE_NAME = 'xpressintra-v109-webapp-polish'"), 'Service worker cache version should be bumped');
   assert(source.includes("'./index.html'"), 'Service worker should precache index.html');
   assert(!source.includes('indep.html'), 'Service worker should not reference old indep.html fallback');
   assert(!source.includes('ppressbudet'), 'Service worker should not reference misspelled logo file');

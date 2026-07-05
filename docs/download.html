@@ -2,80 +2,89 @@
 <html lang="da">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>XpressIntra download</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#071727" />
+  <title>Installer XpressIntra</title>
   <style>
-    :root { color-scheme: dark; --navy:#071727; --card:#102a3e; --line:#29465c; --amber:#f4a641; --cream:#f7f0df; --muted:#aebbc0; }
+    :root { color-scheme: dark; --navy:#071727; --card:#102a3e; --line:#29465c; --amber:#f4a641; --cream:#f7f0df; --muted:#aebbc0; --green:#78c2a4; }
     * { box-sizing: border-box; }
-    body { margin: 0; min-height: 100vh; font-family: system-ui, -apple-system, Segoe UI, sans-serif; background: radial-gradient(circle at top, #143b55, var(--navy)); color: var(--cream); }
-    main { width: min(760px, 100%); margin: 0 auto; padding: 28px 18px 42px; }
-    .panel { display: grid; gap: 18px; padding: 22px; border: 1px solid var(--line); border-radius: 24px; background: rgba(7,23,39,.88); box-shadow: 0 18px 50px rgba(0,0,0,.28); }
-    img { max-width: 230px; height: auto; background: #fff; border-radius: 10px; padding: 6px; }
-    h1 { margin: 12px 0 0; font-size: clamp(34px, 9vw, 56px); line-height: .95; }
+    body { margin: 0; min-height: 100vh; font-family: system-ui, -apple-system, Segoe UI, sans-serif; background: radial-gradient(circle at top, #16425f, var(--navy)); color: var(--cream); }
+    main { width: min(820px, 100%); margin: 0 auto; padding: max(22px, env(safe-area-inset-top)) 16px 42px; }
+    .panel { display: grid; gap: 18px; padding: 22px; border: 1px solid var(--line); border-radius: 28px; background: rgba(7,23,39,.9); box-shadow: 0 18px 50px rgba(0,0,0,.32); }
+    .top { display: grid; gap: 14px; }
+    img { max-width: 250px; height: auto; background: #fff; border-radius: 12px; padding: 6px; }
+    h1 { margin: 4px 0 0; font-size: clamp(36px, 9vw, 60px); line-height: .94; letter-spacing: -.05em; }
+    h2 { margin: 0; font-size: 22px; }
     p { margin: 0; color: var(--muted); font-size: 16px; line-height: 1.5; }
+    .pill { width: fit-content; padding: 8px 12px; border-radius: 999px; background: rgba(120,194,164,.16); color: var(--green); font-weight: 900; }
     .choice { display: grid; gap: 12px; }
-    .card { display: grid; gap: 6px; padding: 17px; border: 1px solid var(--line); border-radius: 18px; background: var(--card); color: var(--cream); text-decoration: none; }
+    .card { display: grid; gap: 8px; padding: 18px; border: 1px solid var(--line); border-radius: 20px; background: var(--card); color: var(--cream); text-decoration: none; }
     .card.primary { background: linear-gradient(135deg, var(--amber), #ffd27c); color: #39250d; }
-    .card b { font-size: 20px; }
-    .card small { color: inherit; opacity: .82; line-height: 1.4; }
+    .card b { font-size: 22px; }
+    .card small { color: inherit; opacity: .84; line-height: 1.45; }
+    .guide { display: grid; gap: 12px; }
+    .step { display: grid; grid-template-columns: 42px 1fr; gap: 12px; align-items: start; padding: 14px; border-radius: 18px; background: rgba(255,255,255,.065); }
+    .step b { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 50%; background: var(--amber); color: #39250d; }
+    .step span { display: grid; gap: 3px; color: var(--cream); font-weight: 900; }
+    .step small { color: var(--muted); line-height: 1.45; }
     details { border: 1px solid var(--line); border-radius: 18px; background: rgba(255,255,255,.045); overflow: hidden; }
     summary { cursor: pointer; padding: 15px 16px; font-weight: 900; }
-    .steps { display: grid; gap: 10px; padding: 0 16px 16px; }
-    .steps span, .safety { display: grid; gap: 4px; padding: 12px; border-radius: 14px; background: rgba(255,255,255,.065); color: var(--muted); }
-    .steps b { display: inline-grid; width: 26px; height: 26px; place-items: center; margin-right: 8px; border-radius: 50%; background: var(--amber); color: #39250d; }
-    .safety { border-left: 4px solid var(--amber); }
+    .inside { display: grid; gap: 10px; padding: 0 16px 16px; }
+    .safety { display: grid; gap: 5px; padding: 14px; border-left: 4px solid var(--amber); border-radius: 16px; background: rgba(255,255,255,.065); color: var(--muted); }
     .safety b { color: var(--cream); }
+    @media (min-width: 720px) {
+      .choice { grid-template-columns: 1.2fr .8fr; }
+      .guide { grid-template-columns: repeat(3, 1fr); }
+      .step { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
   <main>
     <section class="panel">
-      <img src="./xpressbudet-logo-transparent.png" alt="XpressBudet" />
-      <div>
-        <h1>Hent XpressIntra</h1>
-        <p>Intern medarbejder-app til XpressBudet. Brug webappen på iPhone og pc, eller hent Android APK til Android-telefoner.</p>
+      <div class="top">
+        <img src="./xpressbudet-logo-transparent.png" alt="XpressBudet" />
+        <span class="pill">Intern medarbejder-app</span>
+        <div>
+          <h1>Installer XpressIntra</h1>
+          <p>Én fast side til iPhone, pc og Android. iPhone-brugere installerer webappen på hjemmeskærmen, så den åbner som en app.</p>
+        </div>
       </div>
 
       <section class="choice" aria-label="Vælg enhed">
         <a class="card primary" href="https://xpresshub-seven.vercel.app">
-          <b>iPhone eller pc</b>
-          <small>Åbn webappen. På iPhone kan den lægges på hjemmeskærmen og bruges som en almindelig app.</small>
+          <b>Åbn appen på iPhone eller pc</b>
+          <small>Tryk her først. På iPhone skal siden åbnes i Safari, før den lægges på hjemmeskærmen.</small>
         </a>
-        <a class="card" href="https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.48/xpressintra.apk">
+        <a class="card" href="https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.49/xpressintra.apk">
           <b>Download Android APK</b>
-          <small>Hent den nyeste Android-fil fra GitHub Releases og installer den på telefonen.</small>
+          <small>Kun til Android-telefoner. iPhone kan ikke installere APK-filer.</small>
         </a>
       </section>
 
-      <details open>
-        <summary>iPhone: føj til hjemmeskærm</summary>
-        <div class="steps">
-          <span><b>1</b>Åbn app-linket i Safari.</span>
-          <span><b>2</b>Tryk på Del-knappen nederst i Safari.</span>
-          <span><b>3</b>Vælg Føj til hjemmeskærm, og åbn derefter IntraBudet derfra.</span>
+      <section>
+        <h2>iPhone: sådan får du app-ikonet</h2>
+        <div class="guide">
+          <div class="step"><b>1</b><span>Åbn i Safari<small>Tryk på knappen “Åbn appen på iPhone eller pc”. Brug Safari på iPhone.</small></span></div>
+          <div class="step"><b>2</b><span>Tryk på Del<small>Del-knappen sidder normalt nederst i Safari.</small></span></div>
+          <div class="step"><b>3</b><span>Føj til hjemmeskærm<small>Vælg “Føj til hjemmeskærm”, tryk “Tilføj”, og åbn XpressIntra fra ikonet.</small></span></div>
         </div>
-      </details>
+      </section>
 
       <details>
         <summary>Android: installer APK</summary>
-        <div class="steps">
-          <span><b>1</b>Download APK-filen fra det officielle release-link.</span>
-          <span><b>2</b>Åbn filen på telefonen.</span>
-          <span><b>3</b>Tillad installation fra ukendte kilder, hvis Android spørger.</span>
+        <div class="inside">
+          <div class="step"><b>1</b><span>Download APK<small>Brug kun APK-knappen her på siden.</small></span></div>
+          <div class="step"><b>2</b><span>Åbn filen<small>Android spørger muligvis om tilladelse til installation.</small></span></div>
+          <div class="step"><b>3</b><span>Tillad og installer<small>Tillad installation fra ukendte kilder, hvis Android spørger.</small></span></div>
         </div>
       </details>
 
       <section class="safety">
         <b>Sikkerhed</b>
-        <span>Skriv aldrig adgangskoden andre steder end i XpressIntra. Installer kun APK fra det officielle GitHub-release-link her på siden.</span>
+        <span>Skriv aldrig adgangskoden andre steder end i XpressIntra. iPhone skal bruge Safari/hjemmeskærm, og Android skal kun hente APK fra det officielle link her.</span>
       </section>
     </section>
   </main>
 </body>
 </html>
-
-
-
-
-
-

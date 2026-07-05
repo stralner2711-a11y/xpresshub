@@ -26,9 +26,9 @@ const icons = {
   search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>',
 };
 
-const APP_VERSION = '1.3.48-release-v108';
-const APP_DISPLAY_VERSION = '1.3.48';
-const APP_VERSION_CODE = 61;
+const APP_VERSION = '1.3.49-release-v109';
+const APP_DISPLAY_VERSION = '1.3.49';
+const APP_VERSION_CODE = 62;
 const TEMPORARY_EMPLOYEE_PASSWORD = 'xpress';
 const IMAGE_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
 const PROFILE_PHOTO_MAX_DIMENSION = 512;
@@ -5343,7 +5343,7 @@ function renderLogin() {
     <div class="login-copy"><h1>Godt at se dig.</h1><p>Log ind for at finde kollegaer, dele din position og skrive med holdet.</p></div>
     <div class="pwa-install-card">
       <b>Brug den som app</b>
-      <span>På pc kan browseren installere appen direkte. På iPhone åbner du siden i Safari og vælger Føj til hjemmeskærm.</span>
+      <span>På iPhone åbner du siden i Safari og vælger Føj til hjemmeskærm. På pc kan browseren installere den direkte.</span>
       <button type="button" data-action="install-pwa">${text(pwaInstallLabel())}</button>
     </div>
     <form class="login-form">

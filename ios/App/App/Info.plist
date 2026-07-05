@@ -23,11 +23,11 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
-	<string>XpressIntra bruger kun kameraet, naar du selv tager et billede til profil, chat, opslag, logbog eller opgaver.</string>
+	<string>XpressIntra bruger kun kameraet, når du selv tager et billede til profil, chat, opslag, logbog eller opgaver.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>XpressIntra bruger kun din lokation, naar du selv starter frivillig GPS-deling eller en opgave, hvor position er relevant.</string>
+	<string>XpressIntra bruger kun din lokation, når du selv starter frivillig GPS-deling eller en opgave, hvor position er relevant.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>XpressIntra bruger kun adgang til billeder, naar du selv vaelger et billede til profil, chat, opslag, logbog eller opgaver.</string>
+	<string>XpressIntra bruger kun adgang til billeder, når du selv vælger et billede til profil, chat, opslag, logbog eller opgaver.</string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
