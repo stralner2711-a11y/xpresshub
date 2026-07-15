@@ -16,7 +16,8 @@ assert(app.includes('globalThis.XpressIntraMedia.resizeImageFile'), 'App should 
 assert(mediaModule.includes('export function isSupportedImageFile'), 'Media module should own supported image validation');
 assert(mediaModule.includes('export function resizeImageFile'), 'Media module should own image resizing');
 assert(mediaModule.includes('globalThis.XpressIntraMedia'), 'Media module should expose a browser-compatible global for the legacy app shell');
-assert(app.includes("readImageFile(data.get('photo'), { kind: 'profile' })"), 'Profile save should use profile-specific image handling');
+assert(app.includes("await readImageFile(photoFile, { kind: 'profile' })"), 'Profile save should use profile-specific image handling');
+assert(app.includes('await uploadSupabaseProfilePhoto(photoFile, preparedPhoto)'), 'Prepared profile photos should be uploaded to the protected media store');
 assert(app.includes('class="profile-photo-field"'), 'Profile form should show a clear photo upload area');
 assert(app.includes('data-profile-photo-preview'), 'Profile form should include a preview target');
 assert(app.includes("input.matches('input[name=\"photo\"]')"), 'Profile photo input should preview immediately when changed');

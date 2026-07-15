@@ -45,6 +45,7 @@ function createHarness(session = true) {
     console,
     document,
     window: {
+      XPRESSINTRA_DEMO_MODE: true,
       addEventListener() {},
       scrollTo() {},
       matchMedia() { return { matches: false, addEventListener() {}, removeEventListener() {} }; },
@@ -82,7 +83,7 @@ const source = fs.readFileSync('src/app.js', 'utf8');
 
 assert(source.includes('navigator.geolocation.getCurrentPosition(updateLocation'), 'Location sharing should request a first GPS position before waiting for live updates');
 assert(source.includes("if (activeTab === 'map') initializeMaps();"), 'GPS updates on the map should refresh markers without rebuilding the full screen');
-assert(source.includes('large && people.length && !previousView'), 'Leaflet should only auto-fit the map before the user has an existing view');
+assert(source.includes('large && people.length && isNewMap'), 'Leaflet should only auto-fit a newly created map');
 assert(!source.includes("if (activeTab === 'map') render({ preserveScroll: true });"), 'GPS updates should not repeatedly re-render the map screen');
 
 harness.run("activeTab = 'map'; render();");

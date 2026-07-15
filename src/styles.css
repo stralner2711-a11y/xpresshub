@@ -662,7 +662,7 @@ h3 { margin-bottom: 0; font-family: Manrope, sans-serif; font-size: 15px; }
 .profile-modal .place-picker input { margin-top: 0; }
 .place-picker button { padding: 0 9px; border: 0; border-radius: 7px; background: var(--amber); color: #38250c; font-size: 10px; font-weight: 900; white-space: nowrap; }
 .log-entry-form label > small { display: block; margin-top: 5px; color: #687172; font-size: 10px; font-weight: 500; letter-spacing: 0; line-height: 1.35; text-transform: none; }
-.login-shell { width: min(100vw, 430px); min-height: 100vh; padding: 42px 24px; background: var(--navy); }
+.login-shell { width: min(100vw, 430px); min-height: 100vh; padding: max(28px, env(safe-area-inset-top)) 24px calc(34px + env(safe-area-inset-bottom)); background: var(--navy); }
 .launch-splash {
   position: fixed;
   inset: 0;
@@ -954,12 +954,12 @@ h3 { margin-bottom: 0; font-family: Manrope, sans-serif; font-size: 15px; }
   100% { opacity: 0; transform: scaleX(1.8); }
 }
 .login-brand small { display: block; margin-top: 7px; color: var(--muted); font-size: 10px; letter-spacing: 1.2px; text-transform: uppercase; }
-.login-copy { margin-top: 110px; }.login-copy h1 { margin: 0 0 9px; font-family: Manrope,sans-serif; font-size: 34px; letter-spacing: -1.5px; }.login-copy p { color: var(--muted); font-size: 14px; line-height: 1.6; }
-.pwa-install-card { display: grid; gap: 8px; margin-top: 20px; padding: 12px; border: 1px solid rgba(244,166,65,.28); border-radius: 8px; background: rgba(255,255,255,.06); }
+.login-copy { margin-top: clamp(44px, 10vh, 88px); }.login-copy h1 { margin: 0 0 9px; font-family: Manrope,sans-serif; font-size: 36px; letter-spacing: -1.5px; }.login-copy p { color: var(--muted); font-size: 16px; line-height: 1.55; }
+.pwa-install-card { display: grid; gap: 8px; margin-top: 22px; padding: 15px; border: 1px solid rgba(244,166,65,.28); border-radius: 14px; background: rgba(255,255,255,.06); }
 .pwa-install-card b, .pwa-install-card span { display: block; }
-.pwa-install-card b { color: var(--cream); font-size: 12px; }
-.pwa-install-card span { color: var(--muted); font-size: 11px; line-height: 1.45; }
-.pwa-install-card button { min-height: 40px; padding: 11px; border: 0; border-radius: 8px; background: var(--green); color: #062319; font-size: 12px; font-weight: 900; }
+.pwa-install-card b { color: var(--cream); font-size: 15px; }
+.pwa-install-card span { color: var(--muted); font-size: 13px; line-height: 1.5; }
+.pwa-install-card button { min-height: 48px; padding: 12px; border: 0; border-radius: 12px; background: var(--green); color: #062319; font-size: 14px; font-weight: 900; }
 .install-help-modal { display: grid; gap: 12px; }
 .install-help-modal p { margin: 0; color: #687172; font-size: 11px; line-height: 1.5; }
 .install-help-steps { display: grid; gap: 8px; }
@@ -968,13 +968,15 @@ h3 { margin-bottom: 0; font-family: Manrope, sans-serif; font-size: 15px; }
 .install-help-steps b { color: var(--ink); font-size: 11px; }
 .install-help-steps small { margin-top: 4px; color: #687172; font-size: 10px; line-height: 1.4; }
 .install-help-modal > button:not(.modal-close) { min-height: 40px; border: 0; border-radius: 8px; background: var(--amber); color: #38250c; font-size: 11px; font-weight: 900; }
-.login-form { display: grid; gap: 13px; margin-top: 31px; }
-.login-form label { color: var(--cream-2); font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
-.login-form input { width: 100%; margin-top: 6px; padding: 13px; border: 1px solid var(--line); border-radius: 8px; outline: 0; background: #102a3e; color: var(--cream); font-size: 13px; }
+.login-form { display: grid; gap: 14px; margin-top: 28px; }
+.login-form label { color: var(--cream-2); font-size: 12px; font-weight: 800; letter-spacing: .8px; text-transform: uppercase; }
+.login-form input { width: 100%; min-height: 54px; margin-top: 7px; padding: 14px; border: 1px solid var(--line); border-radius: 12px; outline: 0; background: #102a3e; color: var(--cream); font-size: 16px; }
 .login-form input:focus { border-color: rgba(244,166,65,.75); }
-.login-form button { margin-top: 5px; padding: 13px; border: 0; border-radius: 8px; background: var(--amber); color: #38250c; font-size: 13px; font-weight: 800; }
+.login-form button { min-height: 54px; margin-top: 3px; padding: 13px; border: 0; border-radius: 12px; background: var(--amber); color: #38250c; font-size: 16px; font-weight: 900; }
 .login-form button.login-secondary { margin-top: -4px; border: 1px solid rgba(244,166,65,.45); background: transparent; color: var(--amber); }
-.login-form span { color: var(--muted); font-size: 10px; line-height: 1.5; text-align: center; }
+.login-form span { color: var(--muted); font-size: 13px; line-height: 1.5; text-align: center; }
+.login-error { margin: -2px 0 0; padding: 12px 13px; border-left: 4px solid #ff8c70; border-radius: 10px; background: rgba(255,140,112,.12); color: #ffd9cf; font-size: 14px; font-weight: 700; line-height: 1.45; }
+.login-error[hidden] { display: none; }
 .backend-status { display: grid; gap: 3px; margin-top: 24px; padding: 11px; border-left: 3px solid var(--amber); border-radius: 9px; background: rgba(244,166,65,.1); }
 .backend-status.online { border-left-color: var(--green); background: rgba(117,182,154,.12); }
 .backend-status b { color: var(--cream); font-size: 12px; }
@@ -1304,7 +1306,7 @@ h3 { margin-bottom: 0; font-family: Manrope, sans-serif; font-size: 15px; }
 .leaflet-map { height: 230px; border-radius: 18px; border-color: rgba(244,166,65,.34); box-shadow: 0 18px 36px rgba(0,0,0,.22); }
 .leaflet-map-large { height: min(520px, 58vh); min-height: 360px; }
 .leaflet-map::after {
-  content: "Orange: Lastbil   Gron: Varebil   Bla: Dig";
+  content: "Orange: Lastbil   Grøn: Varebil   Blå: Dig";
   position: absolute;
   right: 10px;
   bottom: 10px;
@@ -1496,7 +1498,7 @@ h3 { margin-bottom: 0; font-family: Manrope, sans-serif; font-size: 15px; }
   line-height: 1.2;
 }
 .map-quick-controls .map-share-timer button {
-  min-height: 44px;
+  min-height: 48px;
   padding: 8px 7px;
   border: 1px solid rgba(244,166,65,.24);
   background: rgba(244,166,65,.13);
@@ -1791,5 +1793,150 @@ h3 { margin-bottom: 0; font-family: Manrope, sans-serif; font-size: 15px; }
   .info-card-link strong {
     grid-column: 2;
     justify-self: start;
+  }
+}
+
+/* Stabiliseringsrunde: tydeligere tekst, sikre trykflader og roligere pc-layout. */
+.round-btn,
+.favorite-info-btn,
+.contact-quick-card .screen-section-head button {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.screen-guide span,
+.work-hero span,
+.home-clean-hero span,
+.home-main-actions small,
+.quick-action-rail.simplified small,
+.status-chip small,
+.chat-overview-panel small,
+.chat-copy small,
+.community-chat em,
+.channel-card small,
+.employee-copy small,
+.employee-place,
+.utility-row small,
+.profile-card small,
+.info-simple-actions small,
+.info-emergency-strip small,
+.info-choice-grid small,
+.info-contact-preview a small,
+.info-topic-list summary small,
+.info-topic-list small,
+.info-focus-grid small,
+.info-card-link small,
+.info-row small,
+.info-command-card p,
+.fast-answer-panel p,
+.country-guide-panel p,
+.favorite-info-panel p,
+.source-note {
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.work-status-strip span,
+.work-status-strip small,
+.map-status-card span,
+.map-legend-panel span,
+.map-legend-panel small,
+.map-person-legend,
+.contact-directory small,
+.contact-directory em,
+.quick-guide-card em,
+.quick-guide-card small,
+.quick-guide-card strong {
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.info-results-head button,
+.screen-section-head button,
+.open-info-link,
+.info-card-link strong {
+  font-size: 12px;
+}
+
+@media (min-width: 900px) {
+  .phone-shell.desktop-view-full .topbar > *,
+  .phone-shell.desktop-view-full .content > * {
+    width: min(100%, 1180px);
+    margin-right: auto;
+    margin-left: auto;
+  }
+
+  .phone-shell.desktop-view-full .content {
+    padding-inline: clamp(30px, 5vw, 72px);
+  }
+
+  .phone-shell.desktop-view-full .home-main-actions,
+  .phone-shell.desktop-view-full .quick-action-rail.simplified,
+  .phone-shell.desktop-view-full .info-choice-grid,
+  .phone-shell.desktop-view-full .work-primary-grid {
+    gap: 16px;
+  }
+
+  .phone-shell.desktop-view-full .home-main-actions button,
+  .phone-shell.desktop-view-full .quick-action-rail.simplified button,
+  .phone-shell.desktop-view-full .work-primary-grid button {
+    min-height: 104px;
+  }
+}
+
+.favorite-info-btn .icon {
+  width: 18px;
+  height: 18px;
+}
+
+.modal-close {
+  width: 48px;
+  min-width: 48px;
+  height: 48px;
+  min-height: 48px;
+  display: grid;
+  place-items: center;
+}
+
+.admin-stats small,
+.creator-ops-grid small,
+.creator-ops-missing small {
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+.permission-grid small,
+.creator-ops-hero span,
+.creator-ops-checks small,
+.creator-ops-panel p,
+.creator-ops-panel > button small,
+.creator-ops-privacy span {
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.admin-actions button,
+.creator-ops-actions button,
+.creator-ops-shortcuts button,
+.creator-ops-role-test button {
+  min-height: 48px;
+  font-size: 11px;
+}
+
+.creator-ops-checks b,
+.creator-ops-panel > button b,
+.creator-ops-missing b {
+  font-size: 12px;
+}
+
+@media (min-width: 900px) {
+  .modal-backdrop {
+    place-items: center;
+    padding: 24px;
+  }
+
+  .profile-modal.admin-modal {
+    width: min(760px, calc(100vw - 48px));
+    border-radius: 20px;
   }
 }

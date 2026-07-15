@@ -113,7 +113,15 @@ if (Test-Path -LiteralPath $apkPath) {
   Pass "Lokal APK findes: $apkPath"
   $aapt = $aaptCandidates | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
   if ($aapt) {
-    $badging = Invoke-Checked $aapt @('dump', 'badging', $apkPath)
+    # Androids aapt2 paa Windows kan ikke altid laese stier med danske tegn.
+    # Brug derfor en kort ASCII-sti til selve versionskontrollen.
+    $inspectionApk = Join-Path $env:TEMP ("xpressintra-apk-check-" + [guid]::NewGuid().ToString('N') + '.apk')
+    Copy-Item -LiteralPath $apkPath -Destination $inspectionApk -Force
+    try {
+      $badging = Invoke-Checked $aapt @('dump', 'badging', $inspectionApk)
+    } finally {
+      Remove-Item -LiteralPath $inspectionApk -Force -ErrorAction SilentlyContinue
+    }
     if ($badging.Code -eq 0) {
       $line = ($badging.Output -split "`n" | Where-Object { $_ -match '^package:' } | Select-Object -First 1)
       if ($line -match "versionCode='(\d+)'\s+versionName='([^']+)'") {

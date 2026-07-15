@@ -291,7 +291,7 @@ function assert(condition, message) {
   assert(harness.updates.some(item => item.table === 'workday_sessions' && item.row.status === 'auto_ended'), 'Ending workday should update the online workday session');
 
   harness.run("activePickup = { employeeId: '11111111-1111-4111-8111-111111111111', note: 'Hent palle i Kolding', duration: '30', pickupPlace: 'Kolding terminal', dropoffPlace: 'Hasselager', reference: 'REF-42', priority: 'Haster', status: 'started', checklist: pickupChecklistItems().map(item => ({ ...item, done: item.id === 'route' })), steps: [{ status: 'started', at: '2026-05-31T10:20:00Z' }], expiresAt: '2099-05-31T10:50:00Z', startedAt: '2026-05-31T10:20:00Z', startedLocationSharing: true }");
-  await harness.run('createSupabasePickupTask()');
+  await harness.run('createSupabasePickupTask(activePickup).then(task => { activePickup = task; })');
   assert(harness.insertedRows.some(item => item.table === 'pickup_tasks' && item.row.driver_id === 'user-1' && item.row.colleague_id === '11111111-1111-4111-8111-111111111111' && item.row.expires_at === '2099-05-31T10:50:00Z'), 'Starting a pickup task should create an online task with expiry and colleague access');
   assert(harness.run("activePickup.id") === 'pickup-1', 'Created online pickup task should store its Supabase id locally');
   await harness.run("updatePickupStatus('found')");

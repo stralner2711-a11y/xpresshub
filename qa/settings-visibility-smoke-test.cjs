@@ -73,11 +73,13 @@ assert(employeeSettings.includes('Når jeg møder ind') || employeeSettings.incl
 harness.run("profile = { ...profile, name: 'Tommy Hansen', email: 'stralner2711@gmail.com', accessRole: 'owner', role: 'Appansvarlig · Lastbilchauffør' }; openSettingsModal();");
 const creatorSettings = harness.modalNodes.at(-1).innerHTML;
 
-assert(creatorSettings.includes('Supabase URL'), 'Creator settings should show Supabase URL field');
-assert(creatorSettings.includes('Offentlig anon key'), 'Creator settings should show public key field');
+assert(!creatorSettings.includes('Supabase URL'), 'Creator settings should not allow the deployed backend URL to be changed on a phone');
+assert(!creatorSettings.includes('Offentlig anon key'), 'Creator settings should not expose an editable backend key field');
+assert(creatorSettings.includes('Online backend:'), 'Creator settings should show backend connection status');
 assert(creatorSettings.includes('Test Supabase-forbindelse'), 'Creator settings should show Supabase diagnostics');
 const appSource = fs.readFileSync('src/app.js', 'utf8').replace(/\r\n/g, '\n');
-assert(appSource.includes('if (isCreatorOwner()) {\n      if (nextConfig.url || nextConfig.anonKey)'), 'Only creator should be able to change stored Supabase config from settings');
+assert(!appSource.includes("data.get('supabaseUrl')"), 'Settings should not override the deployed Supabase URL');
+assert(!appSource.includes("data.get('supabaseAnonKey')"), 'Settings should not override the deployed Supabase key');
 
 console.log('Settings visibility smoke test passed');
 

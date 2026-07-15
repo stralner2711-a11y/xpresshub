@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="da">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#071727" />
+    <meta name="format-detection" content="telephone=no" />
+    <title>XpressIntra lokal QA</title>
+    <link rel="stylesheet" href="/src/styles.css" />
+  </head>
+  <body>
+    <main id="app"></main>
+    <script>
+      window.XPRESSINTRA_DEMO_MODE = true;
+      if (new URLSearchParams(window.location.search).get('role') === 'creator') {
+        localStorage.setItem('roadlog:session', JSON.stringify({
+          email: 'creator@xpressintra.local',
+          mode: 'demo',
+          userId: 'qa-creator',
+        }));
+        localStorage.setItem('roadlog:profile', JSON.stringify({
+          id: 'qa-creator',
+          name: 'QA Creator',
+          email: 'creator@xpressintra.local',
+          initials: 'QC',
+          role: 'Appansvarlig · Lastbilchauffør',
+          accessRole: 'owner',
+          vehicleType: 'truck',
+          truck: 'Lastbil',
+          department: 'Lastbil',
+          employmentStatus: 'active',
+          logbook: true,
+        }));
+      }
+    </script>
+    <script type="module" src="/src/lib/runtime-deps.js"></script>
+    <script type="module" src="/src/modules/update-system.js"></script>
+    <script type="module" src="/src/modules/auth.js"></script>
+    <script type="module" src="/src/modules/leaflet-loader.js"></script>
+    <script type="module" src="/src/modules/media.js"></script>
+    <script type="module" src="/src/modules/supabase-client.js"></script>
+    <script type="module" src="/src/modules/chat.js"></script>
+    <script type="module" src="/src/modules/workday-logbook.js"></script>
+    <script type="module" src="/src/modules/info-center.js"></script>
+    <script type="module" src="/src/app.js"></script>
+  </body>
+</html>

@@ -77,7 +77,7 @@ assert(!harness.appElement.innerHTML.includes('Creator test'), 'Employees should
 harness.run("profile = { ...profile, email: 'stralner2711@gmail.com', accessRole: 'owner', role: 'Appansvarlig · Lastbilchauffør', vehicleType: 'truck' }; activeTab = 'more'; render();");
 assert(harness.appElement.innerHTML.includes('Creator test'), 'Creator should see role tester');
 assert(harness.appElement.innerHTML.includes('Appansvarlig'), 'Role tester should include app responsible perspective');
-assert(harness.appElement.innerHTML.includes('Lastbilchauffor'), 'Role tester should include truck perspective');
+assert(harness.appElement.innerHTML.includes('Lastbilchauffør'), 'Role tester should include truck perspective');
 assert(harness.appElement.innerHTML.includes('Chef/admin'), 'Role tester should include admin perspective');
 
 harness.run("profile = { ...profile, email: 'stralner2711@gmail.com', accessRole: 'owner', role: 'Appansvarlig · Lastbilchauffør', vehicleType: 'truck', department: 'Lastbil', license: 'C/E · EU kvalifikationsbevis' }; activeTab = 'chat'; activeChat = null; render();");

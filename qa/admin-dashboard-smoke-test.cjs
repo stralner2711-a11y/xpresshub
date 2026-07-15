@@ -40,6 +40,7 @@ function createHarness() {
     console,
     document,
     window: {
+      XPRESSINTRA_DEMO_MODE: true,
       location: { href: 'https://xpresshub-seven.vercel.app/', origin: 'https://xpresshub-seven.vercel.app' },
       addEventListener() {},
       scrollTo() {},
@@ -101,7 +102,7 @@ assert(!modal.innerHTML.includes('Godmorgen Tommy. Din næste aflæsning'), 'Adm
 harness.run("employees = employees.map(employee => employee.id === 'ma' ? { ...employee, employmentStatus: 'offboarded', status: 'Deaktiveret', online: false, sharing: false } : employee); openAdminModal();");
 const offboardedModal = harness.modalNodes.at(-1);
 assert(offboardedModal.innerHTML.includes('Aktivér igen'), 'Offboarded employees should be possible to reactivate from admin employees tab');
-assert(offboardedModal.innerHTML.includes('Slet helt'), 'Offboarded employees should still be possible to delete permanently from admin employees tab');
+assert(!offboardedModal.innerHTML.includes('Slet helt'), 'Offboarded employees should be retained for audit/GDPR instead of being hard-deleted in the app');
 assert(offboardedModal.innerHTML.includes('employee-action-pair'), 'Offboarded employee actions should be visually grouped');
 harness.run("employees = employees.map(employee => employee.id === 'ma' ? { ...employee, employmentStatus: 'paused', status: 'Afventer godkendelse' } : employee); openAdminModal();");
 const pendingModal = harness.modalNodes.at(-1);
@@ -116,8 +117,8 @@ harness.run("employees = employees.map(employee => employee.id === 'ma' ? { ...e
 assert(harness.run("employees.find(employee => employee.id === 'ma').employmentStatus") === 'offboarded', 'Rejecting an access request should close access by offboarding the profile');
 assert(harness.run("adminAuditEvents.some(event => event.title === 'Adgang afvist')") === true, 'Rejecting an access request should write an admin audit event');
 harness.run("employees = employees.map(employee => employee.id === 'ma' ? { ...employee, employmentStatus: 'offboarded', status: 'Deaktiveret' } : employee); removeEmployee('ma');");
-assert(harness.run("employees.some(employee => employee.id === 'ma')") === false, 'Removing an already offboarded employee should delete it from the local employee list');
-assert(harness.run("adminAuditEvents.some(event => event.title === 'Medarbejder fjernet')") === true, 'Deleting an offboarded employee should write an admin audit event');
+assert(harness.run("employees.some(employee => employee.id === 'ma')") === true, 'Offboarded employees should remain available for audit and reactivation');
+assert(harness.run("employees.find(employee => employee.id === 'ma').employmentStatus") === 'offboarded', 'Repeated removal should leave the employee safely offboarded');
 
 assert(!modal.innerHTML.includes('Appens drift'), 'Normal admin should not see creator-only operations panel');
 

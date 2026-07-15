@@ -42,6 +42,7 @@ function createHarness() {
     console,
     document,
     window: {
+      XPRESSINTRA_DEMO_MODE: true,
       location: { href: 'https://xpresshub-seven.vercel.app/', origin: 'https://xpresshub-seven.vercel.app' },
       addEventListener() {},
       scrollTo() {},

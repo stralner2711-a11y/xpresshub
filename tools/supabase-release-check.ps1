@@ -126,8 +126,8 @@ if ($schema -notmatch 'function private\.protect_profile_security_fields\(\)' -o
 if ($schema -match 'function public\.(is_admin|is_dispatcher_or_admin|is_conversation_member|can_read_conversation|can_access_conversation)') {
   Fail "schema.sql maa ikke oprette offentlige RLS-hjaelpefunktioner"
 }
-if ($fullSetup -notmatch 'drop schema if exists private cascade' -or $fullSetup -notmatch 'function private\.is_admin\(\)') {
-  Fail "Fuld Supabase SQL mangler reset/oprettelse af private RLS-hjaelpefunktioner"
+if ($fullSetup -notmatch 'create schema if not exists private' -or $fullSetup -notmatch 'function private\.is_admin\(\)') {
+  Fail "Fuld Supabase SQL mangler oprettelse af private RLS-hjaelpefunktioner"
 }
 foreach ($requiredText in @('password_reset_required', 'onboarding_method', 'standard_password', 'invitation_id', 'expires_at', 'used_by', "else 'paused'")) {
   if ($schema -notmatch [regex]::Escape($requiredText)) {

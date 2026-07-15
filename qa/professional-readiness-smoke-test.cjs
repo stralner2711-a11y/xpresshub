@@ -11,7 +11,7 @@ const manifest = fs.readFileSync('android/app/src/main/AndroidManifest.xml', 'ut
 const version = JSON.parse(fs.readFileSync('public/version.json', 'utf8'));
 
 for (const source of [worker, rootWorker]) {
-  assert(source.includes("CACHE_NAME = 'xpressintra-web-login-sync-v110'"), 'Service worker cache version should be bumped');
+  assert(source.includes(`CACHE_NAME = 'xpressintra-release-v${version.activeVersionCode}'`), 'Service worker cache should match the active release build');
   assert(source.includes("'./index.html'"), 'Service worker should precache index.html');
   assert(!source.includes('indep.html'), 'Service worker should not reference old indep.html fallback');
   assert(!source.includes('ppressbudet'), 'Service worker should not reference misspelled logo file');
@@ -36,7 +36,8 @@ assert(!manifest.includes('WRITE_EXTERNAL_STORAGE'), 'Legacy write storage permi
 assert(app.includes(`const APP_DISPLAY_VERSION = '${version.activeVersion}'`), 'App version should be visible in code');
 assert(app.includes(`const APP_DISPLAY_VERSION = '${version.activeVersion}'`), 'APK display version should be visible in code');
 assert(app.includes(`const APP_VERSION_CODE = ${version.activeVersionCode}`), 'APK version code should be visible in code');
-assert(app.includes('!hasSupabaseConfigForMode && storedSessionForMode'), 'Demo mode should not override a configured production backend');
+assert(app.includes('const DEMO_MODE = Boolean(window.XPRESSINTRA_DEMO_MODE)'), 'Demo mode should require an explicit test flag in the browser');
+assert(app.includes('return !DEMO_MODE && Boolean(getSupabaseClient());'), 'Demo mode should never write through the production backend');
 
 console.log('Professional readiness smoke test passed');
 

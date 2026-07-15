@@ -1,4 +1,4 @@
-const CACHE_NAME = 'xpressintra-web-login-sync-v110';
+const CACHE_NAME = 'xpressintra-release-v65';
 const APP_FILES = [
   './',
   './index.html',

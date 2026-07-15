@@ -63,7 +63,7 @@ create table if not exists public.employee_invitations (
   languages text,
   emergency_contact text,
   logbook_enabled boolean not null default false,
-  onboarding_method text not null default 'standard_password' check (onboarding_method in ('standard_password', 'manual')),
+  onboarding_method text not null default 'invite_link' check (onboarding_method in ('invite_link', 'access_request', 'standard_password', 'manual')),
   password_reset_required boolean not null default true,
   status text not null default 'pending' check (status in ('pending', 'accepted', 'cancelled')),
   expires_at timestamptz not null default (now() + interval '14 days'),
@@ -77,11 +77,19 @@ alter table public.profiles
 
 alter table public.employee_invitations
   alter column role set default 'Chauffør',
-  add column if not exists onboarding_method text not null default 'standard_password' check (onboarding_method in ('standard_password', 'manual')),
+  add column if not exists onboarding_method text not null default 'invite_link' check (onboarding_method in ('invite_link', 'access_request', 'standard_password', 'manual')),
   add column if not exists password_reset_required boolean not null default true,
   add column if not exists expires_at timestamptz not null default (now() + interval '14 days'),
   add column if not exists accepted_at timestamptz,
   add column if not exists used_by uuid references public.profiles(id) on delete set null;
+
+alter table public.employee_invitations
+  alter column onboarding_method set default 'invite_link';
+alter table public.employee_invitations
+  drop constraint if exists employee_invitations_onboarding_method_check;
+alter table public.employee_invitations
+  add constraint employee_invitations_onboarding_method_check
+  check (onboarding_method in ('invite_link', 'access_request', 'standard_password', 'manual'));
 
 create table if not exists public.core_settings (
   key text primary key,
@@ -123,6 +131,24 @@ create table if not exists public.data_subject_requests (
   handled_at timestamptz
 );
 
+create table if not exists public.support_requests (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  request_type text not null check (request_type in ('bug', 'idea', 'design', 'content')),
+  area text not null,
+  message text not null check (length(message) between 1 and 4000),
+  app_version text,
+  route text,
+  status text not null default 'open' check (status in ('open', 'in_review', 'completed', 'rejected')),
+  handled_by uuid references public.profiles(id) on delete set null,
+  handled_note text,
+  handled_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists support_requests_created_at_idx on public.support_requests (created_at desc);
+create index if not exists support_requests_status_idx on public.support_requests (status, created_at desc);
+
 create table if not exists public.vehicles (
   id uuid primary key default gen_random_uuid(),
   unit text not null,
@@ -158,8 +184,31 @@ create table if not exists public.notification_preferences (
   quiet_hours boolean not null default true,
   quiet_start time not null default '19:00',
   quiet_end time not null default '06:00',
+  work_gps boolean not null default true,
+  work_logbook boolean not null default true,
+  work_notifications boolean not null default true,
+  location_audience text not null default 'all' check (location_audience in ('all', 'truck', 'van', 'none')),
+  show_speed boolean not null default false,
+  show_vehicle boolean not null default true,
+  show_status boolean not null default true,
   updated_at timestamptz not null default now()
 );
+
+alter table public.notification_preferences
+  add column if not exists work_gps boolean not null default true,
+  add column if not exists work_logbook boolean not null default true,
+  add column if not exists work_notifications boolean not null default true,
+  add column if not exists location_audience text not null default 'all',
+  add column if not exists show_speed boolean not null default false,
+  add column if not exists show_vehicle boolean not null default true,
+  add column if not exists show_status boolean not null default true;
+
+do $$ begin
+  alter table public.notification_preferences
+    add constraint notification_preferences_location_audience_check
+    check (location_audience in ('all', 'truck', 'van', 'none'));
+exception when duplicate_object then null;
+end $$;
 
 create table if not exists public.location_shares (
   user_id uuid primary key references public.profiles(id) on delete cascade,
@@ -176,8 +225,7 @@ create table if not exists public.location_shares (
   share_mode text not null default 'manual' check (share_mode in ('manual', 'workday', 'manuel', 'arbejdsdag', '15 min', '30 min', '60 min', 'pickup')),
   expires_at timestamptz,
   last_updated_at timestamptz not null default now(),
-  check (visibility = 'team' or visible_to_user_id is not null),
-  shared_at timestamptz not null default now()
+  check (visibility = 'team' or visible_to_user_id is not null)
 );
 
 alter table public.location_shares
@@ -384,13 +432,48 @@ alter table public.regulatory_updates
 alter table public.regulatory_updates
   add column if not exists content_hash text;
 
+alter table public.regulatory_updates
+  add column if not exists source_id bigint;
+
+alter table public.regulatory_updates
+  add column if not exists effective_date date;
+
+insert into public.regulatory_sources (title, source_url, audience, topic)
+values ('Færdselsstyrelsen · transportregler', 'https://www.fstyr.dk/erhverv/gods-bus-og-varebil', 'all', 'transport')
+on conflict (source_url) do nothing;
+
+update public.regulatory_updates
+set source_id = (
+  select id from public.regulatory_sources
+  where source_url = 'https://www.fstyr.dk/erhverv/gods-bus-og-varebil'
+)
+where source_id is null;
+
+alter table public.regulatory_updates
+  alter column source_id set not null;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conrelid = 'public.regulatory_updates'::regclass
+      and contype = 'f'
+      and conname = 'regulatory_updates_source_id_fkey'
+  ) then
+    alter table public.regulatory_updates
+      add constraint regulatory_updates_source_id_fkey
+      foreign key (source_id) references public.regulatory_sources(id) on delete cascade;
+  end if;
+end $$;
+
 create index if not exists messages_conversation_created_idx on public.messages (conversation_id, created_at desc);
 create index if not exists media_attachments_owner_created_idx on public.media_attachments (owner_id, created_at desc);
 create index if not exists media_attachments_message_idx on public.media_attachments (message_id);
 create index if not exists media_attachments_announcement_idx on public.media_attachments (announcement_id);
 create index if not exists private_log_entries_user_created_idx on public.private_log_entries (user_id, created_at desc);
 create index if not exists private_log_entries_user_source_idx on public.private_log_entries (user_id, source, created_at desc);
-create index if not exists location_shares_shared_at_idx on public.location_shares (shared_at desc);
+create index if not exists location_shares_last_updated_at_idx on public.location_shares (last_updated_at desc);
 create index if not exists workday_sessions_user_started_idx on public.workday_sessions (user_id, started_at desc);
 create index if not exists pickup_tasks_status_started_idx on public.pickup_tasks (status, started_at desc);
 create index if not exists vehicles_assigned_driver_idx on public.vehicles (assigned_driver_id);
@@ -427,6 +510,7 @@ alter table public.core_settings enable row level security;
 alter table public.legal_acceptances enable row level security;
 alter table public.retention_policies enable row level security;
 alter table public.data_subject_requests enable row level security;
+alter table public.support_requests enable row level security;
 alter table public.vehicles enable row level security;
 alter table public.notifications enable row level security;
 alter table public.notification_preferences enable row level security;
@@ -437,6 +521,19 @@ drop function if exists public.is_conversation_member(uuid) cascade;
 drop function if exists public.is_dispatcher_or_admin() cascade;
 drop function if exists public.is_admin() cascade;
 
+create or replace function private.is_active_employee()
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select exists (
+    select 1 from public.profiles
+    where id = auth.uid() and employment_status = 'active'
+  );
+$$;
+
 create or replace function private.is_admin()
 returns boolean
 language sql
@@ -446,7 +543,9 @@ stable
 as $$
   select exists (
     select 1 from public.profiles
-    where id = auth.uid() and access_role in ('admin', 'owner')
+    where id = auth.uid()
+      and access_role in ('admin', 'owner')
+      and employment_status = 'active'
   );
 $$;
 
@@ -459,7 +558,9 @@ stable
 as $$
   select exists (
     select 1 from public.profiles
-    where id = auth.uid() and access_role in ('dispatcher', 'admin', 'owner')
+    where id = auth.uid()
+      and access_role in ('dispatcher', 'admin', 'owner')
+      and employment_status = 'active'
   );
 $$;
 
@@ -471,8 +572,41 @@ language plpgsql
 security definer
 set search_path = public
 as $$
+declare
+  protected_change boolean;
 begin
+  if auth.uid() is null then
+    new.updated_at := now();
+    return new;
+  end if;
+
+  protected_change :=
+    old.email is distinct from new.email
+    or old.department is distinct from new.department
+    or old.license_summary is distinct from new.license_summary
+    or old.role is distinct from new.role
+    or old.access_role is distinct from new.access_role
+    or old.vehicle_type is distinct from new.vehicle_type
+    or old.truck is distinct from new.truck
+    or old.employment_status is distinct from new.employment_status;
+
   if auth.uid() = old.id and not private.is_admin() then
+    if protected_change then
+      insert into public.admin_audit_log (actor_id, target_user_id, action, details)
+      values (
+        auth.uid(),
+        old.id,
+        'profile_security_change_blocked',
+        jsonb_build_object(
+          'requested_access_role', new.access_role,
+          'requested_role', new.role,
+          'requested_employment_status', new.employment_status,
+          'requested_vehicle_type', new.vehicle_type,
+          'requested_department', new.department
+        )
+      );
+    end if;
+    new.email := old.email;
     new.department := old.department;
     new.license_summary := old.license_summary;
     new.role := old.role;
@@ -480,39 +614,29 @@ begin
     new.vehicle_type := old.vehicle_type;
     new.truck := old.truck;
     new.employment_status := old.employment_status;
-    new.logbook_enabled := old.logbook_enabled;
-  end if;
-
-  if old.department is distinct from new.department
-    or old.license_summary is distinct from new.license_summary
-    or old.role is distinct from new.role
-    or old.access_role is distinct from new.access_role
-    or old.vehicle_type is distinct from new.vehicle_type
-    or old.truck is distinct from new.truck
-    or old.employment_status is distinct from new.employment_status
-    or old.logbook_enabled is distinct from new.logbook_enabled then
+  elsif auth.uid() <> old.id and not private.is_admin() then
+    raise exception 'profile_update_not_allowed';
+  elsif private.is_admin() and protected_change then
     insert into public.admin_audit_log (actor_id, target_user_id, action, details)
     values (
       auth.uid(),
       new.id,
       'profile_security_change',
       jsonb_build_object(
+        'old_access_role', old.access_role,
+        'new_access_role', new.access_role,
+        'old_role', old.role,
+        'new_role', new.role,
         'old_department', old.department,
         'new_department', new.department,
         'old_license_summary', old.license_summary,
         'new_license_summary', new.license_summary,
-        'old_role', old.role,
-        'new_role', new.role,
-        'old_access_role', old.access_role,
-        'new_access_role', new.access_role,
-        'old_vehicle_type', old.vehicle_type,
-        'new_vehicle_type', new.vehicle_type,
         'old_truck', old.truck,
         'new_truck', new.truck,
         'old_employment_status', old.employment_status,
         'new_employment_status', new.employment_status,
-        'old_logbook_enabled', old.logbook_enabled,
-        'new_logbook_enabled', new.logbook_enabled
+        'old_vehicle_type', old.vehicle_type,
+        'new_vehicle_type', new.vehicle_type
       )
     );
   end if;
@@ -562,6 +686,16 @@ as $$
   );
 $$;
 
+create or replace function private.can_access_conversation(target_conversation uuid)
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select private.can_read_conversation(target_conversation);
+$$;
+
 create or replace function public.start_direct_conversation(target_user_id uuid)
 returns uuid
 language plpgsql
@@ -574,6 +708,10 @@ declare
 begin
   if auth.uid() is null then
     raise exception 'not_authenticated';
+  end if;
+
+  if not private.is_active_employee() then
+    raise exception 'caller_not_active';
   end if;
 
   if target_user_id = auth.uid() then
@@ -622,72 +760,53 @@ as $$
   select public.start_direct_conversation(target_user_id);
 $$;
 
-create or replace function public.prevent_profile_privilege_escalation()
-returns trigger
-language plpgsql
-security definer
-set search_path = public
-as $$
-begin
-  if auth.uid() is null then
-    raise exception 'not_authenticated';
-  end if;
-
-  if private.is_admin() then
-    return new;
-  end if;
-
-  if old.id <> auth.uid() or new.id <> old.id then
-    raise exception 'profile_update_not_allowed';
-  end if;
-
-  if new.access_role is distinct from old.access_role
-    or new.role is distinct from old.role
-    or new.vehicle_type is distinct from old.vehicle_type
-    or new.department is distinct from old.department
-    or new.license_summary is distinct from old.license_summary
-    or new.truck is distinct from old.truck
-    or new.employment_status is distinct from old.employment_status
-    or new.password_reset_required is distinct from old.password_reset_required then
-    raise exception 'role_or_admin_fields_locked';
-  end if;
-
-  return new;
-end;
-$$;
-
 drop trigger if exists prevent_profile_privilege_escalation_trigger on public.profiles;
-create trigger prevent_profile_privilege_escalation_trigger
-before update on public.profiles
-for each row
-execute function public.prevent_profile_privilege_escalation();
+drop function if exists public.prevent_profile_privilege_escalation();
 
 drop policy if exists "employees can read profiles" on public.profiles;
 drop policy if exists "employees can update own profile" on public.profiles;
+drop policy if exists "profiles update own safe fields" on public.profiles;
 drop policy if exists "admins can update employee profiles" on public.profiles;
 drop policy if exists "admins can deactivate employee profiles" on public.profiles;
 drop policy if exists "employees can read own private profile details" on public.profile_private_details;
 drop policy if exists "employees can manage own private profile details" on public.profile_private_details;
 drop policy if exists "admins can manage private profile details" on public.profile_private_details;
+drop policy if exists "private details own read" on public.profile_private_details;
+drop policy if exists "private details own manage" on public.profile_private_details;
+drop policy if exists "private details admin manage" on public.profile_private_details;
 drop policy if exists "admins can read audit log" on public.admin_audit_log;
 drop policy if exists "admins can create audit log" on public.admin_audit_log;
 drop policy if exists "admins can manage employee invitations" on public.employee_invitations;
+drop policy if exists "admins can read employee invitations" on public.employee_invitations;
+drop policy if exists "admins can create employee invitations" on public.employee_invitations;
+drop policy if exists "admins can update employee invitations" on public.employee_invitations;
+drop policy if exists "admins can delete employee invitations" on public.employee_invitations;
 drop policy if exists "employees can read core settings" on public.core_settings;
 drop policy if exists "admins can manage core settings" on public.core_settings;
 drop policy if exists "employees can read own legal acceptances" on public.legal_acceptances;
 drop policy if exists "employees can accept legal policies" on public.legal_acceptances;
+drop policy if exists "legal own" on public.legal_acceptances;
 drop policy if exists "employees can read retention policies" on public.retention_policies;
 drop policy if exists "admins can manage retention policies" on public.retention_policies;
 drop policy if exists "employees can read own data requests" on public.data_subject_requests;
 drop policy if exists "employees can create own data requests" on public.data_subject_requests;
 drop policy if exists "admins can handle data requests" on public.data_subject_requests;
+drop policy if exists "dsr own read" on public.data_subject_requests;
+drop policy if exists "dsr own insert" on public.data_subject_requests;
+drop policy if exists "dsr admin" on public.data_subject_requests;
+drop policy if exists "support own read" on public.support_requests;
+drop policy if exists "support own insert" on public.support_requests;
+drop policy if exists "support admin update" on public.support_requests;
+drop policy if exists "support admin delete" on public.support_requests;
 drop policy if exists "employees can read vehicles" on public.vehicles;
 drop policy if exists "admins can manage vehicles" on public.vehicles;
 drop policy if exists "employees can read own notifications" on public.notifications;
 drop policy if exists "employees can update own notifications" on public.notifications;
 drop policy if exists "system roles can create notifications" on public.notifications;
+drop policy if exists "notifications own" on public.notifications;
 drop policy if exists "employees can read own notification preferences" on public.notification_preferences;
 drop policy if exists "employees can manage own notification preferences" on public.notification_preferences;
+drop policy if exists "notification prefs own" on public.notification_preferences;
 drop policy if exists "employees can read shared locations" on public.location_shares;
 drop policy if exists "employees can share own location" on public.location_shares;
 drop policy if exists "employees can update own location" on public.location_shares;
@@ -696,10 +815,16 @@ drop policy if exists "admins can delete expired pickup tasks" on public.pickup_
 drop policy if exists "employees can read own workday sessions" on public.workday_sessions;
 drop policy if exists "employees can start own workday sessions" on public.workday_sessions;
 drop policy if exists "employees can end own workday sessions" on public.workday_sessions;
+drop policy if exists "workday own select" on public.workday_sessions;
+drop policy if exists "workday own insert" on public.workday_sessions;
+drop policy if exists "workday own update" on public.workday_sessions;
 drop policy if exists "pickup participants can read tasks" on public.pickup_tasks;
 drop policy if exists "employees can create own pickup tasks" on public.pickup_tasks;
 drop policy if exists "drivers can finish own pickup tasks" on public.pickup_tasks;
 drop policy if exists "pickup participants can update tasks" on public.pickup_tasks;
+drop policy if exists "pickup create own" on public.pickup_tasks;
+drop policy if exists "pickup participants read" on public.pickup_tasks;
+drop policy if exists "pickup participants update" on public.pickup_tasks;
 drop policy if exists "members can read conversations" on public.conversations;
 drop policy if exists "members can read conversation membership" on public.conversation_members;
 drop policy if exists "members can read messages" on public.messages;
@@ -723,78 +848,115 @@ drop policy if exists "employees can create internal announcements" on public.an
 drop policy if exists "authors and admins can update announcements" on public.announcements;
 drop policy if exists "authors and admins can delete announcements" on public.announcements;
 drop policy if exists "employees can read announcement reactions" on public.announcement_reactions;
+drop policy if exists "announcement reactions read active" on public.announcement_reactions;
 drop policy if exists "employees can react to announcements" on public.announcement_reactions;
 drop policy if exists "employees can remove own reactions" on public.announcement_reactions;
 drop policy if exists "employees can read announcement comments" on public.announcement_comments;
+drop policy if exists "announcement comments read active" on public.announcement_comments;
 drop policy if exists "employees can comment on announcements" on public.announcement_comments;
 drop policy if exists "employees can read own private log" on public.private_log_entries;
 drop policy if exists "employees can add to own private log" on public.private_log_entries;
 drop policy if exists "employees can update own private log" on public.private_log_entries;
 drop policy if exists "employees can delete from own private log" on public.private_log_entries;
+drop policy if exists "private log own" on public.private_log_entries;
 drop policy if exists "employees can read own logbook automation settings" on public.logbook_automation_settings;
 drop policy if exists "employees can create own logbook automation settings" on public.logbook_automation_settings;
 drop policy if exists "employees can update own logbook automation settings" on public.logbook_automation_settings;
 drop policy if exists "employees can delete own logbook automation settings" on public.logbook_automation_settings;
+drop policy if exists "logbook settings own" on public.logbook_automation_settings;
 drop policy if exists "employees can read monitored sources" on public.regulatory_sources;
 drop policy if exists "employees can read approved regulatory updates" on public.regulatory_updates;
+drop policy if exists "regulatory approved read" on public.regulatory_updates;
 
 create policy "employees can read profiles"
 on public.profiles for select to authenticated using (
   id = auth.uid()
-  or employment_status = 'active'
   or private.is_admin()
+  or (private.is_active_employee() and employment_status = 'active')
 );
 create policy "employees can update own profile"
-on public.profiles for update to authenticated using (id = auth.uid()) with check (id = auth.uid());
+on public.profiles for update to authenticated
+using (id = auth.uid() and private.is_active_employee())
+with check (id = auth.uid() and private.is_active_employee());
 create policy "admins can update employee profiles"
 on public.profiles for update to authenticated using (private.is_admin()) with check (private.is_admin());
 create policy "employees can read own private profile details"
 on public.profile_private_details for select to authenticated using (
-  user_id = auth.uid() or private.is_dispatcher_or_admin()
+  (user_id = auth.uid() and private.is_active_employee()) or private.is_admin()
 );
 create policy "employees can manage own private profile details"
-on public.profile_private_details for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+on public.profile_private_details for all to authenticated
+using (user_id = auth.uid() and private.is_active_employee())
+with check (user_id = auth.uid() and private.is_active_employee());
 create policy "admins can manage private profile details"
 on public.profile_private_details for all to authenticated using (private.is_admin()) with check (private.is_admin());
 create policy "admins can read audit log"
 on public.admin_audit_log for select to authenticated using (private.is_admin());
 create policy "admins can create audit log"
 on public.admin_audit_log for insert to authenticated with check (actor_id = auth.uid() and private.is_admin());
-create policy "admins can manage employee invitations"
-on public.employee_invitations for all to authenticated using (private.is_admin()) with check (created_by = auth.uid() and private.is_admin());
+create policy "admins can read employee invitations"
+on public.employee_invitations for select to authenticated using (private.is_admin());
+create policy "admins can create employee invitations"
+on public.employee_invitations for insert to authenticated with check (created_by = auth.uid() and private.is_admin());
+create policy "admins can update employee invitations"
+on public.employee_invitations for update to authenticated using (private.is_admin()) with check (private.is_admin());
+create policy "admins can delete employee invitations"
+on public.employee_invitations for delete to authenticated using (private.is_admin());
 create policy "employees can read core settings"
-on public.core_settings for select to authenticated using (true);
+on public.core_settings for select to authenticated using (private.is_active_employee());
 create policy "admins can manage core settings"
 on public.core_settings for all to authenticated using (private.is_admin()) with check (private.is_admin());
 create policy "employees can read own legal acceptances"
-on public.legal_acceptances for select to authenticated using (user_id = auth.uid() or private.is_admin());
+on public.legal_acceptances for select to authenticated using (
+  (user_id = auth.uid() and private.is_active_employee()) or private.is_admin()
+);
 create policy "employees can accept legal policies"
-on public.legal_acceptances for insert to authenticated with check (user_id = auth.uid());
+on public.legal_acceptances for insert to authenticated with check (user_id = auth.uid() and private.is_active_employee());
 create policy "employees can read retention policies"
-on public.retention_policies for select to authenticated using (true);
+on public.retention_policies for select to authenticated using (private.is_active_employee());
 create policy "admins can manage retention policies"
 on public.retention_policies for all to authenticated using (private.is_admin()) with check (private.is_admin());
 create policy "employees can read own data requests"
-on public.data_subject_requests for select to authenticated using (user_id = auth.uid() or private.is_admin());
+on public.data_subject_requests for select to authenticated using (
+  (user_id = auth.uid() and private.is_active_employee()) or private.is_admin()
+);
 create policy "employees can create own data requests"
-on public.data_subject_requests for insert to authenticated with check (user_id = auth.uid());
+on public.data_subject_requests for insert to authenticated with check (user_id = auth.uid() and private.is_active_employee());
 create policy "admins can handle data requests"
 on public.data_subject_requests for update to authenticated using (private.is_admin()) with check (private.is_admin());
+create policy "support own read"
+on public.support_requests for select to authenticated using (
+  (user_id = auth.uid() and private.is_active_employee()) or private.is_admin()
+);
+create policy "support own insert"
+on public.support_requests for insert to authenticated
+with check (user_id = auth.uid() and private.is_active_employee());
+create policy "support admin update"
+on public.support_requests for update to authenticated
+using (private.is_admin()) with check (private.is_admin());
+create policy "support admin delete"
+on public.support_requests for delete to authenticated using (private.is_admin());
 create policy "employees can read vehicles"
-on public.vehicles for select to authenticated using (true);
+on public.vehicles for select to authenticated using (private.is_active_employee());
 create policy "admins can manage vehicles"
 on public.vehicles for all to authenticated using (private.is_admin()) with check (private.is_admin());
 create policy "employees can read own notifications"
-on public.notifications for select to authenticated using (user_id = auth.uid());
+on public.notifications for select to authenticated using (user_id = auth.uid() and private.is_active_employee());
 create policy "employees can update own notifications"
-on public.notifications for update to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+on public.notifications for update to authenticated
+using (user_id = auth.uid() and private.is_active_employee())
+with check (user_id = auth.uid() and private.is_active_employee());
 create policy "system roles can create notifications"
-on public.notifications for insert to authenticated with check (user_id = auth.uid() or private.is_dispatcher_or_admin());
+on public.notifications for insert to authenticated with check (
+  private.is_active_employee() and (user_id = auth.uid() or private.is_dispatcher_or_admin())
+);
 
 create policy "employees can read own notification preferences"
-on public.notification_preferences for select to authenticated using (user_id = auth.uid());
+on public.notification_preferences for select to authenticated using (user_id = auth.uid() and private.is_active_employee());
 create policy "employees can manage own notification preferences"
-on public.notification_preferences for all to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+on public.notification_preferences for all to authenticated
+using (user_id = auth.uid() and private.is_active_employee())
+with check (user_id = auth.uid() and private.is_active_employee());
 
 create or replace function public.purge_expired_operational_data()
 returns jsonb
@@ -854,55 +1016,66 @@ create trigger protect_pickup_task_participants
 create policy "employees can read shared locations"
 on public.location_shares for select to authenticated using (
   user_id = auth.uid()
-  or (visibility = 'pickup' and visible_to_user_id = auth.uid())
   or (
-    visibility = 'team'
-    and audience = 'all'
-  )
-  or (
-    visibility = 'team'
-    and audience = 'truck'
-    and exists (
-      select 1 from public.profiles p
-      where p.id = auth.uid()
-        and p.vehicle_type = 'truck'
-    )
-  )
-  or (
-    visibility = 'team'
-    and audience = 'van'
-    and exists (
-      select 1 from public.profiles p
-      where p.id = auth.uid()
-        and p.vehicle_type = 'van'
+    private.is_active_employee()
+    and (expires_at is null or expires_at > now())
+    and last_updated_at > now() - interval '15 minutes'
+    and (
+      (visibility = 'pickup' and visible_to_user_id = auth.uid())
+      or (visibility = 'team' and audience = 'all')
+      or (
+        visibility = 'team'
+        and audience = 'truck'
+        and exists (
+          select 1 from public.profiles p
+          where p.id = auth.uid()
+            and p.vehicle_type = 'truck'
+            and p.employment_status = 'active'
+        )
+      )
+      or (
+        visibility = 'team'
+        and audience = 'van'
+        and exists (
+          select 1 from public.profiles p
+          where p.id = auth.uid()
+            and p.vehicle_type = 'van'
+            and p.employment_status = 'active'
+        )
+      )
     )
   )
 );
 create policy "employees can share own location"
-on public.location_shares for insert to authenticated with check (user_id = auth.uid());
+on public.location_shares for insert to authenticated with check (user_id = auth.uid() and private.is_active_employee());
 create policy "employees can update own location"
-on public.location_shares for update to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+on public.location_shares for update to authenticated
+using (user_id = auth.uid() and private.is_active_employee())
+with check (user_id = auth.uid() and private.is_active_employee());
 create policy "employees can stop sharing own location"
-on public.location_shares for delete to authenticated using (user_id = auth.uid() or private.is_admin());
+on public.location_shares for delete to authenticated using (user_id = auth.uid());
 
 create policy "employees can read own workday sessions"
-on public.workday_sessions for select to authenticated using (user_id = auth.uid() or private.is_dispatcher_or_admin());
+on public.workday_sessions for select to authenticated using (user_id = auth.uid() and private.is_active_employee());
 create policy "employees can start own workday sessions"
-on public.workday_sessions for insert to authenticated with check (user_id = auth.uid());
+on public.workday_sessions for insert to authenticated with check (user_id = auth.uid() and private.is_active_employee());
 create policy "employees can end own workday sessions"
-on public.workday_sessions for update to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
-
-create policy "admins can deactivate employee profiles"
-on public.profiles for update to authenticated using (private.is_admin()) with check (private.is_admin());
+on public.workday_sessions for update to authenticated
+using (user_id = auth.uid() and private.is_active_employee())
+with check (user_id = auth.uid() and private.is_active_employee());
 
 create policy "pickup participants can read tasks"
-on public.pickup_tasks for select to authenticated using (driver_id = auth.uid() or colleague_id = auth.uid());
+on public.pickup_tasks for select to authenticated using (
+  private.is_active_employee() and (driver_id = auth.uid() or colleague_id = auth.uid())
+);
 create policy "employees can create own pickup tasks"
-on public.pickup_tasks for insert to authenticated with check (driver_id = auth.uid() and driver_id <> colleague_id);
+on public.pickup_tasks for insert to authenticated with check (
+  private.is_active_employee() and driver_id = auth.uid() and driver_id <> colleague_id
+);
 create policy "pickup participants can update tasks"
 on public.pickup_tasks for update to authenticated
-using (driver_id = auth.uid() or colleague_id = auth.uid())
-with check (driver_id = auth.uid() or colleague_id = auth.uid());
+using (private.is_active_employee() and (driver_id = auth.uid() or colleague_id = auth.uid()))
+with check (private.is_active_employee() and (driver_id = auth.uid() or colleague_id = auth.uid()));
 create policy "admins can delete expired pickup tasks"
 on public.pickup_tasks for delete to authenticated
 using (private.is_admin() and expires_at is not null and expires_at < now());
@@ -920,34 +1093,42 @@ on public.messages for insert to authenticated with check (
 
 create policy "employees can read visible media"
 on public.media_attachments for select to authenticated using (
-  owner_id = auth.uid()
-  or (
-    message_id is not null
-    and exists (
-      select 1 from public.messages
-      where messages.id = media_attachments.message_id
-        and private.can_read_conversation(messages.conversation_id)
+  private.is_active_employee()
+  and (
+    owner_id = auth.uid()
+    or (
+      visibility = 'profile'
+      or (
+        message_id is not null
+        and exists (
+          select 1 from public.messages
+          where messages.id = media_attachments.message_id
+            and private.can_read_conversation(messages.conversation_id)
+        )
+      )
+      or (
+        announcement_id is not null
+        and exists (select 1 from public.announcements where id = media_attachments.announcement_id)
+      )
     )
-  )
-  or (
-    announcement_id is not null
-    and exists (select 1 from public.announcements where id = media_attachments.announcement_id)
   )
 );
 create policy "employees can add own media"
-on public.media_attachments for insert to authenticated with check (owner_id = auth.uid());
+on public.media_attachments for insert to authenticated with check (owner_id = auth.uid() and private.is_active_employee());
 create policy "employees can delete own media"
-on public.media_attachments for delete to authenticated using (owner_id = auth.uid());
+on public.media_attachments for delete to authenticated using (owner_id = auth.uid() and private.is_active_employee());
 
 create policy "employees can upload own media objects"
 on storage.objects for insert to authenticated with check (
   bucket_id = 'xpressintra-media'
   and split_part(name, '/', 1) = auth.uid()::text
+  and private.is_active_employee()
 );
 create policy "employees can read own media objects"
 on storage.objects for select to authenticated using (
   bucket_id = 'xpressintra-media'
   and owner = auth.uid()
+  and private.is_active_employee()
 );
 create policy "employees can read shared media objects"
 on storage.objects for select to authenticated using (
@@ -958,13 +1139,25 @@ on storage.objects for select to authenticated using (
       and media_attachments.storage_path = storage.objects.name
       and (
         media_attachments.owner_id = auth.uid()
-        or media_attachments.visibility = 'announcement'
         or (
-          media_attachments.message_id is not null
-          and exists (
-            select 1 from public.messages
-            where messages.id = media_attachments.message_id
-              and private.can_read_conversation(messages.conversation_id)
+          private.is_active_employee()
+          and (
+            media_attachments.visibility = 'profile'
+            or (
+              media_attachments.visibility = 'announcement'
+              and exists (
+                select 1 from public.announcements
+                where announcements.id = media_attachments.announcement_id
+              )
+            )
+            or (
+              media_attachments.message_id is not null
+              and exists (
+                select 1 from public.messages
+                where messages.id = media_attachments.message_id
+                  and private.can_read_conversation(messages.conversation_id)
+              )
+            )
           )
         )
       )
@@ -974,19 +1167,25 @@ create policy "employees can delete own media objects"
 on storage.objects for delete to authenticated using (
   bucket_id = 'xpressintra-media'
   and owner = auth.uid()
+  and private.is_active_employee()
 );
 
 create policy "employees can read internal announcements"
 on public.announcements for select to authenticated using (
-  audience = 'all'
-  or exists (
-    select 1 from public.profiles
-    where id = auth.uid() and vehicle_type = announcements.audience
+  private.is_active_employee()
+  and (
+    audience = 'all'
+    or private.is_dispatcher_or_admin()
+    or exists (
+      select 1 from public.profiles
+      where id = auth.uid() and vehicle_type = announcements.audience
+    )
   )
 );
 create policy "employees can create internal announcements"
 on public.announcements for insert to authenticated with check (
-  author_id = auth.uid()
+  private.is_active_employee()
+  and author_id = auth.uid()
   and (
     kind = 'colleague'
     or exists (
@@ -997,58 +1196,66 @@ on public.announcements for insert to authenticated with check (
 );
 create policy "authors and admins can update announcements"
 on public.announcements for update to authenticated using (
-  author_id = auth.uid() or private.is_admin()
+  private.is_active_employee() and (author_id = auth.uid() or private.is_admin())
 ) with check (
-  author_id = auth.uid() or private.is_admin()
+  private.is_active_employee() and (author_id = auth.uid() or private.is_admin())
 );
 create policy "authors and admins can delete announcements"
 on public.announcements for delete to authenticated using (
-  author_id = auth.uid() or private.is_admin()
+  private.is_active_employee() and (author_id = auth.uid() or private.is_admin())
 );
 
 create policy "employees can read announcement reactions"
 on public.announcement_reactions for select to authenticated using (
-  exists (select 1 from public.announcements where id = announcement_id)
+  private.is_active_employee()
+  and exists (select 1 from public.announcements where id = announcement_id)
 );
 create policy "employees can react to announcements"
 on public.announcement_reactions for insert to authenticated with check (
-  user_id = auth.uid()
+  private.is_active_employee()
+  and user_id = auth.uid()
   and exists (select 1 from public.announcements where id = announcement_id)
 );
 create policy "employees can remove own reactions"
-on public.announcement_reactions for delete to authenticated using (user_id = auth.uid());
+on public.announcement_reactions for delete to authenticated using (private.is_active_employee() and user_id = auth.uid());
 create policy "employees can read announcement comments"
 on public.announcement_comments for select to authenticated using (
-  exists (select 1 from public.announcements where id = announcement_id)
+  private.is_active_employee()
+  and exists (select 1 from public.announcements where id = announcement_id)
 );
 create policy "employees can comment on announcements"
 on public.announcement_comments for insert to authenticated with check (
-  author_id = auth.uid()
+  private.is_active_employee()
+  and author_id = auth.uid()
   and exists (select 1 from public.announcements where id = announcement_id)
 );
 
 create policy "employees can read own private log"
-on public.private_log_entries for select to authenticated using (user_id = auth.uid());
+on public.private_log_entries for select to authenticated using (user_id = auth.uid() and private.is_active_employee());
 create policy "employees can add to own private log"
-on public.private_log_entries for insert to authenticated with check (user_id = auth.uid());
+on public.private_log_entries for insert to authenticated with check (user_id = auth.uid() and private.is_active_employee());
 create policy "employees can update own private log"
-on public.private_log_entries for update to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+on public.private_log_entries for update to authenticated
+using (user_id = auth.uid() and private.is_active_employee())
+with check (user_id = auth.uid() and private.is_active_employee());
 create policy "employees can delete from own private log"
-on public.private_log_entries for delete to authenticated using (user_id = auth.uid());
+on public.private_log_entries for delete to authenticated using (user_id = auth.uid() and private.is_active_employee());
 
 create policy "employees can read own logbook automation settings"
-on public.logbook_automation_settings for select to authenticated using (user_id = auth.uid());
+on public.logbook_automation_settings for select to authenticated using (user_id = auth.uid() and private.is_active_employee());
 create policy "employees can create own logbook automation settings"
-on public.logbook_automation_settings for insert to authenticated with check (user_id = auth.uid());
+on public.logbook_automation_settings for insert to authenticated with check (user_id = auth.uid() and private.is_active_employee());
 create policy "employees can update own logbook automation settings"
-on public.logbook_automation_settings for update to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+on public.logbook_automation_settings for update to authenticated
+using (user_id = auth.uid() and private.is_active_employee())
+with check (user_id = auth.uid() and private.is_active_employee());
 create policy "employees can delete own logbook automation settings"
-on public.logbook_automation_settings for delete to authenticated using (user_id = auth.uid());
+on public.logbook_automation_settings for delete to authenticated using (user_id = auth.uid() and private.is_active_employee());
 
 create policy "employees can read monitored sources"
-on public.regulatory_sources for select to authenticated using (active = true);
+on public.regulatory_sources for select to authenticated using (private.is_active_employee() and active = true);
 create policy "employees can read approved regulatory updates"
-on public.regulatory_updates for select to authenticated using (status = 'approved');
+on public.regulatory_updates for select to authenticated using (private.is_active_employee() and status = 'approved');
 
 -- Supabase Data API access.
 -- RLS above is the final row-level lock; these grants only make the tables reachable
@@ -1065,6 +1272,7 @@ revoke execute on function public.start_direct_conversation_v2(uuid) from public
 grant execute on function public.start_direct_conversation(uuid) to authenticated;
 grant execute on function public.start_direct_conversation_v2(uuid) to authenticated;
 grant execute on function public.purge_expired_operational_data() to authenticated;
+grant select, insert, update, delete on public.support_requests to authenticated;
 
 insert into public.regulatory_sources (title, source_url, audience, topic)
 values
@@ -1076,7 +1284,7 @@ values
   ('Vejafgifter.dk', 'https://vejafgifter.dk/', 'truck', 'transport'),
   ('Miljøzoner.dk · varebiler', 'https://miljoezoner.dk/regler-og-koretojer/regler-for-varebiler/', 'van', 'transport'),
   ('Miljøzoner.dk · lastbiler', 'https://miljoezoner.dk/regler-og-koretojer/regler-for-lastbiler-busser/', 'truck', 'transport'),
-  ('European Labour Authority · varebil', 'https://www.ela.europa.eu/en/light-commercial-vehicles', 'van', 'transport'),
+  ('European Labour Authority · varebil', 'https://www.ela.europa.eu/assets/lcv2026/index.html', 'van', 'transport'),
   ('European Labour Authority · vejtransport', 'https://www.ela.europa.eu/en/campaign/road-fair-transport', 'all', 'transport'),
   ('Datatilsynet · nyheder', 'https://www.datatilsynet.dk/aktuelt/nyheder', 'all', 'gdpr'),
   ('EDPB · news', 'https://www.edpb.europa.eu/news/news_en', 'all', 'gdpr'),
@@ -1255,3 +1463,6 @@ begin
     end if;
   end if;
 end $$;
+
+notify pgrst, 'reload schema';
+select pg_notification_queue_usage();

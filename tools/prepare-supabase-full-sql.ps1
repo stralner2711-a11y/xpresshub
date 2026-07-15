@@ -11,10 +11,6 @@ $sqlEditorUrl = "https://supabase.com/dashboard/project/mtfbdoajzmlgqbeiubxe/sql
 
 $orderedFiles = @(
   "schema.sql",
-  "fix-channel-chat-access.sql",
-  "fix-location-share-mode.sql",
-  "fix-employee-registration.sql",
-  "fix-pickup-live-notes.sql",
   "first-admin.sql"
 )
 
@@ -23,12 +19,9 @@ $generatedFiles = @(
   "RUN_THIS_FROM_SCRATCH_IN_SUPABASE.sql"
 )
 
-$extraFiles = Get-ChildItem -LiteralPath $supabaseDir -Filter "*.sql" |
-  Where-Object { $orderedFiles -notcontains $_.Name -and $generatedFiles -notcontains $_.Name } |
-  Sort-Object Name |
-  ForEach-Object { $_.Name }
-
-$files = @($orderedFiles + $extraFiles)
+# The full package is intentionally canonical and small. Old one-off repair files
+# remain available for diagnostics, but must not override the final schema.
+$files = @($orderedFiles)
 
 $missing = @()
 foreach ($file in $files) {
@@ -63,6 +56,9 @@ $header = @"
 -- - Livekort/GPS fix
 -- - Medarbejderregistrering/invitationer
 -- - Pickup live-noter
+-- - GDPR/dataanmodninger
+-- - retention/slettefrister
+-- - Admin audit-log
 -- - Creator-rettighed til stralner2711@gmail.com
 --
 -- VIGTIGT:
@@ -81,11 +77,12 @@ foreach ($file in $files) {
   [void]$content.AppendLine("-- $file")
   [void]$content.AppendLine("-- ============================================================")
   [void]$content.AppendLine("")
-  [void]$content.AppendLine((Get-Content -LiteralPath $path -Raw))
+  [void]$content.AppendLine([System.IO.File]::ReadAllText($path, [System.Text.Encoding]::UTF8))
 }
 
 $sql = $content.ToString()
-Set-Content -LiteralPath $outputFile -Value $sql -Encoding UTF8
+$utf8NoBom = New-Object System.Text.UTF8Encoding($false)
+[System.IO.File]::WriteAllText($outputFile, $sql, $utf8NoBom)
 Set-Clipboard -Value $sql
 
 Write-Host ""

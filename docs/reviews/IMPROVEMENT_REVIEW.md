@@ -385,7 +385,7 @@ Appen er klar til intern test, når dette virker:
 - [Færdselsstyrelsen: takograf](https://www.fstyr.dk/erhverv/gods-bus-og-varebil/takograf)
 - [Vejafgifter.dk](https://www.vejafgifter.dk/)
 - [Miljøzoner.dk: regler for lastbiler og busser](https://miljoezoner.dk/regler-og-koretojer/regler-for-lastbiler-busser/)
-- [European Labour Authority: light commercial vehicles](https://www.ela.europa.eu/en/light-commercial-vehicles)
+- [European Labour Authority: light commercial vehicles](https://www.ela.europa.eu/assets/lcv2026/index.html)
 - [Google Maps Platform: Maps JavaScript API billing](https://developers.google.com/maps/documentation/javascript/usage-and-billing)
 - [MDN: Geolocation API](https://developer.mozilla.org/en-US/docs/Web/API/Geolocation_API)
 - [XpressBudet: vejtransport](https://www.xpressbudet.dk/vejtransport/)

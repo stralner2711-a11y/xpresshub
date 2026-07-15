@@ -8,7 +8,7 @@ Vigtigt: Apple tillader ikke en almindelig APK-lignende fil til iPhone. En rigti
 
 - XpressIntra har allerede et iPhone/iOS-projekt i `ios/App/App.xcworkspace`.
 - App-id er `dk.xpressbudet.xpressintra`.
-- Versionen matcher Android/web: `1.3.50` / build `63`.
+- Versionen matcher Android/web: `1.3.52` / build `65`.
 - GPS, kamera og billeder har Apple-tilladelsestekster.
 - Webapp, Supabase, chat, livekort og login er samme kodebase som Android.
 

@@ -20,8 +20,9 @@ const directMessageRepair = fs.readFileSync('supabase/REPAIR_DIRECT_MESSAGES.sql
   'new.vehicle_type := old.vehicle_type;',
   'new.truck := old.truck;',
   'new.employment_status := old.employment_status;',
-  'new.logbook_enabled := old.logbook_enabled;',
 ].forEach(line => assert(schema.includes(line), `Profile trigger should preserve ${line}`));
+
+assert(!schema.includes('new.logbook_enabled := old.logbook_enabled;'), 'Employees should be allowed to change their own voluntary logbook setting');
 
 assert(schema.includes('function private.protect_profile_security_fields()'), 'Profile security trigger should live in private schema');
 assert(schema.includes('execute procedure private.protect_profile_security_fields()'), 'Profiles should use the private security trigger');
@@ -33,8 +34,6 @@ assert(schema.includes('execute procedure private.protect_profile_security_field
   'new_license_summary',
   'old_truck',
   'new_truck',
-  'old_logbook_enabled',
-  'new_logbook_enabled',
 ].forEach(field => assert(schema.includes(field), `Audit log should include ${field}`));
 
 assert(schema.includes("c.channel_type = 'truck' and p.vehicle_type = 'truck'"), 'Truck chat should follow approved vehicle type only');
@@ -48,14 +47,12 @@ assert(firstAdmin.includes("vehicle_type = 'truck'"), 'First admin helper should
 assert(firstAdmin.includes('license_summary'), 'First admin helper should preserve/set truck driver license summary');
 assert(fullBootstrap.includes('GDPR/dataanmodninger') && fullBootstrap.includes('retention/slettefrister') && fullBootstrap.includes('audit-log'), 'Full bootstrap should document the latest GDPR and security package');
 assert(fullBootstrap.includes('first-admin.sql'), 'Full bootstrap should include the first-admin helper block');
-assert(fullBootstrap.includes('drop table if exists public.location_shares cascade;'), 'Full bootstrap should reset old location shares before a clean install');
-assert(fullBootstrap.includes('drop function if exists public.can_read_conversation(uuid) cascade;'), 'Full bootstrap should cascade-drop old public chat access functions');
-assert(fullBootstrap.includes('drop schema if exists private cascade;'), 'Full bootstrap should reset private helper schema cleanly');
-assert(fullBootstrap.includes('Denne fil nulstiller XpressIntra-tabellerne'), 'Full bootstrap should warn that it resets XpressIntra data');
+assert(!fullBootstrap.includes('drop table if exists public.location_shares cascade;'), 'Full bootstrap should preserve existing operational data when rerun');
+assert(!fullBootstrap.includes('drop schema if exists private cascade;'), 'Full bootstrap should preserve the private security schema when rerun');
 assert(!fullBootstrap.includes('delete from storage.objects'), 'Full bootstrap must not directly delete from protected Supabase storage.objects');
 assert(!fullBootstrap.includes('delete from storage.buckets'), 'Full bootstrap must not directly delete from protected Supabase storage.buckets');
-assert(fullBootstrap.includes('add column if not exists audience text not null default'), 'Full bootstrap should repair old tables missing the audience column before policies');
-assert(fullBootstrap.includes('add column if not exists auto_delete boolean not null default false'), 'Full bootstrap should repair old retention policies missing auto_delete');
+assert(fullBootstrap.includes("audience text not null default 'all'"), 'Full bootstrap should define the location audience column');
+assert(fullBootstrap.includes('auto_delete boolean not null default false'), 'Full bootstrap should define retention auto-delete choices');
 assert(fullBootstrap.includes("notify pgrst, 'reload schema';"), 'Full bootstrap should refresh Supabase/PostgREST schema cache after creating tables');
 assert(fullBootstrap.includes('select pg_notification_queue_usage();'), 'Full bootstrap should force Supabase to notice schema-cache notifications');
 assert(!fullBootstrap.includes('fix-pickup-live-notes'), 'Full bootstrap should not contain old appended one-off fix sections');
@@ -77,9 +74,14 @@ assert(directMessageRepair.includes('grant execute on function public.start_dire
 assert(directMessageRepair.includes('grant execute on function public.start_direct_conversation_v2(uuid) to authenticated;'), 'Direct message repair SQL should grant authenticated users access to the fallback direct-chat RPC');
 assert(directMessageRepair.includes("notify pgrst, 'reload schema';"), 'Direct message repair SQL should refresh Supabase/PostgREST schema cache');
 assert(schema.includes('create table if not exists public.employee_invitations'), 'Schema should support safe employee invitations without exposing service-role keys');
-assert(schema.includes('on public.employee_invitations for all to authenticated using (private.is_admin())'), 'Only admins should manage employee invitations');
-assert(schema.includes('prevent_profile_privilege_escalation'), 'Profiles should have a database trigger against role escalation');
-assert(schema.includes('role_or_admin_fields_locked'), 'Employees should not be able to update role/admin fields directly in Supabase');
+[
+  'on public.employee_invitations for select to authenticated using (private.is_admin());',
+  'on public.employee_invitations for insert to authenticated with check (created_by = auth.uid() and private.is_admin());',
+  'on public.employee_invitations for update to authenticated using (private.is_admin()) with check (private.is_admin());',
+  'on public.employee_invitations for delete to authenticated using (private.is_admin());',
+].forEach(policy => assert(schema.includes(policy), `Invitation policy should remain admin-only: ${policy}`));
+assert(schema.includes('create trigger protect_profile_security_fields'), 'Profiles should have a database trigger against role escalation');
+assert(schema.includes("'profile_security_change_blocked'"), 'Blocked employee attempts to alter protected role fields should be audited');
 assert(schema.includes("expires_at timestamptz not null default (now() + interval '14 days')"), 'Invitations should expire automatically');
 assert(schema.includes('accepted_at timestamptz'), 'Invitations should record when they are used');
 assert(schema.includes('used_by uuid references public.profiles(id)'), 'Invitations should record which user consumed them');
@@ -110,8 +112,8 @@ assert(schema.includes('show_speed boolean not null default false'), 'Location s
 assert(schema.includes('speed_kmh numeric(6, 2) check (speed_kmh is null or speed_kmh >= 0)'), 'Location speed should be nullable for data minimization');
 assert(schema.includes("and audience = 'truck'"), 'Location RLS should support truck-only sharing');
 assert(schema.includes("and audience = 'van'"), 'Location RLS should support van-only sharing');
-assert(schema.includes("or (visibility = 'pickup' and visible_to_user_id = auth.uid())"), 'Pickup location sharing should only be visible to the selected colleague');
-assert(schema.includes('on public.location_shares for delete to authenticated using (user_id = auth.uid() or private.is_admin())'), 'Employees should stop own location sharing while admins can run retention cleanup');
+assert(schema.includes("visibility = 'pickup' and visible_to_user_id = auth.uid()"), 'Pickup location sharing should only be visible to the selected colleague');
+assert(schema.includes('on public.location_shares for delete to authenticated using (user_id = auth.uid());'), 'Only the sharing employee should stop an active location row directly');
 assert(locationRepair.includes('create table if not exists public.location_shares'), 'Location repair SQL should recreate the missing GPS table');
 assert(locationRepair.includes("to_regclass('public.profiles') is null"), 'Location repair SQL should clearly stop if the base profiles table has not been installed');
 assert(locationRepair.includes('RUN_THIS_FROM_SCRATCH_IN_SUPABASE.sql'), 'Location repair SQL should point users to the full base install when profiles is missing');
@@ -124,14 +126,14 @@ assert(schema.includes('create or replace function public.purge_expired_operatio
 assert(schema.includes('grant execute on function public.purge_expired_operational_data() to authenticated;'), 'Authenticated admins should be able to call cleanup through RLS/function checks');
 assert(schema.includes('create policy "admins can delete expired pickup tasks"'), 'Admins should be able to clean up expired pickup tasks without reading private chats');
 assert(schema.includes("status text not null default 'active' check (status in ('active', 'ended', 'auto_ended'))"), 'Workday sessions should support active, ended, and auto-ended states');
-assert(schema.includes('on public.workday_sessions for insert to authenticated with check (user_id = auth.uid())'), 'Employees should only start their own workday sessions');
-assert(schema.includes('on public.workday_sessions for update to authenticated using (user_id = auth.uid())'), 'Employees should only end their own workday sessions');
+assert(schema.includes('on public.workday_sessions for insert to authenticated with check (user_id = auth.uid() and private.is_active_employee())'), 'Only active employees should start their own workday sessions');
+assert(schema.includes('using (user_id = auth.uid() and private.is_active_employee())'), 'Only active employees should read or end their own workday sessions');
 assert(schema.includes('expires_at timestamptz'), 'Pickup tasks should store automatic expiry time online');
 assert(schema.includes('alter publication supabase_realtime add table public.pickup_tasks;'), 'Pickup tasks should be available through realtime');
-assert(schema.includes('on public.pickup_tasks for select to authenticated using (driver_id = auth.uid() or colleague_id = auth.uid())'), 'Pickup tasks should only be readable by driver and selected colleague');
-assert(schema.includes('on public.pickup_tasks for insert to authenticated with check (driver_id = auth.uid() and driver_id <> colleague_id)'), 'Employees should only create pickup tasks for another colleague');
+assert(schema.includes('private.is_active_employee() and (driver_id = auth.uid() or colleague_id = auth.uid())'), 'Pickup tasks should only be readable by active participants');
+assert(schema.includes('private.is_active_employee() and driver_id = auth.uid() and driver_id <> colleague_id'), 'Active employees should only create pickup tasks for another colleague');
 assert(schema.includes('on public.pickup_tasks for update to authenticated'), 'Pickup participants should have a controlled update policy');
-assert(schema.includes('using (driver_id = auth.uid() or colleague_id = auth.uid())'), 'Both pickup participants should be able to update live notes/status');
+assert(schema.includes('using (private.is_active_employee() and (driver_id = auth.uid() or colleague_id = auth.uid()))'), 'Both active pickup participants should be able to update live notes/status');
 assert(schema.includes('alter publication supabase_realtime add table public.announcement_comments;'), 'Announcement comments should be available through realtime');
 assert(schema.includes('alter publication supabase_realtime add table public.announcement_reactions;'), 'Announcement reactions should be available through realtime');
 assert(schema.includes('alter publication supabase_realtime add table public.notifications;'), 'Notifications should be available through realtime');

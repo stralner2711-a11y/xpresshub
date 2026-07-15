@@ -9,12 +9,10 @@ $supabaseDir = Join-Path $root "supabase"
 $outputFile = Join-Path $supabaseDir "RUN_THIS_IN_SUPABASE.sql"
 $sqlEditorUrl = "https://supabase.com/dashboard/project/mtfbdoajzmlgqbeiubxe/sql/new"
 
-$files = @(
-  "fix-location-share-mode.sql",
-  "fix-employee-registration.sql",
-  "fix-pickup-live-notes.sql",
-  "first-admin.sql"
-)
+$migrationFiles = Get-ChildItem -LiteralPath (Join-Path $supabaseDir "migrations") -Filter "*.sql" -File |
+  Sort-Object Name |
+  ForEach-Object { "migrations\$($_.Name)" }
+$files = @($migrationFiles) + @("first-admin.sql")
 
 $missing = @()
 foreach ($file in $files) {
@@ -34,7 +32,7 @@ if ($missing.Count -gt 0) {
 
 $header = @"
 -- XpressIntra samlet Supabase-fix
--- Oprettet automatisk fra projektets Supabase-fixfiler.
+-- Oprettet automatisk fra den aktuelle sikkerhedsmigration.
 -- Saadan bruges den:
 -- 1. Aabn Supabase SQL Editor.
 -- 2. Indsaet hele teksten.

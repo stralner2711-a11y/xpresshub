@@ -1,6 +1,6 @@
 {
-  "name": "IntraBudet medarbejdersystem",
-  "short_name": "IntraBudet",
+  "name": "XpressIntra medarbejdersystem",
+  "short_name": "XpressIntra",
   "description": "Internt medarbejdersystem til XpressBudets medarbejdere.",
   "start_url": "/",
   "scope": "/",

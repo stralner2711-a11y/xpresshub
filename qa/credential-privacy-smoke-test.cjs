@@ -38,10 +38,11 @@ assert(serviceWorker.includes("url.pathname.endsWith('/app-config.js')"), 'Servi
 
 assert(!/auth\.jwt\(\).*raw_user_meta_data/is.test(schema), 'RLS must not trust user-editable raw_user_meta_data claims');
 assert(!/user_metadata/i.test(schema), 'RLS/schema should not authorize from user_metadata');
-assert(schema.includes("or employment_status = 'active'") && schema.includes('or private.is_admin()'), 'Profile reads should expose pending users only to admins and the user themself');
+assert(schema.includes("or (private.is_active_employee() and employment_status = 'active')") && schema.includes('or private.is_admin()'), 'Profile reads should expose pending users only to admins and the user themself');
 assert(schema.includes("coalesce(invite.access_role, 'employee')"), 'New users should get access role from admin invitation, not self-claimed metadata');
 assert(schema.includes("coalesce(invite.vehicle_type, 'van')"), 'New users should get vehicle type from admin invitation, not self-claimed metadata');
-assert(schema.includes('on public.employee_invitations for all to authenticated using (private.is_admin())'), 'Only admins should manage employee invitations');
-assert(fullSetup.includes('on public.employee_invitations for all to authenticated using (private.is_admin())'), 'Full setup should keep invitations admin-only');
+assert(schema.includes('on public.employee_invitations for insert to authenticated with check (created_by = auth.uid() and private.is_admin())'), 'Only admins should create employee invitations');
+assert(schema.includes('on public.employee_invitations for select to authenticated using (private.is_admin())'), 'Only admins should read employee invitations');
+assert(fullSetup.includes('on public.employee_invitations for insert to authenticated with check (created_by = auth.uid() and private.is_admin())'), 'Full setup should keep invitation creation admin-only');
 
 console.log('Credential and privacy smoke test passed');

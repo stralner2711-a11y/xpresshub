@@ -14,7 +14,7 @@ assert(source.includes("invitationStatus: 'local'"), 'App should create a local 
 assert(source.includes("employee.invitationStatus = 'online'"), 'App should mark Supabase invitations as online');
 assert(source.includes('createSupabaseEmployeeInvitation(employee)'), 'App should create Supabase invitations when online');
 assert(source.includes('Arbejdsmail<input name="email" type="email"'), 'Employee profile modal should include work email');
-assert(source.includes("${isNew ? 'required' : ''}"), 'Work email should be required for new employee invitations');
+assert(source.includes("${isNew ? 'required' : 'readonly'}"), 'Work email should be required for new invitations and locked on existing profiles');
 assert(source.includes('data-action="signup-invite-profile"'), 'Login should expose invite-link profile signup');
 assert(source.includes('employeeDownloadPageUrl'), 'Invite flow should include the official app download page');
 assert(source.includes('function officialAppUrl'), 'Invite flow should generate links from the official app URL');

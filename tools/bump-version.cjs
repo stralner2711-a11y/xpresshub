@@ -21,7 +21,10 @@ Examples:
 
 Updates:
   - src/app.js (APP_VERSION, APP_DISPLAY_VERSION, APP_VERSION_CODE)
+  - package.json and package-lock.json
   - android/app/build.gradle (versionName, versionCode)
+  - ios/App/App.xcodeproj/project.pbxproj (marketing/build version)
+  - public/download.html and docs/download.html (APK link)
   - service-worker.js, public/service-worker.js (CACHE_NAME)
 `);
 }
@@ -44,10 +47,37 @@ app = app.replace(/const APP_DISPLAY_VERSION = '[^']+';/, `const APP_DISPLAY_VER
 app = app.replace(/const APP_VERSION_CODE = \d+;/, `const APP_VERSION_CODE = ${versionCode};`);
 write('src/app.js', app);
 
+const packageJson = JSON.parse(read('package.json'));
+packageJson.version = displayVersion;
+write('package.json', `${JSON.stringify(packageJson, null, 2)}\n`);
+
+const packageLock = JSON.parse(read('package-lock.json'));
+packageLock.version = displayVersion;
+if (packageLock.packages?.['']) packageLock.packages[''].version = displayVersion;
+write('package-lock.json', `${JSON.stringify(packageLock, null, 2)}\n`);
+
 let gradle = read('android/app/build.gradle');
 gradle = gradle.replace(/versionCode \d+/, `versionCode ${versionCode}`);
 gradle = gradle.replace(/versionName "[^"]+"/, `versionName "${displayVersion}"`);
 write('android/app/build.gradle', gradle);
+
+const iosProjectFile = 'ios/App/App.xcodeproj/project.pbxproj';
+if (fs.existsSync(path.join(root, iosProjectFile))) {
+  let iosProject = read(iosProjectFile);
+  iosProject = iosProject.replace(/CURRENT_PROJECT_VERSION = \d+;/g, `CURRENT_PROJECT_VERSION = ${versionCode};`);
+  iosProject = iosProject.replace(/MARKETING_VERSION = [^;]+;/g, `MARKETING_VERSION = ${displayVersion};`);
+  write(iosProjectFile, iosProject);
+}
+
+for (const file of ['public/download.html', 'docs/download.html']) {
+  if (!fs.existsSync(path.join(root, file))) continue;
+  let html = read(file);
+  html = html.replace(
+    /releases\/download\/v\d+\.\d+\.\d+\/xpressintra\.apk/g,
+    `releases/download/v${displayVersion}/xpressintra.apk`
+  );
+  write(file, html);
+}
 
 for (const file of ['service-worker.js', 'public/service-worker.js']) {
   let source = read(file);

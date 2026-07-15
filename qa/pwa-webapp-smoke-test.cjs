@@ -12,6 +12,7 @@ const docsDownload = fs.readFileSync('docs/download.html', 'utf8');
 const serviceWorker = fs.readFileSync('service-worker.js', 'utf8');
 const publicServiceWorker = fs.readFileSync('public/service-worker.js', 'utf8');
 const app = fs.readFileSync('src/app.js', 'utf8');
+const version = JSON.parse(fs.readFileSync('public/version.json', 'utf8'));
 
 assert(index.includes('viewport-fit=cover'), 'index should support iPhone safe-area layout');
 assert(index.includes('mobile-web-app-capable'), 'index should support mobile web app install metadata');
@@ -40,7 +41,7 @@ for (const html of [download, docsDownload]) {
 }
 
 assert(serviceWorker === publicServiceWorker, 'root and public service workers should match');
-assert(serviceWorker.includes('xpressintra-web-login-sync-v110'), 'service worker cache should be bumped for webapp login sync');
+assert(serviceWorker.includes(`xpressintra-release-v${version.activeVersionCode}`), 'service worker cache should match the active release build');
 assert(serviceWorker.includes('./download.html'), 'service worker should cache the install/download page');
 assert(app.includes('På iPhone åbner du siden i Safari'), 'login install card should guide iPhone users clearly');
 
