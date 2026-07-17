@@ -6,6 +6,7 @@ function assert(condition, message) {
 
 const app = fs.readFileSync('src/app.js', 'utf8');
 const chatModule = fs.readFileSync('src/modules/chat.js', 'utf8');
+const styles = fs.readFileSync('src/styles.css', 'utf8');
 
 assert(app.includes('XpressIntraChat.hasChannelAccess'), 'App should delegate channel access checks to the chat module when loaded');
 assert(app.includes('XpressIntraChat.chatFromConversationRow'), 'App should delegate Supabase conversation mapping to the chat module when loaded');
@@ -27,5 +28,10 @@ assert(chatModule.includes('export function hasChannelAccess'), 'Chat module sho
 assert(chatModule.includes('export function chatFromConversationRow'), 'Chat module should export conversation mapping');
 assert(chatModule.includes('export function messageFromSupabaseRow'), 'Chat module should export message mapping');
 assert(chatModule.includes('globalThis.XpressIntraChat'), 'Chat module should expose a browser global for the app wrapper');
+assert(!chatModule.includes("if (['admin', 'owner'].includes(profile.accessRole)) return true;"), 'Admin or creator status alone must not unlock vehicle-only channels');
+assert(!app.includes("if (['admin', 'owner'].includes(profile.accessRole)) return true;\n  if (channel === 'truck')"), 'Fallback channel access must also depend on vehicle type');
+assert(chatModule.includes('latestMessage?.body'), 'Empty conversations must not crash while reading a missing latest message');
+assert(chatModule.includes('sender?.name'), 'Messages from an unavailable sender profile must render a safe fallback');
+assert(styles.includes('.messages { padding-bottom: 180px; }'), 'Conversation messages must reserve room above the fixed mobile composer');
 
 console.log('Chat module smoke test passed');

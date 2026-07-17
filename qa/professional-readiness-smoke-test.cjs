@@ -8,6 +8,8 @@ const app = fs.readFileSync('src/app.js', 'utf8');
 const worker = fs.readFileSync('public/service-worker.js', 'utf8');
 const rootWorker = fs.readFileSync('service-worker.js', 'utf8');
 const manifest = fs.readFileSync('android/app/src/main/AndroidManifest.xml', 'utf8');
+const backupRules = fs.readFileSync('android/app/src/main/res/xml/backup_rules.xml', 'utf8');
+const dataExtractionRules = fs.readFileSync('android/app/src/main/res/xml/data_extraction_rules.xml', 'utf8');
 const version = JSON.parse(fs.readFileSync('public/version.json', 'utf8'));
 
 for (const source of [worker, rootWorker]) {
@@ -26,7 +28,14 @@ for (const source of [worker, rootWorker]) {
 }
 
 assert(manifest.includes('android:allowBackup="false"'), 'Android backup should be disabled for private app data');
-assert(manifest.includes('android:fullBackupContent="false"'), 'Android full backup content should be disabled');
+assert(manifest.includes('android:fullBackupContent="@xml/backup_rules"'), 'Android should use explicit full-backup rules');
+assert(manifest.includes('android:dataExtractionRules="@xml/data_extraction_rules"'), 'Android should use explicit Android 12+ extraction rules');
+for (const domain of ['root', 'file', 'database', 'sharedpref', 'external', 'device_root', 'device_file', 'device_database', 'device_sharedpref']) {
+  assert(backupRules.includes(`<exclude domain="${domain}" path="." />`), `Full-backup rules should exclude ${domain}`);
+  assert(dataExtractionRules.includes(`<exclude domain="${domain}" path="." />`), `Data extraction rules should exclude ${domain}`);
+}
+assert(dataExtractionRules.includes('<cloud-backup>'), 'Android 12+ cloud backup rules should be explicit');
+assert(dataExtractionRules.includes('<device-transfer>'), 'Android 12+ device transfer rules should be explicit');
 assert(manifest.includes('android.permission.POST_NOTIFICATIONS'), 'Android should request notification permission for Android 13+');
 assert(manifest.includes('android.hardware.location.gps" android:required="false"'), 'GPS hardware should not be required for installation');
 assert(manifest.includes('android.hardware.camera" android:required="false"'), 'Camera hardware should not be required for installation');

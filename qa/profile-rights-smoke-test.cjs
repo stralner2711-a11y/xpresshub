@@ -84,13 +84,17 @@ assert(employeeModal.innerHTML.includes('name="role"') && employeeModal.innerHTM
 assert(employeeModal.innerHTML.includes('name="department"') && employeeModal.innerHTML.includes('disabled'), 'Employee department field should be disabled');
 assert(employeeModal.innerHTML.includes('name="truck"') && employeeModal.innerHTML.includes('disabled'), 'Employee vehicle/unit field should be disabled');
 
-harness.run("profile = { ...profile, role: 'Chef', accessRole: 'admin', vehicleType: 'dispatch', truck: 'Ledelse' }; openProfileModal(employees.find(employee => employee.id === 'ma'));");
+harness.run("profile = { ...profile, role: 'Chef', accessRole: 'admin', vehicleType: 'dispatch', truck: 'Ledelse' }; openProfileModal({ id: 'employee-1', name: 'Kollega', role: 'Lastbilchauffør', accessRole: 'employee', vehicleType: 'truck', truck: 'Lastbil 02' });");
 const adminModal = harness.modalNodes.at(-1);
 assert(adminModal.innerHTML.includes('Chef/admin kan ændre titel'), 'Admin should see editable admin-fields explanation');
 assert(adminModal.innerHTML.includes('Titel / rolle'), 'Admin should see title/role control');
 assert(!adminModal.innerHTML.match(/<select name="role"[^>]*disabled/), 'Admin role/title field should be editable');
 assert(!adminModal.innerHTML.match(/<input name="department"[^>]*disabled/), 'Admin department field should be editable');
 assert(!adminModal.innerHTML.match(/<input name="truck"[^>]*disabled/), 'Admin vehicle/unit field should be editable');
+
+harness.run("openProfileModal({ id: 'employee-2', name: 'Appansvarlig', role: 'Appansvarlig', accessRole: 'employee', vehicleType: 'truck', truck: 'Lastbil 03' });");
+const customRoleModal = harness.modalNodes.at(-1);
+assert(customRoleModal.innerHTML.includes('<option value="Appansvarlig" selected>Appansvarlig</option>'), 'Existing custom job titles should stay selected instead of silently falling back to Chauffør');
 
 console.log('Profile rights smoke test passed');
 

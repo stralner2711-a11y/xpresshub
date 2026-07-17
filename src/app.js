@@ -26,9 +26,9 @@ const icons = {
   search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>',
 };
 
-const APP_VERSION = '1.3.52-release-v65';
-const APP_DISPLAY_VERSION = '1.3.52';
-const APP_VERSION_CODE = 65;
+const APP_VERSION = '1.3.53-release-v66';
+const APP_DISPLAY_VERSION = '1.3.53';
+const APP_VERSION_CODE = 66;
 const IMAGE_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
 const PROFILE_PHOTO_MAX_DIMENSION = 512;
 const PROFILE_PHOTO_QUALITY = 0.84;
@@ -335,6 +335,7 @@ function clearLegacyProductionStorage() {
   if (DEMO_MODE) return;
   Object.keys(localStorage)
     .filter(key => key.startsWith('roadlog:'))
+    .filter(key => !key.startsWith('roadlog:restSupabaseSession:'))
     .filter(key => !PERSISTENT_DEVICE_STORAGE_KEYS.has(key.slice('roadlog:'.length)))
     .forEach(key => localStorage.removeItem(key));
 }
@@ -377,6 +378,29 @@ const fixMojibakeText = value => String(value ?? '')
   ));
 const text = value => fixMojibakeText(value).replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]);
 const mediaName = value => String(value || 'xpressintra-billede.jpg').replace(/[^\wæøåÆØÅ&.-]+/g, '-');
+
+function safeHref(value, options = {}) {
+  const raw = String(value || '').trim();
+  if (!raw || /[\u0000-\u001f\u007f]/.test(raw)) return '';
+  const allowedProtocols = options.allowedProtocols || ['https:', 'http:', 'tel:', 'mailto:'];
+  try {
+    const parsed = new URL(raw, window.location.origin);
+    if (!allowedProtocols.includes(parsed.protocol)) return '';
+    return ['tel:', 'mailto:'].includes(parsed.protocol) ? raw : parsed.href;
+  } catch {
+    return '';
+  }
+}
+
+function safeMediaSrc(value) {
+  const raw = String(value || '').trim();
+  if (/^data:image\/(?:jpeg|png|webp|gif);base64,/i.test(raw)) return raw;
+  if (/^blob:/i.test(raw)) return raw;
+  return safeHref(raw, { allowedProtocols: ['https:', 'http:'] });
+}
+
+const hrefAttr = value => text(safeHref(value) || '#');
+const mediaSrcAttr = value => text(safeMediaSrc(value));
 
 let supabaseClientInstance = null;
 let supabaseChatSubscription = null;
@@ -823,24 +847,6 @@ function resizeImageFile(file, options = {}) {
   });
 }
 
-function legacyReadImageFile(file) {
-  if (!coreSettings.media) {
-    showToast('Billeder er midlertidigt slået fra af chef/admin');
-    return Promise.resolve(null);
-  }
-  if (!file || !file.type?.startsWith('image/')) return Promise.resolve(null);
-  if (file.size > 2 * 1024 * 1024) {
-    showToast('Billedet er for stort til denne enhed. Vælg max 2 MB.');
-    return Promise.resolve(null);
-  }
-  return new Promise(resolve => {
-    const reader = new FileReader();
-    reader.addEventListener('load', () => resolve({ src: reader.result, name: file.name, type: file.type, size: file.size }));
-    reader.addEventListener('error', () => resolve(null));
-    reader.readAsDataURL(file);
-  });
-}
-
 async function readImageFile(file, options = {}) {
   if (!coreSettings.media) {
     showToast('Billeder er midlertidigt slået fra af chef/admin');
@@ -965,8 +971,13 @@ let loginErrorMessage = '';
 let creatorRoleTester = stored('creatorRoleTester') || { active: false, originalProfile: null, currentRole: null };
 let profile = stored('profile') || (DEMO_MODE ? clone(emptyLocalProfile) : clone(productionProfile));
 let location = { sharing: false, demo: false, speed: 0, points: 0, watchId: null, timer: null, coords: null, startedAt: null, expiresAt: null, lastUpdatedAt: null, shareMode: null, pendingMessage: '', errorHandled: false };
+let locationSyncInFlight = false;
+let locationAuthFailureHandled = false;
+let locationSyncBackoffUntil = 0;
+let locationSyncWarningShown = false;
 const DEFAULT_DEMO_COORDS = [56.1055, 10.0065];
 const LIVE_LOCATION_MAX_AGE_MS = 15 * 60 * 1000;
+const LOCATION_SYNC_RETRY_DELAY_MS = 15 * 1000;
 let activePickup = stored('activePickup');
 let pickupHistory = stored('pickupHistory') || [];
 let mapZoom = 1;
@@ -1096,7 +1107,7 @@ function scheduleLaunchSplashExit() {
 function avatar(employee, className = '') {
   const photo = employee?.photo || (employee?.id === 'th' ? profile.photo : null);
   const initials = employee?.initials || initialsFromName(employee?.name || profile.name || 'Medarbejder');
-  return `<span class="person-avatar ${employee?.online ? 'is-online' : ''} ${className}">${photo ? `<img src="${text(photo.src)}" alt="${text(employee?.name || 'Profil')}" />` : text(initials)}</span>`;
+  return `<span class="person-avatar ${employee?.online ? 'is-online' : ''} ${className}">${safeMediaSrc(photo?.src) ? `<img src="${mediaSrcAttr(photo.src)}" alt="${text(employee?.name || 'Profil')}" />` : text(initials)}</span>`;
 }
 
 function showToast(text) {
@@ -1913,7 +1924,6 @@ function hasChannelAccess(channel) {
   if (globalThis.XpressIntraChat?.hasChannelAccess) {
     return globalThis.XpressIntraChat.hasChannelAccess(channel, profile, { searchable });
   }
-  if (['admin', 'owner'].includes(profile.accessRole)) return true;
   if (channel === 'truck') return profile.vehicleType === 'truck';
   if (channel === 'van') return profile.vehicleType === 'van';
   return true;
@@ -2818,30 +2828,38 @@ function locationPrivacyForSupabase(visibility = 'team') {
 async function syncSupabaseLocation() {
   const client = getSupabaseClient();
   if (!client || !session?.userId || !location.sharing) return;
+  if (locationSyncInFlight || Date.now() < locationSyncBackoffUntil) return;
   const coords = location.coords || currentEmployee().coords;
   if (!coords) return;
   const visibility = activePickup?.employeeId ? 'pickup' : 'team';
   const shareMode = activePickup ? 'pickup' : location.shareMode || (workday.active ? 'workday' : 'manual');
   const privacy = locationPrivacyForSupabase(visibility);
-  const { error } = await client.from('location_shares').upsert({
-    user_id: session.userId,
-    latitude: coords[0],
-    longitude: coords[1],
-    speed_kmh: privacy.showSpeed ? Number(location.speed || 0) : null,
-    visibility,
-    visible_to_user_id: visibility === 'pickup' ? activePickup.employeeId : null,
-    audience: privacy.audience,
-    show_speed: privacy.showSpeed,
-    show_vehicle: privacy.showVehicle,
-    show_status: privacy.showStatus,
-    status: locationStatusForSupabase(),
-    share_mode: shareMode,
-    expires_at: location.expiresAt,
-    last_updated_at: new Date().toISOString(),
-  });
-  if (error) {
-    if (handleLocationShareSchemaError(error)) return;
-    throw error;
+  locationSyncInFlight = true;
+  try {
+    const { error } = await client.from('location_shares').upsert({
+      user_id: session.userId,
+      latitude: coords[0],
+      longitude: coords[1],
+      speed_kmh: privacy.showSpeed ? Number(location.speed || 0) : null,
+      visibility,
+      visible_to_user_id: visibility === 'pickup' ? activePickup.employeeId : null,
+      audience: privacy.audience,
+      show_speed: privacy.showSpeed,
+      show_vehicle: privacy.showVehicle,
+      show_status: privacy.showStatus,
+      status: locationStatusForSupabase(),
+      share_mode: shareMode,
+      expires_at: location.expiresAt,
+      last_updated_at: new Date().toISOString(),
+    });
+    if (error) {
+      if (handleLocationShareSchemaError(error)) return;
+      throw error;
+    }
+    locationSyncBackoffUntil = 0;
+    locationSyncWarningShown = false;
+  } finally {
+    locationSyncInFlight = false;
   }
 }
 
@@ -3540,6 +3558,7 @@ async function signOut() {
   logbookDrafts = [];
   profile = clone(productionProfile);
   location = { sharing: false, demo: false, speed: 0, points: 0, watchId: null, timer: null, coords: null, startedAt: null, expiresAt: null, lastUpdatedAt: null, shareMode: null, pendingMessage: null, errorHandled: false };
+  resetLocationSyncGuard();
   creatorRoleTester = { active: false, originalProfile: null, currentRole: null };
   activeTab = 'home';
   activeChat = null;
@@ -4698,7 +4717,7 @@ function searchable(value) {
 }
 
 function globalSearchResults() {
-  const query = globalQuery.trim().toLowerCase();
+  const query = searchable(globalQuery.trim());
   if (query.length < 2) return [];
   const matches = value => searchable(value).includes(query);
   const resultSets = [
@@ -4707,6 +4726,7 @@ function globalSearchResults() {
       title: employee.name,
       body: `${employee.role} · ${employee.truck} · ${employee.location}`,
       targetTab: 'team',
+      employeeQuery: employee.name,
     })),
     visibleChats().map(chat => ({
       type: chat.channel ? 'Kanal' : chat.community ? 'Fælleschat' : 'Chat',
@@ -4727,6 +4747,7 @@ function globalSearchResults() {
       body: `${item.source} · ${item.description}`,
       targetTab: 'info',
       infoCategory: item.category,
+      infoQuery: item.title,
     })),
     vehicles.map(vehicle => ({
       type: 'Køretøj',
@@ -4753,7 +4774,7 @@ function renderGlobalSearch() {
   return `<section class="global-search">
     <label><span>${icon('search')}</span><input data-global-search placeholder="Søg i appen..." value="${text(globalQuery)}" autocomplete="off" /></label>
     ${globalQuery.trim().length >= 2 ? `<div class="global-search-results">
-      ${results.length ? results.map(item => `<button data-search-target="${text(item.targetTab)}" ${item.chatId ? `data-search-chat="${text(item.chatId)}"` : ''} ${item.infoCategory ? `data-search-info="${text(item.infoCategory)}"` : ''} ${item.action ? `data-search-action="${text(item.action)}"` : ''}>
+      ${results.length ? results.map(item => `<button data-search-target="${text(item.targetTab)}" ${item.chatId ? `data-search-chat="${text(item.chatId)}"` : ''} ${item.employeeQuery ? `data-search-employee-query="${text(item.employeeQuery)}"` : ''} ${item.infoCategory ? `data-search-info="${text(item.infoCategory)}"` : ''} ${item.infoQuery ? `data-search-info-query="${text(item.infoQuery)}"` : ''} ${item.action ? `data-search-action="${text(item.action)}"` : ''}>
         <small>${text(item.type)}</small><b>${text(item.title)}</b><span>${text(item.body)}</span>
       </button>`).join('') : '<p>Ingen resultater. Prøv navn, bil, by, CMR, GPS eller regel.</p>'}
     </div>` : ''}
@@ -5403,7 +5424,7 @@ function renderLogbookEntry(entry) {
     <p>${text(entry.date || 'I dag')} · ${text(entry.place)} ${entry.source === 'auto' ? '· Automatisk forslag' : '· Manuel'}</p>
     <b>${text(entry.category || 'Logbog')}</b>
     <span>${text(entry.note)}</span>
-    ${entry.image ? `<figure class="logbook-image"><img src="${text(entry.image.src)}" alt="${text(entry.image.name || entry.place)}" /><a href="${text(entry.image.src)}" download="${text(mediaName(entry.image.name))}">${icon('download')} Download</a></figure>` : ''}
+    ${safeMediaSrc(entry.image?.src) ? `<figure class="logbook-image"><img src="${mediaSrcAttr(entry.image.src)}" alt="${text(entry.image.name || entry.place)}" /><a href="${mediaSrcAttr(entry.image.src)}" download="${text(mediaName(entry.image.name))}">${icon('download')} Download</a></figure>` : ''}
   </article>`;
 }
 
@@ -5551,7 +5572,7 @@ function renderFeedPost(item) {
   return `<article class="social-post ${item.kind === 'rule' ? 'rule-post' : ''}">
     <header>${postAvatar(item)}<div><b>${text(item.author)}</b><span>${text(item.time)} · ${text(item.audience)}</span></div>${item.pinned ? '<em>Fastgjort</em>' : ''}${canEditPost ? `<nav class="post-admin-actions" aria-label="Opslagshandlinger"><button data-action="edit-announcement" data-post="${text(item.id)}">Ret</button><button data-action="delete-announcement" data-post="${text(item.id)}">Slet</button></nav>` : ''}</header>
     <div class="social-post-body">${item.title ? `<h3>${text(item.title)}</h3>` : ''}<p>${text(item.body)}</p>
-      ${item.image ? `<figure class="post-image"><img src="${text(item.image.src)}" alt="${text(item.image.name || item.title || 'Opslagsbillede')}" /><a href="${text(item.image.src)}" download="${text(mediaName(item.image.name))}">${icon('download')} Download</a></figure>` : ''}
+      ${safeMediaSrc(item.image?.src) ? `<figure class="post-image"><img src="${mediaSrcAttr(item.image.src)}" alt="${text(item.image.name || item.title || 'Opslagsbillede')}" /><a href="${mediaSrcAttr(item.image.src)}" download="${text(mediaName(item.image.name))}">${icon('download')} Download</a></figure>` : ''}
       ${item.kind === 'rule' ? `<button class="source-link" data-action="open-rule-updates">${text(item.source)} · Se officiel kilde</button>` : ''}
     </div>
     <footer>
@@ -5575,7 +5596,7 @@ function updateLocation(position) {
   const successMessage = location.pendingMessage;
   location.pendingMessage = '';
   syncLogbookDrafts();
-  syncSupabaseLocation().catch(error => showToast(`GPS kunne ikke opdateres online: ${error.message}`));
+  syncSupabaseLocation().catch(handleLocationSyncError);
   if (activeTab === 'map') {
     if (firstFix) render({ preserveScroll: true });
     else initializeMaps();
@@ -5607,6 +5628,65 @@ function locationErrorMessage(error = {}) {
   if (Number(error.code) === 1) return 'Lokation blev ikke delt. Giv XpressIntra adgang til lokation i telefonens indstillinger.';
   if (Number(error.code) === 3) return 'Telefonen kunne ikke finde din position hurtigt nok. Gå udenfor eller prøv igen om lidt.';
   return 'Telefonens position er ikke tilgængelig lige nu. Tjek at GPS er slået til, og prøv igen.';
+}
+
+function isSupabaseAuthFailure(error = {}) {
+  const status = Number(error?.status || error?.statusCode || error?.context?.status || 0);
+  const code = String(error?.code || '').toLowerCase();
+  const details = [error?.message, error?.details, error?.hint].filter(Boolean).join(' ').toLowerCase();
+  return status === 401
+    || code === 'pgrst301'
+    || details.includes('jwt expired')
+    || details.includes('invalid jwt')
+    || details.includes('jwt malformed')
+    || details.includes('token has expired')
+    || details.includes('refresh token')
+    || details.includes('not authenticated')
+    || details.includes('unauthorized');
+}
+
+function resetLocationSyncGuard() {
+  locationSyncInFlight = false;
+  locationAuthFailureHandled = false;
+  locationSyncBackoffUntil = 0;
+  locationSyncWarningShown = false;
+}
+
+function stopLocationAfterAuthFailure() {
+  if (locationAuthFailureHandled) return;
+  locationAuthFailureHandled = true;
+  locationSyncBackoffUntil = Number.MAX_SAFE_INTEGER;
+  navigator.geolocation?.clearWatch(location.watchId);
+  clearInterval(location.timer);
+  location = {
+    sharing: false,
+    demo: false,
+    speed: 0,
+    points: 0,
+    watchId: null,
+    timer: null,
+    coords: null,
+    startedAt: null,
+    expiresAt: null,
+    lastUpdatedAt: null,
+    shareMode: null,
+    pendingMessage: '',
+    errorHandled: true,
+  };
+  render({ preserveScroll: true });
+  showToast('Din session er udløbet. GPS-delingen er stoppet. Log ud og ind igen.');
+}
+
+function handleLocationSyncError(error = {}) {
+  if (isSupabaseAuthFailure(error)) {
+    stopLocationAfterAuthFailure();
+    return;
+  }
+  if (!location.sharing) return;
+  locationSyncBackoffUntil = Date.now() + LOCATION_SYNC_RETRY_DELAY_MS;
+  if (locationSyncWarningShown) return;
+  locationSyncWarningShown = true;
+  showToast('GPS-data kunne ikke sendes lige nu. XpressIntra prøver igen automatisk.');
 }
 
 function handleLocationError(error = {}) {
@@ -5653,8 +5733,9 @@ function startLocationSharing(message = 'Din live-position deles nu med kolleger
   location.shareMode = durationMinutes ? `${durationMinutes} min` : workday.active ? 'workday' : 'manual';
   location.pendingMessage = message;
   location.errorHandled = false;
+  resetLocationSyncGuard();
   if (location.sharing) {
-    syncSupabaseLocation().catch(error => showToast(`GPS kunne ikke opdateres online: ${error.message}`));
+    syncSupabaseLocation().catch(handleLocationSyncError);
     render({ preserveScroll: true });
     showToast(message);
     return;
@@ -5681,6 +5762,7 @@ function stopLocationSharing(message = 'Din position er ikke længere synlig for
   clearInterval(location.timer);
   stopSupabaseLocation().catch(() => {});
   location = { sharing: false, demo: false, speed: 0, points: 0, watchId: null, timer: null, coords: null, startedAt: null, expiresAt: null, lastUpdatedAt: null, shareMode: null, pendingMessage: '', errorHandled: false };
+  resetLocationSyncGuard();
   render();
   showToast(message);
 }
@@ -5708,26 +5790,6 @@ function toggleLocation() {
   startLocationSharing();
 }
 
-function renderScreenGuide() {
-  if (activeTab === 'chat' && activeChat) return '';
-  if (activeTab === 'home' || activeTab === 'work' || activeTab === 'map' || activeTab === 'chat') return '';
-  const guides = {
-    home: { title: 'Start her', body: 'Se dagens vigtigste beskeder, opgaver og hurtige handlinger.', action: 'open-notifications', label: 'Tjek beskeder' },
-    work: { title: 'Arbejde og tur', body: 'Mød ind, del tur, hent for kollega og gem logbog fra ét roligt sted.', action: workday.active ? 'end-workday' : 'start-workday', label: workday.active ? 'Slut dag' : 'Mød ind' },
-    team: { title: 'Find en kollega', body: 'Søg efter navn, bil eller rolle. Profiler viser kun det, kollegaen må dele.', action: 'new-employee', label: 'Registrer kollega', adminOnly: true },
-    map: { title: 'Livekort med frivillig GPS', body: 'Se kollegaer på kortet og brug kortvarig deling, når nogen skal finde dig.', action: 'open-map', label: 'Åbn kort' },
-    chat: { title: 'Beskeder samlet', body: 'Brug fælleschat, din køretøjskanal eller direkte beskeder uden at blande opslag ind.', action: 'new-chat', label: 'Ny besked' },
-    info: { title: 'Hurtig information', body: 'Find drift, telefonnumre, regler, dokumenter og praktiske svar fra vejen.', action: 'open-info', label: 'Nød og drift', info: 'operations' },
-    more: { title: isCreatorOwner() ? 'Styr appen professionelt' : 'Din konto og privatliv', body: isCreatorOwner() ? 'Tjek drift, rettigheder, Supabase, sikkerhed og de vigtigste styringer.' : 'Ret profil, privatliv, notifikationer og dine egne data.', action: isCreatorOwner() ? 'open-admin' : 'open-profile', label: isCreatorOwner() ? 'Appens drift' : 'Min profil' },
-  };
-  const guide = guides[activeTab] || guides.home;
-  const hidden = guide.adminOnly && !canManageEmployees();
-  return `<section class="screen-guide">
-    <div><b>${text(guide.title)}</b><span>${text(guide.body)}</span></div>
-    ${hidden ? '' : `<button type="button" data-action="${text(guide.action)}" ${guide.info ? `data-info="${text(guide.info)}"` : ''}>${text(guide.label)}</button>`}
-  </section>`;
-}
-
 function appShell(content) {
   return `
     <section class="phone-shell desktop-view-${desktopViewMode()}">
@@ -5737,7 +5799,7 @@ function appShell(content) {
           <button class="avatar" data-action="open-profile" aria-label="Åbn din profil">${text(currentEmployee().initials)}</button>
         </div>
       </header>
-      <section class="content">${renderGlobalSearch()}${renderScreenGuide()}${content}</section>
+      <section class="content">${renderGlobalSearch()}${content}</section>
       <nav class="bottom-nav" aria-label="Hovedmenu">
         ${[
           ['home', 'home', 'Forside'],
@@ -5891,7 +5953,7 @@ function renderWork() {
     : workdayPrivacy.audience === 'van' ? 'Varebilholdet'
     : 'Ingen';
   return `
-    <div class="page-heading"><div><p class="eyebrow">Din tur</p><h2>Arbejde</h2></div><button class="round-btn" data-action="open-settings" aria-label="Arbejdstilladelser">${icon('settings')}</button></div>
+    <div class="page-heading"><div><p class="eyebrow">Din tur</p><h2>Arbejde</h2></div></div>
     <section class="work-hero surface-card ${workday.active ? 'active' : ''}">
       <div>
         <p class="eyebrow">Arbejdsdag</p>
@@ -5944,7 +6006,7 @@ function renderPickupCard() {
       <span><b>Reference</b><small>${text(activePickup.reference || 'Ingen reference')}</small></span>
       <span><b>Prioritet</b><small>${text(activePickup.priority || 'Normal')}</small></span>
     </div>
-    <div class="pickup-checklist"><b>Tjekliste</b>${checklist.map(item => `<button class="${item.done ? 'done' : ''}" data-pickup-check="${text(item.id)}">${item.done ? '?' : '?'} ${text(item.label)}</button>`).join('')}</div>
+    <div class="pickup-checklist"><b>Tjekliste</b>${checklist.map(item => `<button class="${item.done ? 'done' : ''}" data-pickup-check="${text(item.id)}"><span>${item.done ? 'Færdig' : 'Markér'}</span> ${text(item.label)}</button>`).join('')}</div>
     <div class="pickup-live-notes"><b>Live noter</b>
       ${liveNotes.length ? liveNotes.slice(-5).map(step => `<span><strong>${text(step.authorName || 'Kollega')}</strong><small>${new Date(step.at).toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' })}</small>${text(step.note)}</span>`).join('') : '<span>Ingen noter endnu. Begge parter kan skrive korte opdateringer her.</span>'}
       <form class="pickup-note-form"><input name="note" placeholder="Skriv live note..." autocomplete="off" /><button>Send</button></form>
@@ -6268,7 +6330,7 @@ function renderMessageBubble(message) {
     <div class="bubble ${text(message.side)}">
       <header><b>${own ? 'Dig' : text(message.senderName)}</b>${meta ? `<small>${text(meta)}</small>` : ''}</header>
       ${message.body ? `<p>${text(message.body)}</p>` : ''}
-      ${message.image ? `<figure class="chat-image"><img src="${text(message.image.src)}" alt="${text(message.image.name || 'Chatbillede')}" /><a href="${text(message.image.src)}" download="${text(mediaName(message.image.name))}">${icon('download')} Download</a></figure>` : ''}
+      ${safeMediaSrc(message.image?.src) ? `<figure class="chat-image"><img src="${mediaSrcAttr(message.image.src)}" alt="${text(message.image.name || 'Chatbillede')}" /><a href="${mediaSrcAttr(message.image.src)}" download="${text(mediaName(message.image.name))}">${icon('download')} Download</a></figure>` : ''}
       <time>${text(messageTimestamp(message))}</time>
     </div>
   </article>`;
@@ -6291,7 +6353,7 @@ function renderMore() {
   const completion = profileCompletion({ ...currentEmployee(), ...profile });
   return `
     <div class="page-heading"><div><p class="eyebrow">Din konto</p><h2>Kontrolcenter</h2></div></div>
-    <button class="profile-card" data-action="open-profile">${avatar(currentEmployee(), 'large-avatar')}<span><b>${text(profile.name)}</b><small>${text(profile.role)} · ${text(accessRoleLabel(profile.accessRole))} · ${completion}% udfyldt</small></span>${icon('edit', 'row-arrow')}</button>
+    <section class="profile-card profile-summary-card">${avatar(currentEmployee(), 'large-avatar')}<span><b>${text(profile.name)}</b><small>${text(profile.role)} · ${text(accessRoleLabel(profile.accessRole))} · ${completion}% udfyldt</small></span></section>
     ${legalAcceptance ? '' : `<section class="legal-alert">
       <b>Sikkerhed & jura</b>
       <span>${text(legalStatusText())}. GPS, billeder, chat og profiler er persondata og skal bruges efter klare interne regler.</span>
@@ -6409,7 +6471,7 @@ function renderInfo() {
         <span class="utility-icon">${icon(item.icon)}</span>
         <span><em>${text(item.source)}</em><b>${text(item.title)}</b><small>${text(item.description)}</small></span>
         <button type="button" class="favorite-info-btn ${infoFavorites.includes(item.id) ? 'active' : ''}" data-info-favorite="${text(item.id)}" aria-label="${infoFavorites.includes(item.id) ? 'Fjern fra favoritter' : 'Gem som favorit'}" title="${infoFavorites.includes(item.id) ? 'Fjern fra favoritter' : 'Gem som favorit'}">${icon('heart')}</button>
-        ${item.href ? `<a class="open-info-link" href="${text(item.href)}" target="${item.href.startsWith('http') ? '_blank' : '_self'}" rel="noreferrer">Åbn</a>` : '<strong>Info</strong>'}
+        ${safeHref(item.href) ? `<a class="open-info-link" href="${hrefAttr(item.href)}" target="${safeHref(item.href).startsWith('http') ? '_blank' : '_self'}" rel="noreferrer">Åbn</a>` : '<strong>Info</strong>'}
       </article>` ).join('') : '<p class="empty-state">Ingen information matcher din søgning.</p>'}
       </section>
     </section>`}
@@ -6424,8 +6486,8 @@ function renderInfo() {
         ${favoriteLinks.length ? favoriteLinks.slice(0, 3).map(item => `<button data-info-category="${text(item.category)}"><b>${text(item.title)}</b><small>${text(item.source)} · ${text(item.description)}</small></button>`).join('') : '<p>Tryk på stjernen ved et link for at gemme det her.</p>'}
       </section>
       <section class="quick-guide-grid">
-        ${quickGuides.map((guide, index) => guide.href
-          ? `<a class="quick-guide-card" href="${text(guide.href)}" target="${guide.href.startsWith('http') ? '_blank' : '_self'}" rel="noreferrer"><span>${icon(guide.icon)}</span><em>${text(guide.audience)}</em><b>${text(guide.title)}</b><small>${text(guide.body)}</small><strong>${text(guide.action)}</strong></a>`
+        ${quickGuides.map((guide, index) => safeHref(guide.href)
+          ? `<a class="quick-guide-card" href="${hrefAttr(guide.href)}" target="${safeHref(guide.href).startsWith('http') ? '_blank' : '_self'}" rel="noreferrer"><span>${icon(guide.icon)}</span><em>${text(guide.audience)}</em><b>${text(guide.title)}</b><small>${text(guide.body)}</small><strong>${text(guide.action)}</strong></a>`
           : `<button class="quick-guide-card" data-guide="${index}"><span>${icon(guide.icon)}</span><em>${text(guide.audience)}</em><b>${text(guide.title)}</b><small>${text(guide.body)}</small><strong>${text(guide.action)}</strong></button>`
         ).join('')}
       </section>
@@ -6443,6 +6505,16 @@ function renderInfo() {
 }
 
 const routes = { home: renderHome, work: renderWork, team: renderTeam, map: renderMap, chat: renderChat, info: renderInfo, more: renderMore };
+
+const profileRoleOptions = ['Chauffør', 'Lastbilchauffør', 'Varebilschauffør', 'Disponent', 'Chef', 'Creator'];
+
+function renderProfileRoleOptions(currentRole = 'Chauffør') {
+  const selectedRole = String(currentRole || '').trim() || 'Chauffør';
+  const roles = profileRoleOptions.includes(selectedRole)
+    ? profileRoleOptions
+    : [selectedRole, ...profileRoleOptions];
+  return roles.map(role => `<option value="${text(role)}" ${role === selectedRole ? 'selected' : ''}>${text(role)}</option>`).join('');
+}
 
 function openProfileModal(employee = currentEmployee(), isNew = false) {
   const ownId = session?.userId || 'th';
@@ -6473,7 +6545,7 @@ function openProfileModal(employee = currentEmployee(), isNew = false) {
         <label>Arbejdsmail<input name="email" type="email" value="${text(source.email || '')}" ${isNew ? 'required' : 'readonly'} /></label>
         ${isOwnProfile ? `<label class="profile-photo-field">Profilbillede
           <span class="profile-photo-preview ${source.photo ? '' : 'is-empty'}" data-profile-photo-preview>
-            ${source.photo ? `<img src="${text(source.photo.src)}" alt="${text(source.name || 'Profilbillede')}" />` : '<b>+</b><small>Vælg billede</small>'}
+            ${safeMediaSrc(source.photo?.src) ? `<img src="${mediaSrcAttr(source.photo.src)}" alt="${text(source.name || 'Profilbillede')}" />` : '<b>+</b><small>Vælg billede</small>'}
           </span>
           <input name="photo" type="file" accept="image/jpeg,image/png,image/webp,image/gif" />
           <small>JPG, PNG, WebP eller GIF · max 10 MB. Store billeder skaleres ned til profilvisning.</small>
@@ -6488,7 +6560,7 @@ function openProfileModal(employee = currentEmployee(), isNew = false) {
         <label>Sprog<input name="languages" value="${text(source.languages || '')}" placeholder="Dansk, engelsk, tysk..." /></label>
       </section>
       <section class="profile-form-section"><h4>Rettigheder</h4>
-        <label>Titel / rolle<select name="role" ${canEditAdminFields ? '' : 'disabled'}><option ${source.role === 'Chauffør' ? 'selected' : ''}>Chauffør</option><option ${source.role === 'Lastbilchauffør' ? 'selected' : ''}>Lastbilchauffør</option><option ${source.role === 'Varebilschauffør' ? 'selected' : ''}>Varebilschauffør</option><option ${source.role === 'Disponent' ? 'selected' : ''}>Disponent</option><option ${source.role === 'Chef' ? 'selected' : ''}>Chef</option><option ${source.role === 'Creator' ? 'selected' : ''}>Creator</option></select></label>
+        <label>Titel / rolle<select name="role" ${canEditAdminFields ? '' : 'disabled'}>${renderProfileRoleOptions(source.role)}</select></label>
         <input type="hidden" name="role" value="${text(source.role || 'Chauffør')}" ${canEditAdminFields ? 'disabled' : ''} />
         <label>Rettighed<select name="accessRole" ${canEditAdminFields ? '' : 'disabled'}><option value="employee" ${source.accessRole === 'employee' ? 'selected' : ''}>Medarbejder</option><option value="dispatcher" ${source.accessRole === 'dispatcher' ? 'selected' : ''}>Disponent</option><option value="admin" ${source.accessRole === 'admin' ? 'selected' : ''}>Chef/admin</option><option value="owner" ${source.accessRole === 'owner' ? 'selected' : ''}>Creator</option></select></label>
         <input type="hidden" name="accessRole" value="${text(source.accessRole || 'employee')}" ${canEditAdminFields ? 'disabled' : ''} />
@@ -6503,7 +6575,7 @@ function openProfileModal(employee = currentEmployee(), isNew = false) {
       ${canEditAdminFields ? '<p class="security-inline-note">Chef/admin kan ændre titel, rettighed, afdeling, beviser og køretøj. Almindelige medarbejdere kan kun ændre egne kontakt- og profiloplysninger.</p>' : '<p class="security-inline-note">Titel, rettighed, afdeling, beviser og køretøj er låst og skal ændres af chef/admin.</p>'}
       ${canEditAdminFields && !isNew && source.email ? `<section class="invite-help"><b>Mailbekræftelse</b><span>Hvis kollegaen har trykket opret konto, men ikke har fået bekræftelsesmailen, kan admin gensende den her.</span><button type="button" data-resend-confirmation="${text(source.email)}">Gensend bekræftelsesmail</button></section>` : ''}
       <button class="save-btn">${isNew ? 'Registrér og lav invitation' : 'Gem profil'}</button>` : `
-      <div class="profile-details">${employee.photo ? `<img class="profile-photo-preview" src="${text(employee.photo.src)}" alt="${text(employee.name)}" />` : ''}<span><b>Rolle</b>${text(employee.role)} · ${text(accessRoleLabel(employee.accessRole))}</span><span><b>Bil</b>${text(employee.truck)}</span><span><b>Status</b>${text(employee.status)}</span><span><b>Telefon</b>${text(employee.phone || 'Telefon mangler')}</span><span><b>Mail</b>${text(employee.email || 'Mail mangler')}</span><span><b>Beviser</b>${text(employee.license || 'Beviser ikke udfyldt')}</span><span><b>GPS</b>${employee.sharing ? `${text(employee.location)} · deler position` : 'Deler ikke position'}</span></div>
+      <div class="profile-details">${safeMediaSrc(employee.photo?.src) ? `<img class="profile-photo-preview" src="${mediaSrcAttr(employee.photo.src)}" alt="${text(employee.name)}" />` : ''}<span><b>Rolle</b>${text(employee.role)} · ${text(accessRoleLabel(employee.accessRole))}</span><span><b>Bil</b>${text(employee.truck)}</span><span><b>Status</b>${text(employee.status)}</span><span><b>Telefon</b>${text(employee.phone || 'Telefon mangler')}</span><span><b>Mail</b>${text(employee.email || 'Mail mangler')}</span><span><b>Beviser</b>${text(employee.license || 'Beviser ikke udfyldt')}</span><span><b>GPS</b>${employee.sharing ? `${text(employee.location)} · deler position` : 'Deler ikke position'}</span></div>
       <button type="button" class="save-btn" data-direct-chat="${text(employee.id)}">Skriv en besked</button>`}
   </form>`;
   document.body.append(modal);
@@ -6930,7 +7002,7 @@ async function startPickupTask(task, modalElement = null) {
     driverId: session?.userId || currentEmployee().id,
     priority: 'Normal',
     status: 'started',
-    checklist: pickupChecklistItems().map(item => ({ ...item, done: item.id === 'route' })),
+    checklist: pickupChecklistItems().map(item => ({ ...item, done: false })),
     steps: [{ status: 'started', at: new Date().toISOString() }],
     startedAt: new Date().toISOString(),
     startedLocationSharing,
@@ -6953,7 +7025,8 @@ async function startPickupTask(task, modalElement = null) {
   addNotification({ type: 'Afhentning', title: 'Afhentning startet', body: activePickup.note || 'Midlertidig opgave er startet.', level: 'task' });
   modalElement?.remove();
   if (startedLocationSharing) {
-    startLocationSharing('Afhentningen er startet, og din position deles midlertidigt');
+    const sharingMinutes = activePickup.duration === 'until-done' ? null : Number(activePickup.duration || 30);
+    startLocationSharing('Afhentningen er startet, og din position deles midlertidigt', sharingMinutes);
   } else {
     render();
     showToast('Afhentningen er startet');
@@ -6977,7 +7050,7 @@ async function openSupabaseDiagnosticsModal() {
   const list = modal.querySelector('.diagnostic-list');
   try {
     const checks = await runSupabaseDiagnostics();
-    list.innerHTML = checks.map(check => `<article class="${check.ok ? 'ok' : 'fail'}"><b>${check.ok ? '?' : '!' } ${text(check.name)}</b><small>${text(check.detail)}</small></article>`).join('');
+    list.innerHTML = checks.map(check => `<article class="${check.ok ? 'ok' : 'fail'}"><b>${check.ok ? 'OK' : 'FEJL'} · ${text(check.name)}</b><small>${text(check.detail)}</small></article>`).join('');
   } catch (error) {
     list.innerHTML = `<article class="fail"><b>! Test fejlede</b><small>${text(error.message)}</small></article>`;
   }
@@ -7233,8 +7306,8 @@ function openInfoModal(id) {
     <button type="button" class="modal-close" data-action="close-modal" aria-label="Luk">${icon('close')}</button>
     <p class="eyebrow">Intern information</p><h3>${text(section.title)}</h3>
     <p class="info-intro">${text(section.intro)}</p>
-    <div class="info-detail-list">${section.rows.map(([title, description, href]) => href
-      ? `<a href="${text(href)}" target="${href.startsWith('http') ? '_blank' : '_self'}" rel="noreferrer"><b>${text(title)}</b><small>${text(description)}</small>${icon('arrow', 'row-arrow')}</a>`
+    <div class="info-detail-list">${section.rows.map(([title, description, href]) => safeHref(href)
+      ? `<a href="${hrefAttr(href)}" target="${safeHref(href).startsWith('http') ? '_blank' : '_self'}" rel="noreferrer"><b>${text(title)}</b><small>${text(description)}</small>${icon('arrow', 'row-arrow')}</a>`
       : `<span><b>${text(title)}</b><small>${text(description)}</small></span>`
     ).join('')}</div>
   </section>`;
@@ -7251,7 +7324,7 @@ function openRuleUpdatesModal() {
     <p class="eyebrow">Overvågede kilder</p><h3>Regelnyt</h3>
     <p class="info-intro">${canSeeDrafts ? 'Når appen forbindes online, kan den kontrollere udvalgte officielle kilder automatisk. Nye tekster bør godkendes internt, før medarbejderne får en besked.' : 'Her vises kun godkendte regelopdateringer, så medarbejderne får enkel og sikker information.'}</p>
     <div class="rule-update-list">${visibleRuleUpdates.map(update => `
-      <a href="${text(update.href)}" target="_blank" rel="noreferrer">
+      <a href="${hrefAttr(update.href)}" target="_blank" rel="noreferrer">
         <div class="rule-meta"><small>${text(update.audience)}</small>${canSeeDrafts ? `<i class="approval-pill ${text(update.status)}">${text(update.status === 'approved' ? 'Godkendt' : 'Kladde')}</i>` : ''}</div>
         <b>${text(update.title)}</b>
         <span>${text(update.body)}</span><em>${text(update.source)} · ${text(update.checked)}</em>
@@ -7865,9 +7938,12 @@ document.addEventListener('click', async event => {
   if (searchResult) {
     activeTab = searchResult.dataset.searchTarget;
     activeChat = searchResult.dataset.searchChat || null;
+    if (searchResult.dataset.searchEmployeeQuery) {
+      teamQuery = searchResult.dataset.searchEmployeeQuery;
+    }
     if (searchResult.dataset.searchInfo) {
       activeInfoCategory = searchResult.dataset.searchInfo;
-      infoQuery = '';
+      infoQuery = searchResult.dataset.searchInfoQuery || '';
     }
     globalQuery = '';
     event.target.closest('.modal-backdrop')?.remove();
@@ -8281,7 +8357,9 @@ document.addEventListener('change', async event => {
   const image = await readImageFile(input.files?.[0], { kind: 'profile' });
   if (!preview || !image) return;
   preview.classList.remove('is-empty');
-  preview.innerHTML = `<img src="${text(image.src)}" alt="Valgt profilbillede" />`;
+  const previewSrc = safeMediaSrc(image.src);
+  if (!previewSrc) return;
+  preview.innerHTML = `<img src="${mediaSrcAttr(previewSrc)}" alt="Valgt profilbillede" />`;
 });
 
 document.addEventListener('submit', async event => {

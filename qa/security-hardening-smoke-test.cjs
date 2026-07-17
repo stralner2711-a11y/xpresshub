@@ -12,6 +12,9 @@ const vercel = fs.readFileSync('vercel.json', 'utf8');
 const publicConfig = fs.readFileSync('public/app-config.js', 'utf8');
 const schema = fs.readFileSync('supabase/schema.sql', 'utf8');
 const securityDoc = fs.readFileSync('docs/SECURITY_HARDENING.md', 'utf8');
+const androidManifest = fs.readFileSync('android/app/src/main/AndroidManifest.xml', 'utf8');
+const backupRules = fs.readFileSync('android/app/src/main/res/xml/backup_rules.xml', 'utf8');
+const extractionRules = fs.readFileSync('android/app/src/main/res/xml/data_extraction_rules.xml', 'utf8');
 
 assert(!/onerror\s*=/.test(app), 'App HTML should not use inline onerror handlers');
 for (const workerSource of [serviceWorker, publicServiceWorker]) {
@@ -44,6 +47,14 @@ assert(app.includes('function registerLoginSuccess'), 'App should clear login gu
 assert(app.includes('Login-beskyttelse uden auto-logud'), 'Security center should document that users are not auto-logged out');
 assert(!/setTimeout\([^)]*logout|inactivityLogout|autoLogout/i.test(app), 'App should not introduce automatic logout code');
 assert(app.includes("recordSecurityEvent('upload_rejected'"), 'Rejected uploads should be visible as local security events');
+assert(!androidManifest.includes('android.permission.READ_MEDIA_IMAGES'), 'Android should use the system photo picker instead of broad library access');
+assert(!androidManifest.includes('android.permission.CAMERA'), 'Android image selection should not request broad camera access');
+assert(androidManifest.includes('android:dataExtractionRules="@xml/data_extraction_rules"'), 'Android should declare explicit Android 12+ backup rules');
+assert(androidManifest.includes('android:fullBackupContent="@xml/backup_rules"'), 'Android should declare explicit legacy backup rules');
+for (const rules of [backupRules, extractionRules]) {
+  assert(rules.includes('domain="database" path="."'), 'Android backup rules should exclude local databases');
+  assert(rules.includes('domain="sharedpref" path="."'), 'Android backup rules should exclude local preferences');
+}
 
 console.log('Security hardening smoke test passed');
 

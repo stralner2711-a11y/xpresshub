@@ -20,7 +20,7 @@ assert(source.includes("if (action === 'open-task-overview') openTaskOverviewMod
 assert(!source.includes('<button data-action="open-notifications">Se alt</button>'), 'Task "Se alt" should not route directly to notifications');
 assert(source.includes("modalReplacingActions"), 'Modal-to-modal navigation should replace the current modal');
 assert(source.includes("canPublishOfficePosts() ? '<button data-action=\"new-announcement\">Nyt opslag</button>' : ''"), 'Office post button should only show for office/dispatch roles');
-assert(source.includes("activeInfoCategory = searchResult.dataset.searchInfo;\n      infoQuery = '';"), 'Global information results should clear stale information searches before navigation');
+assert(source.includes("activeInfoCategory = searchResult.dataset.searchInfo;\n      infoQuery = searchResult.dataset.searchInfoQuery || '';"), 'Global information results should replace stale searches with the selected result query');
 
 console.log('Navigation action smoke test passed');
 

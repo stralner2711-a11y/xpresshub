@@ -47,8 +47,19 @@ function Find-LocalGradleBat {
 function Run-Logged($command, $arguments) {
   Write-Host "> $command $($arguments -join ' ')"
   Add-Content -LiteralPath $logPath -Value "> $command $($arguments -join ' ')"
-  & $command @arguments 2>&1 | Tee-Object -FilePath $logPath -Append
-  if ($LASTEXITCODE -ne 0) {
+  $previousErrorActionPreference = $ErrorActionPreference
+  $ErrorActionPreference = "Continue"
+  try {
+    $output = @(& $command @arguments 2>&1 | ForEach-Object { "$_" })
+    $exitCode = $LASTEXITCODE
+  } finally {
+    $ErrorActionPreference = $previousErrorActionPreference
+  }
+  $output | ForEach-Object { Write-Host $_ }
+  if ($output.Count -gt 0) {
+    [System.IO.File]::AppendAllText($logPath, (($output -join [Environment]::NewLine) + [Environment]::NewLine), [System.Text.UTF8Encoding]::new($false))
+  }
+  if ($exitCode -ne 0) {
     throw "Kommando fejlede: $command $($arguments -join ' ')"
   }
 }
@@ -121,9 +132,18 @@ keyPassword=$password
 Write-Step "XpressIntra Android Release AAB build"
 
 Add-PathIfExists "C:\Program Files\nodejs"
-if (Test-Path "C:\Program Files\Android\Android Studio\jbr") {
-  $env:JAVA_HOME = "C:\Program Files\Android\Android Studio\jbr"
-  Add-PathIfExists "C:\Program Files\Android\Android Studio\jbr\bin"
+$androidStudioJbrCandidates = @(
+  "C:\Program Files\Android\Android Studio\jbr",
+  "C:\Program Files\Android\Android Studio1\jbr",
+  "C:\Program Files\Android\Android Studio2\jbr"
+)
+foreach ($jbr in $androidStudioJbrCandidates) {
+  $javaExe = Join-Path $jbr "bin\java.exe"
+  if (Test-Path -LiteralPath $javaExe) {
+    $env:JAVA_HOME = $jbr
+    Add-PathIfExists (Join-Path $jbr "bin")
+    break
+  }
 }
 
 $sdk = Find-AndroidSdk

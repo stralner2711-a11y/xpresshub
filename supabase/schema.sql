@@ -487,6 +487,8 @@ create index if not exists admin_audit_log_created_idx on public.admin_audit_log
 create index if not exists employee_invitations_status_created_idx on public.employee_invitations (status, created_at desc);
 create unique index if not exists employee_invitations_one_pending_email_idx on public.employee_invitations (lower(email)) where status = 'pending';
 create index if not exists employee_invitations_used_by_idx on public.employee_invitations (used_by);
+create index if not exists support_requests_user_id_idx on public.support_requests (user_id);
+create index if not exists support_requests_handled_by_idx on public.support_requests (handled_by);
 
 alter table public.profiles enable row level security;
 alter table public.profile_private_details enable row level security;
@@ -549,6 +551,21 @@ as $$
   );
 $$;
 
+create or replace function private.is_owner()
+returns boolean
+language sql
+security definer
+set search_path = public
+stable
+as $$
+  select exists (
+    select 1 from public.profiles
+    where id = auth.uid()
+      and access_role = 'owner'
+      and employment_status = 'active'
+  );
+$$;
+
 create or replace function private.is_dispatcher_or_admin()
 returns boolean
 language sql
@@ -574,6 +591,7 @@ set search_path = public
 as $$
 declare
   protected_change boolean;
+  owner_sensitive_change boolean;
 begin
   if auth.uid() is null then
     new.updated_at := now();
@@ -589,6 +607,38 @@ begin
     or old.vehicle_type is distinct from new.vehicle_type
     or old.truck is distinct from new.truck
     or old.employment_status is distinct from new.employment_status;
+
+  owner_sensitive_change :=
+    old.access_role = 'owner'
+    or new.access_role = 'owner';
+
+  if owner_sensitive_change and protected_change and not private.is_owner() then
+    insert into public.admin_audit_log (actor_id, target_user_id, action, details)
+    values (
+      auth.uid(),
+      old.id,
+      'owner_security_change_blocked',
+      jsonb_build_object(
+        'old_access_role', old.access_role,
+        'requested_access_role', new.access_role,
+        'old_employment_status', old.employment_status,
+        'requested_employment_status', new.employment_status
+      )
+    );
+    raise exception 'owner_role_change_requires_owner';
+  end if;
+
+  if old.access_role = 'owner'
+    and old.employment_status = 'active'
+    and (new.access_role <> 'owner' or new.employment_status <> 'active')
+    and not exists (
+      select 1 from public.profiles p
+      where p.id <> old.id
+        and p.access_role = 'owner'
+        and p.employment_status = 'active'
+    ) then
+    raise exception 'last_active_owner_required';
+  end if;
 
   if auth.uid() = old.id and not private.is_admin() then
     if protected_change then
@@ -897,11 +947,18 @@ on public.admin_audit_log for insert to authenticated with check (actor_id = aut
 create policy "admins can read employee invitations"
 on public.employee_invitations for select to authenticated using (private.is_admin());
 create policy "admins can create employee invitations"
-on public.employee_invitations for insert to authenticated with check (created_by = auth.uid() and private.is_admin());
+on public.employee_invitations for insert to authenticated with check (
+  created_by = auth.uid()
+  and private.is_admin()
+  and (access_role <> 'owner' or private.is_owner())
+);
 create policy "admins can update employee invitations"
-on public.employee_invitations for update to authenticated using (private.is_admin()) with check (private.is_admin());
+on public.employee_invitations for update to authenticated
+using (private.is_admin() and (access_role <> 'owner' or private.is_owner()))
+with check (private.is_admin() and (access_role <> 'owner' or private.is_owner()));
 create policy "admins can delete employee invitations"
-on public.employee_invitations for delete to authenticated using (private.is_admin());
+on public.employee_invitations for delete to authenticated
+using (private.is_admin() and (access_role <> 'owner' or private.is_owner()));
 create policy "employees can read core settings"
 on public.core_settings for select to authenticated using (private.is_active_employee());
 create policy "admins can manage core settings"
@@ -1198,7 +1255,11 @@ create policy "authors and admins can update announcements"
 on public.announcements for update to authenticated using (
   private.is_active_employee() and (author_id = auth.uid() or private.is_admin())
 ) with check (
-  private.is_active_employee() and (author_id = auth.uid() or private.is_admin())
+  private.is_active_employee()
+  and (
+    private.is_dispatcher_or_admin()
+    or (author_id = auth.uid() and kind = 'colleague')
+  )
 );
 create policy "authors and admins can delete announcements"
 on public.announcements for delete to authenticated using (
@@ -1273,6 +1334,8 @@ grant execute on function public.start_direct_conversation(uuid) to authenticate
 grant execute on function public.start_direct_conversation_v2(uuid) to authenticated;
 grant execute on function public.purge_expired_operational_data() to authenticated;
 grant select, insert, update, delete on public.support_requests to authenticated;
+revoke all on table public.regulatory_sources from anon;
+revoke all on table public.support_requests from anon;
 
 insert into public.regulatory_sources (title, source_url, audience, topic)
 values
@@ -1336,6 +1399,8 @@ begin
   from public.employee_invitations
   where lower(email) = lower(new.email)
     and status = 'pending'
+    and accepted_at is null
+    and used_by is null
     and expires_at > now()
     and id::text = coalesce(nullif(new.raw_user_meta_data ->> 'invitation_id', ''), 'missing-invitation-id')
   order by created_at desc
@@ -1366,7 +1431,16 @@ begin
     invite.license_summary,
     invite.languages,
     coalesce(invite.role, 'Chauffør'),
-    coalesce(invite.access_role, 'employee'),
+    case
+      when invite.access_role = 'owner'
+        and not exists (
+          select 1 from public.profiles creator
+          where creator.id = invite.created_by
+            and creator.access_role = 'owner'
+            and creator.employment_status = 'active'
+        ) then 'employee'
+      else coalesce(invite.access_role, 'employee')
+    end,
     coalesce(invite.vehicle_type, 'van'),
     invite.truck,
     case
@@ -1391,7 +1465,10 @@ begin
     set status = 'accepted',
         accepted_at = now(),
         used_by = new.id
-    where id = invite.id;
+    where id = invite.id
+      and status = 'pending'
+      and accepted_at is null
+      and used_by is null;
   end if;
 
   return new;
@@ -1463,6 +1540,14 @@ begin
     end if;
   end if;
 end $$;
+
+-- Repair the legacy owner title without overwriting other custom job titles.
+update public.profiles
+set
+  role = 'Appansvarlig · Lastbilchauffør',
+  updated_at = now()
+where lower(coalesce(access_role, '')) = 'owner'
+  and role = 'Appansvarlig ' || chr(194) || chr(183) || ' Lastbilchauff' || chr(195) || chr(184) || 'r';
 
 notify pgrst, 'reload schema';
 select pg_notification_queue_usage();

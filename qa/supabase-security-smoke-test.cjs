@@ -74,18 +74,18 @@ assert(directMessageRepair.includes('grant execute on function public.start_dire
 assert(directMessageRepair.includes('grant execute on function public.start_direct_conversation_v2(uuid) to authenticated;'), 'Direct message repair SQL should grant authenticated users access to the fallback direct-chat RPC');
 assert(directMessageRepair.includes("notify pgrst, 'reload schema';"), 'Direct message repair SQL should refresh Supabase/PostgREST schema cache');
 assert(schema.includes('create table if not exists public.employee_invitations'), 'Schema should support safe employee invitations without exposing service-role keys');
-[
-  'on public.employee_invitations for select to authenticated using (private.is_admin());',
-  'on public.employee_invitations for insert to authenticated with check (created_by = auth.uid() and private.is_admin());',
-  'on public.employee_invitations for update to authenticated using (private.is_admin()) with check (private.is_admin());',
-  'on public.employee_invitations for delete to authenticated using (private.is_admin());',
-].forEach(policy => assert(schema.includes(policy), `Invitation policy should remain admin-only: ${policy}`));
+assert(schema.includes('on public.employee_invitations for select to authenticated using (private.is_admin());'), 'Invitation reads should remain admin-only');
+assert(schema.includes("and (access_role <> 'owner' or private.is_owner())"), 'Invitation writes should reserve owner access for an active owner');
 assert(schema.includes('create trigger protect_profile_security_fields'), 'Profiles should have a database trigger against role escalation');
 assert(schema.includes("'profile_security_change_blocked'"), 'Blocked employee attempts to alter protected role fields should be audited');
+assert(schema.includes('create or replace function private.is_owner()'), 'Owner-only database checks should be explicit');
+assert(schema.includes('owner_role_change_requires_owner'), 'Admins must not be able to promote themselves to owner');
+assert(schema.includes('last_active_owner_required'), 'The final active owner must not be removable by mistake');
 assert(schema.includes("expires_at timestamptz not null default (now() + interval '14 days')"), 'Invitations should expire automatically');
 assert(schema.includes('accepted_at timestamptz'), 'Invitations should record when they are used');
 assert(schema.includes('used_by uuid references public.profiles(id)'), 'Invitations should record which user consumed them');
 assert(schema.includes("and id::text = coalesce(nullif(new.raw_user_meta_data ->> 'invitation_id', ''), 'missing-invitation-id')"), 'Auth trigger should require the exact invitation id from the private link');
+assert(schema.includes('and accepted_at is null') && schema.includes('and used_by is null'), 'Invitation consumption should reject already-used invitations');
 assert(!schema.includes("when invite.id is not null then 'active'"), 'Invited users should still wait for chef/creator approval');
 assert(!fullBootstrap.includes("when invite.id is not null then 'active'"), 'Full bootstrap should not auto-activate invited users');
 assert(!updateSql.includes("when invite.id is not null then 'active'"), 'Update SQL should not auto-activate invited users');
@@ -93,6 +93,9 @@ assert(schema.includes("when not exists (select 1 from public.profiles) then 'ac
 assert(schema.includes('employee_invitations_one_pending_email_idx'), 'Only one pending invitation per email should be allowed');
 assert(schema.includes('employee_invitations_used_by_idx'), 'Invitation used_by foreign key should have a covering index');
 assert(schema.includes('media_attachments_announcement_idx'), 'Announcement media foreign key should have a covering index');
+assert(schema.includes('support_requests_user_id_idx'), 'Support request user foreign key should have a covering index');
+assert(schema.includes('support_requests_handled_by_idx'), 'Support request handler foreign key should have a covering index');
+assert(schema.includes("or (author_id = auth.uid() and kind = 'colleague')"), 'Employees must not be able to promote their own colleague post to an office post');
 assert(schema.includes("set status = 'accepted',"), 'Used invitations should be marked accepted');
 assert(schema.includes("new.raw_user_meta_data ->> 'first_personal_password'"), 'Auth trigger should understand first-login personal password onboarding');
 assert(fullBootstrap.includes("new.raw_user_meta_data ->> 'first_personal_password'"), 'Full bootstrap should include first-login personal password onboarding');

@@ -12,25 +12,76 @@
     <main id="app"></main>
     <script>
       window.XPRESSINTRA_DEMO_MODE = true;
-      if (new URLSearchParams(window.location.search).get('role') === 'creator') {
+      const qaParams = new URLSearchParams(window.location.search);
+      const qaRole = qaParams.get('role');
+      const qaFixtureEnabled = qaParams.get('fixture') === 'full';
+      const qaProfiles = {
+        creator: { id: 'qa-creator', name: 'QA Creator', email: 'creator@xpressintra.local', initials: 'QC', role: 'Appansvarlig · Lastbilchauffør', accessRole: 'owner', vehicleType: 'truck', truck: 'Lastbil 01', department: 'Lastbil' },
+        admin: { id: 'qa-admin', name: 'QA Chef', email: 'chef@xpressintra.local', initials: 'QF', role: 'Chef', accessRole: 'admin', vehicleType: 'dispatch', truck: 'Kontor', department: 'Kontor' },
+        dispatcher: { id: 'qa-dispatcher', name: 'QA Disponent', email: 'disponent@xpressintra.local', initials: 'QD', role: 'Disponent', accessRole: 'dispatcher', vehicleType: 'dispatch', truck: 'Kontor', department: 'Drift' },
+        employee: { id: 'qa-driver', name: 'QA Chauffør', email: 'chauffoer@xpressintra.local', initials: 'QK', role: 'Lastbilchauffør', accessRole: 'employee', vehicleType: 'truck', truck: 'Lastbil 24', department: 'Lastbil' },
+        van: { id: 'qa-van-driver', name: 'QA Varebil', email: 'varebil@xpressintra.local', initials: 'QV', role: 'Varebilschauffør', accessRole: 'employee', vehicleType: 'van', truck: 'Varebil 08', department: 'Varebil' },
+      };
+      const qaStorageKeys = [
+        'session', 'profile', 'employees', 'chats', 'messages', 'announcements',
+        'notifications', 'workday', 'activePickup', 'creatorRoleTester',
+      ];
+      qaStorageKeys.forEach(key => localStorage.removeItem(`roadlog:${key}`));
+      sessionStorage.setItem('xpressintra:launchSplashSeen', '1');
+
+      if (qaProfiles[qaRole]) {
+        const qaProfile = { ...qaProfiles[qaRole], employmentStatus: 'active', logbook: true };
         localStorage.setItem('roadlog:session', JSON.stringify({
-          email: 'creator@xpressintra.local',
+          email: qaProfile.email,
           mode: 'demo',
-          userId: 'qa-creator',
+          userId: qaProfile.id,
         }));
-        localStorage.setItem('roadlog:profile', JSON.stringify({
-          id: 'qa-creator',
-          name: 'QA Creator',
-          email: 'creator@xpressintra.local',
-          initials: 'QC',
-          role: 'Appansvarlig · Lastbilchauffør',
-          accessRole: 'owner',
-          vehicleType: 'truck',
-          truck: 'Lastbil',
-          department: 'Lastbil',
-          employmentStatus: 'active',
-          logbook: true,
-        }));
+        localStorage.setItem('roadlog:profile', JSON.stringify(qaProfile));
+
+        if (qaFixtureEnabled) {
+          const qaEmployees = [
+            { ...qaProfile, status: 'Online', location: qaProfile.department, online: true, sharing: false },
+            { id: 'qa-driver-2', name: 'Maja Nielsen', initials: 'MN', role: 'Lastbilchauffør', accessRole: 'employee', vehicleType: 'truck', truck: 'Lastbil 17', department: 'Lastbil', status: 'På vej', location: 'Aarhus', online: true, sharing: true, coords: [56.1629, 10.2039], lastUpdatedAt: new Date(Date.now() - 90_000).toISOString(), employmentStatus: 'active' },
+            { id: 'qa-van-2', name: 'Peter Sørensen', initials: 'PS', role: 'Varebilschauffør', accessRole: 'employee', vehicleType: 'van', truck: 'Varebil 12', department: 'Varebil', status: 'Klar', location: 'Horsens', online: true, sharing: true, coords: [55.8581, 9.8476], lastUpdatedAt: new Date(Date.now() - 4 * 60_000).toISOString(), employmentStatus: 'active' },
+            { id: 'qa-office-2', name: 'Lene Andersen', initials: 'LA', role: 'Disponent', accessRole: 'dispatcher', vehicleType: 'dispatch', truck: 'Kontor', department: 'Drift', status: 'Online', location: 'Kontoret', online: true, sharing: false, employmentStatus: 'active' },
+          ];
+          const qaChats = [
+            { id: 'qa-all', name: 'Fælleschat', initials: 'FC', preview: 'Maja: God tur derude', time: '08.42', unread: 2, community: true, online: true },
+            { id: 'qa-truck', name: 'Lastbilchat', initials: 'LB', preview: 'Husk kø ved Kolding', time: '08.31', unread: 1, channel: 'truck', online: true },
+            { id: 'qa-van', name: 'Varebilchat', initials: 'VB', preview: 'Porten er åben igen', time: '08.18', unread: 0, channel: 'van', online: true },
+            { id: 'qa-direct-driver', name: 'Maja Nielsen', initials: 'MN', preview: 'Jeg er fremme om 10 min.', time: '08.39', unread: 1, direct: true, online: true },
+          ];
+          const now = Date.now();
+          const qaMessages = {
+            'qa-all': [
+              { id: 'qa-message-1', senderId: 'qa-driver-2', senderName: 'Maja Nielsen', senderInitials: 'MN', senderRole: 'Lastbilchauffør', senderVehicle: 'Lastbil 17', side: 'them', body: 'Godmorgen. Der er tæt trafik ved Kolding.', createdAt: new Date(now - 12 * 60_000).toISOString() },
+              { id: 'qa-message-2', senderId: qaProfile.id, senderName: qaProfile.name, senderInitials: qaProfile.initials, senderRole: qaProfile.role, senderVehicle: qaProfile.truck, side: 'me', body: 'Tak for beskeden. Kør forsigtigt.', createdAt: new Date(now - 10 * 60_000).toISOString() },
+              { id: 'qa-message-3', senderId: 'qa-van-2', senderName: 'Peter Sørensen', senderInitials: 'PS', senderRole: 'Varebilschauffør', senderVehicle: 'Varebil 12', side: 'them', body: 'Jeg melder tilbage, når porten er fri.', createdAt: new Date(now - 7 * 60_000).toISOString() },
+            ],
+            'qa-truck': [
+              { id: 'qa-message-4', senderId: 'qa-driver-2', senderName: 'Maja Nielsen', senderInitials: 'MN', senderRole: 'Lastbilchauffør', senderVehicle: 'Lastbil 17', side: 'them', body: 'Husk kø ved Kolding i nordgående retning.', createdAt: new Date(now - 15 * 60_000).toISOString() },
+            ],
+            'qa-van': [
+              { id: 'qa-message-5', senderId: 'qa-van-2', senderName: 'Peter Sørensen', senderInitials: 'PS', senderRole: 'Varebilschauffør', senderVehicle: 'Varebil 12', side: 'them', body: 'Porten er åben igen.', createdAt: new Date(now - 20 * 60_000).toISOString() },
+            ],
+            'qa-direct-driver': [
+              { id: 'qa-message-6', senderId: 'qa-driver-2', senderName: 'Maja Nielsen', senderInitials: 'MN', senderRole: 'Lastbilchauffør', senderVehicle: 'Lastbil 17', side: 'them', body: 'Jeg er fremme om 10 min.', createdAt: new Date(now - 3 * 60_000).toISOString() },
+            ],
+          };
+          const qaAnnouncements = [
+            { id: 'qa-office-post', title: 'Ny besked fra kontoret', body: 'Husk at melde tilbage ved større forsinkelser.', time: 'I dag · 08.15', kind: 'office', authorId: 'qa-creator', author: 'Kontoret', initials: 'XB', audience: 'Alle medarbejdere', pinned: true, likes: 4, comments: ['Modtaget'] },
+            { id: 'qa-colleague-post', title: 'God tur', body: 'Kaffen står klar på kontoret.', time: 'I går · 16.40', kind: 'colleague', authorId: 'qa-driver-2', author: 'Maja Nielsen', initials: 'MN', audience: 'Alle medarbejdere', likes: 2, comments: [] },
+          ];
+          const qaNotifications = [
+            { id: 'qa-notification-1', type: 'Kontoropslag', title: 'Ny besked fra kontoret', body: 'Husk at melde tilbage ved større forsinkelser.', time: '08.15', level: 'office', priority: 'medium', unread: true },
+            { id: 'qa-notification-2', type: 'Chatbesked', title: 'Maja skrev', body: 'Jeg er fremme om 10 min.', time: '08.39', level: 'message', priority: 'normal', unread: true, chatId: 'qa-direct-driver' },
+          ];
+          localStorage.setItem('roadlog:employees', JSON.stringify(qaEmployees));
+          localStorage.setItem('roadlog:chats', JSON.stringify(qaChats));
+          localStorage.setItem('roadlog:messages', JSON.stringify(qaMessages));
+          localStorage.setItem('roadlog:announcements', JSON.stringify(qaAnnouncements));
+          localStorage.setItem('roadlog:notifications', JSON.stringify(qaNotifications));
+        }
       }
     </script>
     <script type="module" src="/src/lib/runtime-deps.js"></script>

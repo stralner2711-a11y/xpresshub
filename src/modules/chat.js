@@ -7,7 +7,6 @@ function defaultSearchable(value = '') {
 }
 
 export function hasChannelAccess(channel, profile = {}, helpers = {}) {
-  if (['admin', 'owner'].includes(profile.accessRole)) return true;
   if (channel === 'truck') return profile.vehicleType === 'truck';
   if (channel === 'van') return profile.vehicleType === 'van';
   return true;
@@ -36,8 +35,8 @@ export function chatFromConversationRow(row, latestMessage = null, helpers = {})
     id: row.id,
     name: title,
     initials: isAll ? 'FC' : isTruck ? 'LB' : isVan ? 'VB' : initialsFromName(title),
-    preview: latestMessage.body || 'Ingen beskeder endnu',
-    time: latestMessage.created_at ? new Date(latestMessage.created_at).toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' }) : '',
+    preview: latestMessage?.body || 'Ingen beskeder endnu',
+    time: latestMessage?.created_at ? new Date(latestMessage.created_at).toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' }) : '',
     unread: 0,
     community: isAll,
     channel: isTruck ? 'truck' : isVan ? 'van' : null,
@@ -55,10 +54,10 @@ export function messageFromSupabaseRow(row, userId, helpers = {}) {
     id: row.id,
     senderId: row.sender_id,
     side: row.sender_id === userId ? 'me' : 'them',
-    senderName: sender.name || 'Kollega',
-    senderInitials: sender.initials || initialsFromName(sender.name || 'Kollega'),
-    senderRole: sender.role || '',
-    senderVehicle: sender.truck || '',
+    senderName: sender?.name || 'Kollega',
+    senderInitials: sender?.initials || initialsFromName(sender?.name || 'Kollega'),
+    senderRole: sender?.role || '',
+    senderVehicle: sender?.truck || '',
     body: row.body,
     time: row.created_at ? new Date(row.created_at).toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' }) : '',
     createdAt: row.created_at,

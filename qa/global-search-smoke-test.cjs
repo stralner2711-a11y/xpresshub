@@ -76,6 +76,10 @@ assert(harness.appElement.innerHTML.includes('Drift og planlægning') || harness
 
 harness.run("globalQuery = 'CMR'; render();");
 assert(harness.appElement.innerHTML.includes('Information') || harness.appElement.innerHTML.includes('Kontoropslag'), 'Global search should find info and office content');
+assert(harness.appElement.innerHTML.includes('data-search-info-query="CMR-loven"'), 'Information results should carry the exact item query into the information screen');
+
+harness.run("employees = [{ id: 'employee-1', name: 'Åse Andersen', role: 'Chauffør', truck: 'TR 9', location: 'Århus', accessRole: 'employee', vehicleType: 'truck' }]; globalQuery = 'Åse'; render();");
+assert(harness.appElement.innerHTML.includes('data-search-employee-query="Åse Andersen"'), 'Employee results should carry the selected colleague into the team filter');
 
 harness.run("globalQuery = 'TR 42'; render();");
 assert(harness.appElement.innerHTML.includes('Køretøj') || harness.appElement.innerHTML.includes('Kollega'), 'Global search should find vehicles or employees');

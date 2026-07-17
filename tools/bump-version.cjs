@@ -31,7 +31,7 @@ Updates:
 
 const displayVersion = String(process.argv[2] || '').trim();
 const versionCode = Number(process.argv[3]);
-const cacheLabel = String(process.argv[4] || `v${versionCode}`).trim();
+const cacheLabel = String(process.argv[4] || `release-v${versionCode}`).trim();
 
 if (!/^\d+\.\d+\.\d+$/.test(displayVersion) || !Number.isFinite(versionCode) || versionCode <= 0) {
   usage();

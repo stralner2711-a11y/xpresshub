@@ -41,8 +41,10 @@ assert(!/user_metadata/i.test(schema), 'RLS/schema should not authorize from use
 assert(schema.includes("or (private.is_active_employee() and employment_status = 'active')") && schema.includes('or private.is_admin()'), 'Profile reads should expose pending users only to admins and the user themself');
 assert(schema.includes("coalesce(invite.access_role, 'employee')"), 'New users should get access role from admin invitation, not self-claimed metadata');
 assert(schema.includes("coalesce(invite.vehicle_type, 'van')"), 'New users should get vehicle type from admin invitation, not self-claimed metadata');
-assert(schema.includes('on public.employee_invitations for insert to authenticated with check (created_by = auth.uid() and private.is_admin())'), 'Only admins should create employee invitations');
+assert(schema.includes("and (access_role <> 'owner' or private.is_owner())"), 'Only an active owner should be able to create owner invitations');
 assert(schema.includes('on public.employee_invitations for select to authenticated using (private.is_admin())'), 'Only admins should read employee invitations');
-assert(fullSetup.includes('on public.employee_invitations for insert to authenticated with check (created_by = auth.uid() and private.is_admin())'), 'Full setup should keep invitation creation admin-only');
+assert(fullSetup.includes("and (access_role <> 'owner' or private.is_owner())"), 'Full setup should reserve owner invitations for an active owner');
+assert(schema.includes('create or replace function private.is_owner()'), 'Schema should distinguish owner-only changes from ordinary admin changes');
+assert(schema.includes('owner_role_change_requires_owner'), 'Database trigger should block admin-to-owner privilege escalation');
 
 console.log('Credential and privacy smoke test passed');

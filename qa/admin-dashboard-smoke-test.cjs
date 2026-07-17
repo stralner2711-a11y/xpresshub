@@ -1,6 +1,8 @@
 ﻿const fs = require('fs');
 const vm = require('vm');
 
+const styles = fs.readFileSync('src/styles.css', 'utf8');
+
 function createHarness() {
   const code = fs.readFileSync('src/app.js', 'utf8');
   const storage = new Map([['roadlog:session', JSON.stringify({ email: 'demo@xpressintra.local', mode: 'demo' })]]);
@@ -132,6 +134,8 @@ assert(creatorModal.innerHTML.includes('Backup'), 'Creator should get a rollback
 assert(creatorModal.innerHTML.includes('Sikkerhedscenter'), 'Creator should get the security center shortcut');
 assert(creatorModal.innerHTML.includes('Dataanmodninger'), 'Creator should see privacy/data operations status');
 assert(!creatorModal.innerHTML.includes('Godmorgen Tommy. Din næste aflæsning'), 'Creator operations panel should not expose private/direct chat message content');
+assert(styles.includes('grid-template-columns: repeat(4, minmax(0, 1fr));'), 'Admin and creator grids should shrink safely on narrow phones');
+assert(styles.includes('.creator-ops-dashboard > *'), 'Creator dashboard children should be constrained to the mobile modal width');
 
 assert(creatorModal.innerHTML.includes('Hvad skal du holde øje med'), 'Creator should see prioritized action items');
 assert(creatorModal.innerHTML.includes('Onboarding kontrol'), 'Creator should see an onboarding control section');

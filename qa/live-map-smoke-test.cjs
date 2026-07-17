@@ -113,6 +113,17 @@ assert((harness.appElement.innerHTML.match(/data-action="toggle-location"/g) || 
 harness.run("enforceLocationExpiry(new Date(new Date(location.expiresAt).getTime() + 1000));");
 assert(harness.run('location.sharing') === false, 'Timed sharing should stop automatically after expiry');
 
+harness.run("navigator.geolocation = { clearWatch(id) { globalThis.clearedLocationWatch = id; } }; location = { ...location, sharing: true, watchId: 42, timer: 2, coords: [56.1, 10.0] }; resetLocationSyncGuard(); handleLocationSyncError({ status: 401, message: 'JWT expired' });");
+assert(harness.run('location.sharing') === false, 'An expired Supabase session should stop GPS sharing');
+assert(harness.run('globalThis.clearedLocationWatch') === 42, 'An expired Supabase session should clear the active GPS watch');
+assert(harness.run('locationAuthFailureHandled') === true, 'An expired Supabase session should only be handled once');
+assert(harness.run("document.querySelector('.toast').textContent.includes('session er udløbet')") === true, 'An expired session should explain why GPS sharing stopped');
+
+harness.run("location = { ...location, sharing: true, coords: [56.1, 10.0] }; resetLocationSyncGuard(); handleLocationSyncError({ status: 503, message: 'Network unavailable' });");
+assert(harness.run('location.sharing') === true, 'A temporary network error should keep local GPS sharing active');
+assert(harness.run('locationSyncBackoffUntil > Date.now()') === true, 'A temporary network error should pause online retries briefly');
+assert(harness.run('locationSyncWarningShown') === true, 'A temporary network error should only show one warning until syncing succeeds');
+
 console.log('Live map smoke test passed');
 
 

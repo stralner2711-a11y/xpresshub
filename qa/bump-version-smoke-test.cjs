@@ -7,6 +7,8 @@ function assert(condition, message) {
 
 const scriptPath = path.join('tools', 'bump-version.cjs');
 assert(fs.existsSync(scriptPath), 'bump-version script should exist');
+const bumpScript = fs.readFileSync(scriptPath, 'utf8');
+assert(bumpScript.includes('`release-v${versionCode}`'), 'bump-version should generate the release cache naming convention by default');
 
 const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
 assert(packageJson.scripts?.bump === 'node tools/bump-version.cjs', 'package.json should expose npm run bump');
@@ -28,6 +30,6 @@ assert(gradleNameMatch[1] === displayMatch[1], 'Android versionName should match
 assert(packageJson.version === displayMatch[1], 'package.json version should match app.js APP_DISPLAY_VERSION');
 assert(iosProject.includes(`CURRENT_PROJECT_VERSION = ${codeMatch[1]};`), 'iOS build number should match app.js APP_VERSION_CODE');
 assert(iosProject.includes(`MARKETING_VERSION = ${displayMatch[1]};`), 'iOS version should match app.js APP_DISPLAY_VERSION');
-assert(serviceWorker.includes('const CACHE_NAME = '), 'service worker should declare a cache name');
+assert(serviceWorker.includes(`const CACHE_NAME = 'xpressintra-release-v${codeMatch[1]}'`), 'service worker cache should match the Android/iOS build number');
 
 console.log('Bump version smoke test passed');

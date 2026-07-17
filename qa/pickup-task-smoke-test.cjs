@@ -76,6 +76,10 @@ function assert(condition, message) {
 }
 
 const harness = createHarness();
+const sourceCode = fs.readFileSync('src/app.js', 'utf8');
+
+assert(sourceCode.includes("checklist: pickupChecklistItems().map(item => ({ ...item, done: false }))"), 'A new pickup should not mark checklist items as complete before the driver confirms them');
+assert(sourceCode.includes("startLocationSharing('Afhentningen er startet, og din position deles midlertidigt', sharingMinutes)"), 'Pickup GPS sharing should use the selected sharing duration');
 
 harness.run(`
 employees = [

@@ -88,8 +88,10 @@ assert(!harness.appElement.innerHTML.includes('Opgaver og kladder'), 'Home shoul
 assert(harness.appElement.innerHTML.includes('Åbn chat'), 'Home should still offer quick access to social content');
 
 harness.run("profile = { ...profile, name: 'Tommy Hansen', email: 'stralner2711@gmail.com', accessRole: 'owner', role: 'Appansvarlig · Lastbilchauffør', vehicleType: 'truck' }; activeTab = 'more'; render();");
-assert(harness.appElement.innerHTML.includes('Styr appen professionelt'), 'Creator control guide should explain professional app management');
+assert(!harness.appElement.innerHTML.includes('screen-guide'), 'Control center should avoid a duplicate guide card');
 assert(harness.appElement.innerHTML.includes('Kontrolcenter'), 'More should be renamed to Kontrolcenter');
+assert(harness.appElement.innerHTML.includes('profile-summary-card'), 'Control center should show profile status without duplicating the edit action');
+assert(!harness.appElement.innerHTML.includes('class="profile-card" data-action="open-profile"'), 'Profile summary should not duplicate the explicit edit-profile row');
 assert(harness.appElement.innerHTML.includes('Daglig brug'), 'Control center should group daily tools');
 assert(harness.appElement.innerHTML.includes('Sikkerhed og privatliv'), 'Control center should group security tools');
 assert(harness.appElement.innerHTML.includes('Administration'), 'Control center should group admin tools');
@@ -124,6 +126,7 @@ assert(harness.appElement.innerHTML.includes('<span>Kort</span>'), 'Map should e
 assert(harness.appElement.innerHTML.includes('Synlige kollegaer'), 'Map should label visible colleagues');
 
 harness.run("activeTab = 'info'; render();");
+assert(!harness.appElement.innerHTML.includes('screen-guide'), 'Information should open directly without a duplicate guide card');
 assert(harness.appElement.innerHTML.includes('Hjælpecentral'), 'Info should feel like a dedicated help center');
 assert(harness.appElement.innerHTML.includes('info-command-card'), 'Info should start with a clear command card');
 assert(harness.appElement.innerHTML.includes('info-emergency-strip'), 'Info should put urgent phone actions first');
@@ -143,7 +146,7 @@ assert(harness.appElement.innerHTML.includes('info-more-section'), 'Info should 
 assert(harness.appElement.innerHTML.includes('Hurtige svar'), 'Info should still keep fast answers behind the more section');
 assert(styles.includes('.surface-card'), 'Styles should include shared surface cards');
 assert(styles.includes('.screen-section'), 'Styles should include reusable screen sections');
-assert(styles.includes('.screen-guide'), 'Styles should include app-wide screen guide');
+assert(!styles.includes('.screen-guide {'), 'Removed guide cards should not leave dead global styles behind');
 assert(styles.includes('.creator-pro-list'), 'Styles should include professional completion plan');
 assert(styles.includes('.control-detail-group'), 'Styles should include collapsible control groups');
 assert(styles.includes('.contact-directory'), 'Styles should include the information contact directory');

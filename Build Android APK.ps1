@@ -110,8 +110,19 @@ function Ensure-OfflineGradleSupport {
 function Run-Logged($command, $arguments) {
   Write-Host "> $command $($arguments -join ' ')"
   Add-Content -LiteralPath $logPath -Value "> $command $($arguments -join ' ')"
-  & $command @arguments 2>&1 | Tee-Object -FilePath $logPath -Append
-  if ($LASTEXITCODE -ne 0) {
+  $previousErrorActionPreference = $ErrorActionPreference
+  $ErrorActionPreference = "Continue"
+  try {
+    $output = @(& $command @arguments 2>&1 | ForEach-Object { "$_" })
+    $exitCode = $LASTEXITCODE
+  } finally {
+    $ErrorActionPreference = $previousErrorActionPreference
+  }
+  $output | ForEach-Object { Write-Host $_ }
+  if ($output.Count -gt 0) {
+    [System.IO.File]::AppendAllText($logPath, (($output -join [Environment]::NewLine) + [Environment]::NewLine), [System.Text.UTF8Encoding]::new($false))
+  }
+  if ($exitCode -ne 0) {
     throw "Kommando fejlede: $command $($arguments -join ' ')"
   }
 }
@@ -239,25 +250,9 @@ try {
     if ($localGradle) {
       Write-Host "Bruger lokal Gradle: $localGradle"
       Add-Content -LiteralPath $logPath -Value "Bruger lokal Gradle: $localGradle"
-      try {
-        Run-Logged $localGradle (Get-GradleBuildArguments)
-      } catch {
-        if ((Test-Path -LiteralPath $apk) -and ((Get-Item -LiteralPath $apk).LastWriteTime -ge $buildStartedAt)) {
-          Write-Host "Gradle meldte fejl (sandsynligvis ved rapport-generering), men APK'en er bygget."
-        } else {
-          throw $_
-        }
-      }
+      Run-Logged $localGradle (Get-GradleBuildArguments)
     } else {
-      try {
-        Run-Logged ".\gradlew.bat" (Get-GradleBuildArguments)
-      } catch {
-        if ((Test-Path -LiteralPath $apk) -and ((Get-Item -LiteralPath $apk).LastWriteTime -ge $buildStartedAt)) {
-          Write-Host "Gradle meldte fejl (sandsynligvis ved rapport-generering), men APK'en er bygget."
-        } else {
-          throw $_
-        }
-      }
+      Run-Logged ".\gradlew.bat" (Get-GradleBuildArguments)
     }
   } finally {
     Pop-Location
