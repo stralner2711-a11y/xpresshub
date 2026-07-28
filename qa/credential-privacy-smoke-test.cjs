@@ -1,10 +1,10 @@
-﻿const fs = require('fs');
+const fs = require('fs');
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
-const app = fs.readFileSync('src/app.js', 'utf8');
+const app = fs.readFileSync('app.js', 'utf8');
 const publicConfig = fs.readFileSync('public/app-config.js', 'utf8');
 const serviceWorker = fs.readFileSync('public/service-worker.js', 'utf8');
 const schema = fs.readFileSync('supabase/schema.sql', 'utf8');

@@ -1,8 +1,8 @@
-﻿const fs = require('fs');
+const fs = require('fs');
 const vm = require('vm');
 
 function createHarness(session = true) {
-  const code = fs.readFileSync('src/app.js', 'utf8');
+  const code = fs.readFileSync('app.js', 'utf8');
   const storage = new Map(session ? [['roadlog:session', JSON.stringify({ email: 'demo@xpressintra.local', mode: 'demo' })]] : []);
   const appElement = { innerHTML: '', classList: { add() {}, remove() {} } };
   const toast = { textContent: '', classList: { add() {}, remove() {} } };

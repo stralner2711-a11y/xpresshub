@@ -1,10 +1,10 @@
-﻿const fs = require('fs');
+const fs = require('fs');
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
-const app = fs.readFileSync('src/app.js', 'utf8');
+const app = fs.readFileSync('app.js', 'utf8');
 const loginStart = app.indexOf('function renderLogin()');
 const loginEnd = app.indexOf('function renderHome()', loginStart);
 assert(loginStart !== -1 && loginEnd !== -1, 'renderLogin block should exist');

@@ -26,9 +26,9 @@ const icons = {
   search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>',
 };
 
-const APP_VERSION = '1.3.53-release-v66';
-const APP_DISPLAY_VERSION = '1.3.53';
-const APP_VERSION_CODE = 66;
+const APP_VERSION = '1.3.54-release-v67';
+const APP_DISPLAY_VERSION = '1.3.54';
+const APP_VERSION_CODE = 67;
 const IMAGE_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
 const PROFILE_PHOTO_MAX_DIMENSION = 512;
 const PROFILE_PHOTO_QUALITY = 0.84;
@@ -876,6 +876,7 @@ function normalizeMessage(message) {
     : { ...message };
   const sender = messageSender(raw);
   return {
+    id: raw.id || null,
     side: raw.side || (raw.senderId === session?.userId ? 'me' : 'them'),
     body: raw.body || '',
     time: raw.time || '',
@@ -886,6 +887,7 @@ function normalizeMessage(message) {
     senderInitials: raw.senderInitials || sender.initials,
     senderRole: raw.senderRole || sender.role,
     senderVehicle: raw.senderVehicle || sender.truck,
+    deliveryStatus: raw.deliveryStatus || '',
   };
 }
 
@@ -963,7 +965,9 @@ let activeInfoCategory = 'all';
 let infoFavorites = stored('infoFavorites') || [];
 let savedItems = stored('savedItems') || [];
 let announcementReads = stored('announcementReads') || {};
-let offlineQueue = stored('offlineQueue') || [];
+let offlineQueue = globalThis.XpressIntraOfflineQueue?.normalizeQueue(stored('offlineQueue') || [])
+  || stored('offlineQueue')
+  || [];
 let session = hasSupabaseConfigForMode && !DEMO_MODE ? null : stored('session');
 let pendingStandardSignupEmail = '';
 let pendingStandardSignupInvitationId = '';
@@ -4936,6 +4940,22 @@ async function addPickupLiveNote(note) {
     try {
       await updateSupabasePickupTask({}, nextPickup);
     } catch (error) {
+      if (offlineQueueApi()?.isRetryableError(error)) {
+        const queuedStep = nextPickup.steps[nextPickup.steps.length - 1];
+        queueOfflineChange(
+          'Live note',
+          note.trim(),
+          'Afhentning',
+          'save-pickup-note',
+          { task: nextPickup },
+          { idempotencyKey: `pickup-note:${nextPickup.id}:${queuedStep.at}` }
+        );
+        activePickup = nextPickup;
+        save('activePickup', activePickup);
+        render({ preserveScroll: true });
+        showToast('Ingen stabil forbindelse. Noten sendes automatisk senere.');
+        return;
+      }
       showToast(`Noten kunne ikke gemmes: ${error.message}`);
       return;
     }
@@ -5522,43 +5542,157 @@ function markAnnouncementRead(id) {
   save('announcementReads', announcementReads);
 }
 
-function queueOfflineChange(type, body, source = 'XpressIntra', action = '') {
-  offlineQueue = [
-    {
-      id: `offline-${Date.now()}-${offlineQueue.length}`,
+function offlineQueueApi() {
+  return globalThis.XpressIntraOfflineQueue || null;
+}
+
+function saveOfflineQueueState() {
+  const api = offlineQueueApi();
+  if (api) offlineQueue = api.normalizeQueue(offlineQueue);
+  save('offlineQueue', offlineQueue);
+}
+
+function queueOfflineChange(type, body, source = 'XpressIntra', action = '', payload = {}, options = {}) {
+  const api = offlineQueueApi();
+  if (api) {
+    const result = api.enqueue(offlineQueue, {
       type,
       body,
       source,
       action,
-      createdAt: new Date().toISOString(),
-      status: 'pending',
-    },
-    ...offlineQueue,
-  ].slice(0, 30);
-  save('offlineQueue', offlineQueue);
-  return offlineQueue[0];
+      payload,
+      userId: session?.userId || '',
+      idempotencyKey: options.idempotencyKey || '',
+    });
+    offlineQueue = result.queue;
+    saveOfflineQueueState();
+    return result.item;
+  }
+  const item = {
+    id: `offline-${Date.now()}-${offlineQueue.length}`,
+    type,
+    body,
+    source,
+    action,
+    payload,
+    userId: session?.userId || '',
+    createdAt: new Date().toISOString(),
+    status: 'pending',
+    attempts: 0,
+  };
+  offlineQueue = [item, ...offlineQueue].slice(0, 30);
+  saveOfflineQueueState();
+  return item;
 }
 
 function offlineQueueSummary() {
-  const pending = offlineQueue.filter(item => item.status !== 'synced').length;
-  return { pending, total: offlineQueue.length };
+  const summary = offlineQueueApi()?.queueSummary(offlineQueue)
+    || { pending: offlineQueue.filter(item => item.status !== 'synced').length, failed: 0, synced: 0, total: offlineQueue.length };
+  return { ...summary, pending: summary.pending + summary.failed };
+}
+
+function offlineQueueStatusLabel(item) {
+  return offlineQueueApi()?.statusLabel(item)
+    || (item.status === 'synced' ? 'Sendt' : 'Venter på forbindelse');
+}
+
+let offlineQueueSyncing = false;
+
+async function syncQueuedChatMessage(item, client) {
+  const payload = item.payload || {};
+  if (!payload.conversationId || !payload.body || !session?.userId) {
+    throw new Error('Den ventende besked mangler samtale eller bruger');
+  }
+  const { data, error } = await client.from('messages').insert({
+    conversation_id: payload.conversationId,
+    sender_id: session.userId,
+    body: payload.body,
+  }).select('*').maybeSingle();
+  if (error) throw error;
+
+  const thread = messages[payload.conversationId] || [];
+  const localIndex = thread.findIndex(message => message.id === payload.localMessageId);
+  const delivered = data ? messageFromSupabase(data, session.userId) : null;
+  if (localIndex >= 0 && delivered) thread.splice(localIndex, 1, delivered);
+  else if (localIndex >= 0) thread.splice(localIndex, 1);
+  else if (delivered && !thread.some(message => message.id === delivered.id)) thread.push(delivered);
+  messages[payload.conversationId] = thread;
+  save('messages', messages);
+}
+
+async function syncQueuedPickupNote(item) {
+  const task = item.payload?.task;
+  if (!task?.id) throw new Error('Den ventende live note mangler en aktiv opgave');
+  await updateSupabasePickupTask({}, task);
+  if (activePickup?.id === task.id) {
+    activePickup = task;
+    save('activePickup', activePickup);
+  }
+}
+
+async function processOfflineQueueItem(item) {
+  if (item.userId && item.userId !== session?.userId) {
+    throw new Error('Den ventende ændring tilhører en anden bruger');
+  }
+  const client = getSupabaseClient();
+  if (!client || !session?.userId) throw new Error('Login eller databaseforbindelse mangler');
+  if (item.action === 'send-chat-message') return syncQueuedChatMessage(item, client);
+  if (item.action === 'save-pickup-note') return syncQueuedPickupNote(item);
+  throw new Error('Denne lokale ændring kan ikke gensendes automatisk');
+}
+
+async function syncOfflineQueue({ force = false, notify = false } = {}) {
+  const api = offlineQueueApi();
+  if (!api || offlineQueueSyncing || !navigator.onLine || !onlineBackendActive() || !session?.userId) return;
+  offlineQueueSyncing = true;
+  if (force) offlineQueue = api.resetFailed(offlineQueue);
+  const due = api.dueItems(offlineQueue).filter(item => !item.userId || item.userId === session.userId);
+  let synced = 0;
+  try {
+    for (const item of due) {
+      offlineQueue = api.markProcessing(offlineQueue, item.id);
+      saveOfflineQueueState();
+      try {
+        await processOfflineQueueItem(item);
+        offlineQueue = api.markSynced(offlineQueue, item.id);
+        synced += 1;
+      } catch (error) {
+        offlineQueue = api.markRetry(offlineQueue, item.id, error);
+        globalThis.XpressIntraAppDiagnostics?.recordDiagnostic?.(error.message, {
+          source: 'Offline-kø',
+          area: item.source || activeTab,
+        });
+      }
+      saveOfflineQueueState();
+    }
+  } finally {
+    offlineQueueSyncing = false;
+  }
+  if (due.length) render({ preserveScroll: true });
+  if (notify) {
+    const remaining = offlineQueueSummary().pending;
+    showToast(remaining ? `${remaining} ændringer venter stadig` : `${synced} ændringer er sendt`);
+  }
 }
 
 function openOfflineQueueModal() {
   const modal = document.createElement('div');
   modal.className = 'modal-backdrop';
-  const pending = offlineQueueSummary().pending;
+  const queueStats = offlineQueueSummary();
+  const pending = queueStats.pending;
   modal.innerHTML = `<section class="profile-modal notification-modal">
     <button type="button" class="modal-close" data-action="close-modal" aria-label="Luk">${icon('close')}</button>
     <p class="eyebrow">Offline-kø</p><h3>Lokale ting der venter</h3>
-    <p class="info-intro">${pending ? `${pending} ting er gemt lokalt og skal tjekkes, når forbindelsen er stabil.` : 'Der er ingen lokale ændringer der venter.'}</p>
+    <p class="info-intro">${pending ? `${pending} ting er gemt sikkert på denne enhed og sendes automatisk, når forbindelsen er stabil.` : 'Der er ingen lokale ændringer der venter.'}</p>
     <div class="offline-queue-list">
       ${offlineQueue.length ? offlineQueue.map(item => `<article>
         <b>${text(item.type)}</b>
         <span>${text(item.body)}</span>
-        <small>${text(item.source)} · ${formatClock(item.createdAt)}</small>
+        <small>${text(item.source)} · ${formatClock(item.createdAt)} · ${text(offlineQueueStatusLabel(item))}</small>
+        ${item.lastError ? `<em>${text(item.lastError)}</em>` : ''}
       </article>`).join('') : '<p class="empty-state">Alt er ajour.</p>'}
     </div>
+    ${pending ? '<button class="primary-action" type="button" data-action="retry-offline-queue">Prøv at sende nu</button>' : ''}
   </section>`;
   document.body.append(modal);
 }
@@ -6331,6 +6465,7 @@ function renderMessageBubble(message) {
       <header><b>${own ? 'Dig' : text(message.senderName)}</b>${meta ? `<small>${text(meta)}</small>` : ''}</header>
       ${message.body ? `<p>${text(message.body)}</p>` : ''}
       ${safeMediaSrc(message.image?.src) ? `<figure class="chat-image"><img src="${mediaSrcAttr(message.image.src)}" alt="${text(message.image.name || 'Chatbillede')}" /><a href="${mediaSrcAttr(message.image.src)}" download="${text(mediaName(message.image.name))}">${icon('download')} Download</a></figure>` : ''}
+      ${message.deliveryStatus === 'pending' ? '<small class="message-delivery pending">Venter på forbindelse</small>' : ''}
       <time>${text(messageTimestamp(message))}</time>
     </div>
   </article>`;
@@ -8152,6 +8287,11 @@ document.addEventListener('click', async event => {
   if (action === 'open-access-requests') openAccessRequestsModal();
   if (action === 'open-support-request') openSupportRequestModal();
   if (action === 'open-offline-queue') openOfflineQueueModal();
+  if (action === 'retry-offline-queue') {
+    await syncOfflineQueue({ force: true, notify: true });
+    event.target.closest('.modal-backdrop')?.remove();
+    openOfflineQueueModal();
+  }
   if (action === 'copy-support-report') {
     const request = supportRequests.find(item => item.id === event.target.closest('[data-support-report]')?.dataset.supportReport);
     await copyTextToClipboard(supportRequestSummary(request), 'Fejlrapport kopieret');
@@ -8740,13 +8880,55 @@ document.addEventListener('submit', async event => {
     const file = event.target.elements.image.files[0];
     if (!input.value.trim() && !file) return;
     const client = getSupabaseClient();
-    const { data: inserted, error } = await client.from('messages').insert({
-      conversation_id: activeChat,
-      sender_id: session.userId,
-      body: input.value.trim() || 'Sendte et billede',
-    }).select('*').maybeSingle();
-    if (error) {
-      showToast(`Beskeden kunne ikke sendes: ${error.message}`);
+    const messageBody = input.value.trim() || 'Sendte et billede';
+    let inserted = null;
+    let sendError = null;
+    try {
+      const result = await client.from('messages').insert({
+        conversation_id: activeChat,
+        sender_id: session.userId,
+        body: messageBody,
+      }).select('*').maybeSingle();
+      inserted = result.data;
+      sendError = result.error;
+    } catch (error) {
+      sendError = error;
+    }
+    if (sendError) {
+      if (!file && offlineQueueApi()?.isRetryableError(sendError)) {
+        const localMessageId = `offline-message-${Date.now()}`;
+        messages[activeChat] = messages[activeChat] || [];
+        messages[activeChat].push({
+          id: localMessageId,
+          side: 'me',
+          senderId: session.userId,
+          senderName: currentEmployee().name,
+          senderInitials: currentEmployee().initials,
+          senderRole: currentEmployee().role,
+          senderVehicle: currentEmployee().truck,
+          body: messageBody,
+          createdAt: new Date().toISOString(),
+          deliveryStatus: 'pending',
+        });
+        queueOfflineChange(
+          'Chatbesked',
+          messageBody,
+          'Beskeder',
+          'send-chat-message',
+          {
+            conversationId: activeChat,
+            body: messageBody,
+            localMessageId,
+          },
+          { idempotencyKey: `chat:${activeChat}:${localMessageId}` }
+        );
+        save('messages', messages);
+        input.value = '';
+        render();
+        showToast('Ingen stabil forbindelse. Beskeden sendes automatisk senere.');
+        return;
+      }
+      showToast(`Beskeden kunne ikke sendes: ${sendError.message}`);
       return;
     }
     if (file) {
@@ -8793,7 +8975,9 @@ document.addEventListener('submit', async event => {
 });
 
 render();
-restoreSupabaseSession().catch(() => {});
+restoreSupabaseSession()
+  .then(() => syncOfflineQueue())
+  .catch(() => {});
 window.addEventListener('beforeinstallprompt', event => {
   event.preventDefault();
   deferredPwaInstallPrompt = event;
@@ -8828,8 +9012,15 @@ function checkForUpdateWhenForegrounded() {
 
 window.addEventListener('focus', checkForUpdateWhenForegrounded);
 window.addEventListener('online', checkForUpdateWhenForegrounded);
+window.addEventListener('online', () => syncOfflineQueue());
 document.addEventListener('visibilitychange', () => {
-  if (!document.hidden) checkForUpdateWhenForegrounded();
+  if (!document.hidden) {
+    checkForUpdateWhenForegrounded();
+    syncOfflineQueue();
+  }
 });
+setInterval(() => {
+  if (offlineQueueSummary().pending) syncOfflineQueue();
+}, 30 * 1000);
 
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('./service-worker.js').catch(() => {});

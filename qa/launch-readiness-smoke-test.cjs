@@ -1,8 +1,8 @@
-﻿const fs = require('fs');
+const fs = require('fs');
 const vm = require('vm');
 
 function createHarness() {
-  const code = fs.readFileSync('src/app.js', 'utf8');
+  const code = fs.readFileSync('app.js', 'utf8');
   const storage = new Map([['roadlog:session', JSON.stringify({ email: 'demo@xpressintra.local', mode: 'supabase', userId: 'user-1' })]]);
   const appElement = { innerHTML: '', classList: { add() {}, remove() {} } };
   const modalNodes = [];

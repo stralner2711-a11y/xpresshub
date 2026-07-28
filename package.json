@@ -1,23 +1,23 @@
 {
   "name": "xpressintra-employee-app",
   "private": true,
-  "version": "1.3.53",
+  "version": "1.3.54",
   "type": "module",
   "scripts": {
-    "dev": "vite --host 127.0.0.1",
-    "build": "vite build",
-    "qa": "node tools/run-qa.cjs",
+    "dev": "vite --config vite.active.config.js --configLoader runner --host 127.0.0.1",
+    "build": "vite build --config vite.active.config.js --configLoader runner",
+    "qa": "node run-qa.cjs",
     "bump": "node tools/bump-version.cjs",
     "native:sync": "npm run build && cap sync android && cap sync ios",
     "android:add": "cap add android",
     "android:sync": "npm run build && cap sync android",
     "android:open": "cap open android",
     "android:apk": "powershell -ExecutionPolicy Bypass -File \"./Build Android APK.ps1\"",
-    "android:aab": "npm run android:sync && cd android && gradlew.bat bundleRelease",
+    "android:aab": "npm run android:sync && cd android-active && gradlew.bat bundleRelease",
     "ios:add": "cap add ios",
     "ios:sync": "npm run build && cap sync ios",
     "ios:open": "cap open ios",
-    "ios:check": "powershell -ExecutionPolicy Bypass -File \"./tools/ios-readiness-check.ps1\""
+    "ios:check": "node ios-readiness-check.cjs"
   },
   "devDependencies": {
     "@capacitor/android": "^7.0.0",

@@ -3,6 +3,13 @@ $ErrorActionPreference = "Stop"
 Set-Location -LiteralPath $PSScriptRoot
 $logPath = Join-Path $PSScriptRoot "android-build-log.txt"
 if (Test-Path $logPath) { Remove-Item -LiteralPath $logPath -Force }
+$capacitorConfig = Get-Content -LiteralPath (Join-Path $PSScriptRoot "capacitor.config.json") -Raw | ConvertFrom-Json
+$androidProjectName = if ($capacitorConfig.android.path) { $capacitorConfig.android.path } else { "android" }
+$androidProjectPath = Join-Path $PSScriptRoot $androidProjectName
+$offlineGradleRepo = Join-Path $PSScriptRoot "android\offline-maven"
+if (Test-Path -LiteralPath $offlineGradleRepo) {
+  $env:XPRESSINTRA_GRADLE_OFFLINE_REPO = $offlineGradleRepo
+}
 
 function Write-Step($message) {
   Write-Host ""
@@ -14,6 +21,73 @@ function Add-PathIfExists($path) {
   if ($path -and (Test-Path -LiteralPath $path)) {
     $env:Path = "$path;$env:Path"
   }
+}
+
+function Get-JavaMajorVersion($javaHome) {
+  if (!$javaHome) { return $null }
+  $javaExe = Join-Path $javaHome "bin\java.exe"
+  if (!(Test-Path -LiteralPath $javaExe)) { return $null }
+  $versionOutput = @(& $javaExe -version 2>&1 | ForEach-Object { "$_" })
+  if (($versionOutput -join "`n") -match 'version "(\d+)') {
+    return [int]$matches[1]
+  }
+  return $null
+}
+
+function Find-OrInstallJdk17 {
+  $candidates = New-Object System.Collections.Generic.List[string]
+  foreach ($candidate in @(
+    $env:JAVA_HOME,
+    (Join-Path $PSScriptRoot ".tools\jdk17")
+  )) {
+    if ($candidate) { $candidates.Add($candidate) }
+  }
+
+  foreach ($root in @(
+    "C:\Program Files\Eclipse Adoptium",
+    "C:\Program Files\Microsoft",
+    (Join-Path $env:USERPROFILE ".jdks")
+  )) {
+    if (!(Test-Path -LiteralPath $root)) { continue }
+    Get-ChildItem -LiteralPath $root -Directory -ErrorAction SilentlyContinue |
+      ForEach-Object { $candidates.Add($_.FullName) }
+  }
+
+  foreach ($candidate in $candidates) {
+    if ((Get-JavaMajorVersion $candidate) -eq 17) { return $candidate }
+    if (Test-Path -LiteralPath $candidate) {
+      $nested = Get-ChildItem -LiteralPath $candidate -Directory -ErrorAction SilentlyContinue |
+        Where-Object { (Get-JavaMajorVersion $_.FullName) -eq 17 } |
+        Select-Object -First 1
+      if ($nested) { return $nested.FullName }
+    }
+  }
+
+  Write-Step "Henter Java 17 til Android-build"
+  $installRoot = Join-Path $PSScriptRoot ".tools\jdk17"
+  if (!(Test-Path -LiteralPath $installRoot)) {
+    New-Item -ItemType Directory -Path $installRoot | Out-Null
+  }
+  $download = Join-Path $env:TEMP ("xpressintra-jdk17-" + [guid]::NewGuid().ToString("N") + ".zip")
+  $uri = "https://api.adoptium.net/v3/binary/latest/17/ga/windows/x64/jdk/hotspot/normal/eclipse?project=jdk"
+  try {
+    Invoke-WebRequest -UseBasicParsing -Uri $uri -OutFile $download -MaximumRedirection 10
+    Expand-Archive -LiteralPath $download -DestinationPath $installRoot
+  } catch {
+    throw "Java 17 mangler, og automatisk download fejlede. Kontroller internetforbindelsen og koer igen. $($_.Exception.Message)"
+  } finally {
+    if (Test-Path -LiteralPath $download) {
+      Remove-Item -LiteralPath $download -Force
+    }
+  }
+
+  $installed = Get-ChildItem -LiteralPath $installRoot -Directory -ErrorAction SilentlyContinue |
+    Where-Object { (Get-JavaMajorVersion $_.FullName) -eq 17 } |
+    Select-Object -First 1
+  if (!$installed) {
+    throw "Java-pakken blev hentet, men en gyldig JDK 17 blev ikke fundet."
+  }
+  return $installed.FullName
 }
 
 function Find-AndroidSdk {
@@ -60,9 +134,9 @@ function Find-LocalGradleBat {
 }
 
 function Remove-UnusedGoogleServicesPlugin {
-  $googleServicesJson = Join-Path $PSScriptRoot "android\app\google-services.json"
-  $rootGradle = Join-Path $PSScriptRoot "android\build.gradle"
-  $appGradle = Join-Path $PSScriptRoot "android\app\build.gradle"
+  $googleServicesJson = Join-Path $androidProjectPath "app\google-services.json"
+  $rootGradle = Join-Path $androidProjectPath "build.gradle"
+  $appGradle = Join-Path $androidProjectPath "app\build.gradle"
   if ((Test-Path -LiteralPath $googleServicesJson) -or !(Test-Path -LiteralPath $rootGradle) -or !(Test-Path -LiteralPath $appGradle)) {
     return
   }
@@ -78,32 +152,27 @@ function Remove-UnusedGoogleServicesPlugin {
 }
 
 function Ensure-OfflineGradleSupport {
-  $patches = @(
-    @{
-      Path = Join-Path $PSScriptRoot "node_modules\@capacitor\android\capacitor\build.gradle"
-      BuildscriptNeedle = "repositories {`r`n        google()"
-      BuildscriptReplacement = "repositories {`r`n        def offlineRepoPath = System.getenv(`"XPRESSINTRA_GRADLE_OFFLINE_REPO`")`r`n        def offlineRepo = offlineRepoPath ? file(offlineRepoPath) : file(`"../../../../android/offline-maven`")`r`n        if (offlineRepo.exists()) {`r`n            maven { url offlineRepo }`r`n        }`r`n        google()"
-      RepositoriesNeedle = "`r`nrepositories {`r`n    google()"
-      RepositoriesReplacement = "`r`nrepositories {`r`n    def offlineRepoPath = System.getenv(`"XPRESSINTRA_GRADLE_OFFLINE_REPO`")`r`n    def offlineRepo = offlineRepoPath ? file(offlineRepoPath) : file(`"../../../../android/offline-maven`")`r`n    if (offlineRepo.exists()) {`r`n        maven { url offlineRepo }`r`n    }`r`n    google()"
-    },
-    @{
-      Path = Join-Path $PSScriptRoot "android\capacitor-cordova-android-plugins\build.gradle"
-      BuildscriptNeedle = "repositories {`r`n        google()"
-      BuildscriptReplacement = "repositories {`r`n        def offlineRepoPath = System.getenv(`"XPRESSINTRA_GRADLE_OFFLINE_REPO`")`r`n        def offlineRepo = offlineRepoPath ? file(offlineRepoPath) : file(`"../offline-maven`")`r`n        if (offlineRepo.exists()) {`r`n            maven { url offlineRepo }`r`n        }`r`n        google()"
-      RepositoriesNeedle = "`r`nrepositories {`r`n    google()"
-      RepositoriesReplacement = "`r`nrepositories {`r`n    def offlineRepoPath = System.getenv(`"XPRESSINTRA_GRADLE_OFFLINE_REPO`")`r`n    def offlineRepo = offlineRepoPath ? file(offlineRepoPath) : file(`"../offline-maven`")`r`n    if (offlineRepo.exists()) {`r`n        maven { url offlineRepo }`r`n    }`r`n    google()"
-    }
+  $paths = @(
+    (Join-Path $PSScriptRoot "node_modules\@capacitor\android\capacitor\build.gradle"),
+    (Join-Path $androidProjectPath "capacitor-cordova-android-plugins\build.gradle")
   )
+  $repositoryBlock = @"
+repositories {
+    def offlineRepoPath = System.getenv("XPRESSINTRA_GRADLE_OFFLINE_REPO")
+    def offlineRepo = offlineRepoPath ? file(offlineRepoPath) : null
+    if (offlineRepo != null && offlineRepo.exists()) {
+        maven { url offlineRepo }
+    }
+"@
 
-  foreach ($patch in $patches) {
-    if (!(Test-Path -LiteralPath $patch.Path)) { continue }
-    $content = Get-Content -LiteralPath $patch.Path -Raw
+  foreach ($path in $paths) {
+    if (!(Test-Path -LiteralPath $path)) { continue }
+    $content = Get-Content -LiteralPath $path -Raw
     $content = $content -replace "JavaVersion\.VERSION_21", "JavaVersion.VERSION_17"
     if ($content -notmatch "XPRESSINTRA_GRADLE_OFFLINE_REPO") {
-      $content = $content.Replace($patch.BuildscriptNeedle, $patch.BuildscriptReplacement)
-      $content = $content.Replace($patch.RepositoriesNeedle, $patch.RepositoriesReplacement)
+      $content = $content.Replace("repositories {", $repositoryBlock)
     }
-    [System.IO.File]::WriteAllText($patch.Path, $content, [System.Text.UTF8Encoding]::new($false))
+    [System.IO.File]::WriteAllText($path, $content, [System.Text.UTF8Encoding]::new($false))
   }
 }
 
@@ -129,7 +198,7 @@ function Run-Logged($command, $arguments) {
 
 function Get-GradleBuildArguments {
   $arguments = @("assembleDebug", "--stacktrace", "--no-daemon", "--no-watch-fs", "--no-build-cache", "--max-workers=1")
-  if (Test-Path -LiteralPath (Join-Path $PSScriptRoot "android\offline-maven")) {
+  if (Test-Path -LiteralPath $offlineGradleRepo) {
     $arguments += "--offline"
   }
   return $arguments
@@ -137,8 +206,8 @@ function Get-GradleBuildArguments {
 
 function Clear-BuiltWebAssets {
   foreach ($relativePath in @(
-    "dist",
-    "android\app\src\main\assets\public"
+    "web-build",
+    "$androidProjectName\app\src\main\assets\public"
   )) {
     $target = Join-Path $PSScriptRoot $relativePath
     if (!(Test-Path -LiteralPath $target)) { continue }
@@ -154,19 +223,9 @@ function Clear-BuiltWebAssets {
 Write-Step "XpressIntra Android APK build"
 
 Add-PathIfExists "C:\Program Files\nodejs"
-$androidStudioJbrCandidates = @(
-  "C:\Program Files\Android\Android Studio\jbr",
-  "C:\Program Files\Android\Android Studio1\jbr",
-  "C:\Program Files\Android\Android Studio2\jbr"
-)
-foreach ($jbr in $androidStudioJbrCandidates) {
-  $javaExe = Join-Path $jbr "bin\java.exe"
-  if (Test-Path -LiteralPath $javaExe) {
-    $env:JAVA_HOME = $jbr
-    Add-PathIfExists (Join-Path $jbr "bin")
-    break
-  }
-}
+$jdk17 = Find-OrInstallJdk17
+$env:JAVA_HOME = $jdk17
+Add-PathIfExists (Join-Path $jdk17 "bin")
 
 $sdk = Find-AndroidSdk
 if ($sdk) {
@@ -208,7 +267,7 @@ try {
     Run-Logged "npm.cmd" @("install")
   }
 
-  if (!(Test-Path -LiteralPath "android")) {
+  if (!(Test-Path -LiteralPath $androidProjectPath)) {
     Write-Step "Bygger webapp"
     Run-Logged "npm.cmd" @("run", "build")
 
@@ -231,11 +290,11 @@ try {
 
   Write-Step "Bygger debug APK"
   $buildStartedAt = Get-Date
-  $apk = Join-Path $PSScriptRoot "android\app\build\outputs\apk\debug\app-debug.apk"
+  $apk = Join-Path $androidProjectPath "app\build\outputs\apk\debug\app-debug.apk"
   if (Test-Path -LiteralPath $apk) {
     Remove-Item -LiteralPath $apk -Force
   }
-  $problemReports = Join-Path $PSScriptRoot "android\build\reports\problems"
+  $problemReports = Join-Path $androidProjectPath "build\reports\problems"
   if (Test-Path -LiteralPath $problemReports) {
     try {
       Remove-Item -LiteralPath $problemReports -Recurse -Force
@@ -244,7 +303,7 @@ try {
       Add-Content -LiteralPath $logPath -Value "Kunne ikke rydde gammel Gradle-rapport: $($_.Exception.Message)"
     }
   }
-  Push-Location -LiteralPath "android"
+  Push-Location -LiteralPath $androidProjectPath
   try {
     $localGradle = Find-LocalGradleBat
     if ($localGradle) {

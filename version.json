@@ -1,25 +1,25 @@
 {
-  "latestVersion": "1.3.53",
-  "stableVersion": "1.3.53",
-  "activeVersion": "1.3.53",
-  "previousStableVersion": "1.3.52",
-  "latestVersionCode": 66,
-  "stableVersionCode": 66,
-  "activeVersionCode": 66,
-  "apkDownloadUrl": "https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.53/xpressintra.apk",
-  "stableApkDownloadUrl": "https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.53/xpressintra.apk",
-  "previousStableApkDownloadUrl": "https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.52/xpressintra.apk",
-  "releasePageUrl": "https://github.com/stralner2711-a11y/xpresshub/releases/tag/v1.3.53",
-  "stableReleasePageUrl": "https://github.com/stralner2711-a11y/xpresshub/releases/tag/v1.3.53",
+  "latestVersion": "1.3.54",
+  "stableVersion": "1.3.54",
+  "activeVersion": "1.3.54",
+  "previousStableVersion": "1.3.53",
+  "latestVersionCode": 67,
+  "stableVersionCode": 67,
+  "activeVersionCode": 67,
+  "apkDownloadUrl": "https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.54/xpressintra.apk",
+  "stableApkDownloadUrl": "https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.54/xpressintra.apk",
+  "previousStableApkDownloadUrl": "https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.53/xpressintra.apk",
+  "releasePageUrl": "https://github.com/stralner2711-a11y/xpresshub/releases/tag/v1.3.54",
+  "stableReleasePageUrl": "https://github.com/stralner2711-a11y/xpresshub/releases/tag/v1.3.54",
   "downloadPageUrl": "https://stralner2711-a11y.github.io/xpresshub/download.html",
   "changelog": [
-    "build 66: professionel kvalitetsrunde af web, Android, iPhone/PWA og Supabase",
-    "GPS stopper sikkert ved udløbet login og undgår gentagne fejl ved dårlig forbindelse",
-    "Direkte beskeder, global søgning, profilroller og afhentningsflow er stabiliseret",
-    "Mobil- og desktoplayout, adgangsroller, invitationer og releaseflow er gennemtestet"
+    "build 67: stabilitetsrunde for web, Android og iPhone/PWA",
+    "Chat og afhentningsnoter kan køres i kø ved ustabil forbindelse og prøves automatisk igen",
+    "Dubletter begrænses, og beskeder viser tydelig ventende eller fejlet status",
+    "Releaseflow, aktive native projekter og den samlede QA-pakke er gjort mere robuste"
   ],
   "forceUpdate": true,
   "rollbackReason": "",
   "defectiveVersions": [],
-  "updatedAt": "2026-07-15"
+  "updatedAt": "2026-07-28"
 }

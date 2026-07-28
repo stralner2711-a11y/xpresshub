@@ -2,6 +2,7 @@ $ErrorActionPreference = "Stop"
 
 $project = $PSScriptRoot.TrimEnd("\")
 $versionFile = Join-Path $project "public\version.json"
+$capacitorConfigFile = Join-Path $project "capacitor.config.json"
 $repo = "stralner2711-a11y/xpresshub"
 $releaseAssetName = "xpressintra.apk"
 $releaseDir = Join-Path $project "release-klargjort"
@@ -13,9 +14,11 @@ if (!(Test-Path -LiteralPath $versionFile)) {
 }
 
 $version = Get-Content -LiteralPath $versionFile -Raw | ConvertFrom-Json
+$capacitorConfig = Get-Content -LiteralPath $capacitorConfigFile -Raw | ConvertFrom-Json
+$androidProjectDir = if ($capacitorConfig.android.path) { [string]$capacitorConfig.android.path } else { "android" }
 $tag = "v$($version.activeVersion)"
 $title = "XpressIntra $($version.activeVersion)"
-$apkSource = Join-Path $project "android\app\build\outputs\apk\debug\app-debug.apk"
+$apkSource = Join-Path $project "$androidProjectDir\app\build\outputs\apk\debug\app-debug.apk"
 $apkReady = Join-Path $releaseDir $releaseAssetName
 
 Write-Host "XpressIntra GitHub release"

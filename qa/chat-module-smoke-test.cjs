@@ -4,7 +4,7 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
-const app = fs.readFileSync('src/app.js', 'utf8');
+const app = fs.readFileSync('app.js', 'utf8');
 const chatModule = fs.readFileSync('src/modules/chat.js', 'utf8');
 const styles = fs.readFileSync('src/styles.css', 'utf8');
 

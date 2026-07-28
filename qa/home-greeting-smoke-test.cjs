@@ -1,10 +1,10 @@
-﻿const fs = require('fs');
+const fs = require('fs');
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
-const app = fs.readFileSync('src/app.js', 'utf8');
+const app = fs.readFileSync('app.js', 'utf8');
 
 assert(app.includes('function profileGreetingName()'), 'Home greeting should use a dedicated profile greeting helper');
 assert(app.includes('function dayGreeting'), 'Home greeting should use a time-aware greeting helper');

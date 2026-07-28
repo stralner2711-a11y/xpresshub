@@ -5,7 +5,7 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
-const source = fs.readFileSync('src/app.js', 'utf8');
+const source = fs.readFileSync('app.js', 'utf8');
 assert(source.includes('function') || source.includes('const fixMojibakeText'), 'App should include mojibake text cleanup');
 assert(source.includes('[0xc3, 0x00b8]') && source.includes("'ø'"), 'App should repair Danish oe mojibake');
 assert(source.includes('[0xc3, 0x00a5]') && source.includes("'å'"), 'App should repair Danish aa mojibake');

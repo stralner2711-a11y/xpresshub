@@ -13,9 +13,12 @@ assert(bumpScript.includes('`release-v${versionCode}`'), 'bump-version should ge
 const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
 assert(packageJson.scripts?.bump === 'node tools/bump-version.cjs', 'package.json should expose npm run bump');
 
-const app = fs.readFileSync('src/app.js', 'utf8');
-const gradle = fs.readFileSync('android/app/build.gradle', 'utf8');
-const iosProject = fs.readFileSync('ios/App/App.xcodeproj/project.pbxproj', 'utf8');
+const capacitorConfig = JSON.parse(fs.readFileSync('capacitor.config.json', 'utf8'));
+const androidProjectDir = capacitorConfig.android?.path || 'android';
+const iosProjectDir = capacitorConfig.ios?.path || 'ios';
+const app = fs.readFileSync('app.js', 'utf8');
+const gradle = fs.readFileSync(path.join(androidProjectDir, 'app', 'build.gradle'), 'utf8');
+const iosProject = fs.readFileSync(path.join(iosProjectDir, 'App', 'App.xcodeproj', 'project.pbxproj'), 'utf8');
 const serviceWorker = fs.readFileSync('service-worker.js', 'utf8');
 
 const displayMatch = app.match(/const APP_DISPLAY_VERSION = '([^']+)';/);

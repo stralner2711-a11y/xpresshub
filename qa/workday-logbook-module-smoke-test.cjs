@@ -4,7 +4,7 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
-const app = fs.readFileSync('src/app.js', 'utf8');
+const app = fs.readFileSync('app.js', 'utf8');
 const moduleCode = fs.readFileSync('src/modules/workday-logbook.js', 'utf8');
 
 assert(app.includes('XpressIntraWorkdayLogbook.workdayEndTime'), 'App should delegate Danish workday end time to the workday/logbook module when loaded');

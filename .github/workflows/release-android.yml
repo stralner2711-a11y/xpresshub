@@ -1,0 +1,140 @@
+name: Build and release XpressIntra
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/release-android.yml"
+      - "android-active/**"
+      - "app.js"
+      - "assets/**"
+      - "capacitor.config.json"
+      - "diagnostics.js"
+      - "index.html"
+      - "manifest.webmanifest"
+      - "offline-queue.js"
+      - "package-lock.json"
+      - "package.json"
+      - "public/**"
+      - "service-worker.js"
+      - "src/**"
+      - "vite.active.config.js"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: xpressintra-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Hent kildekoden
+        uses: actions/checkout@v4
+
+      - name: Klargør Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Klargør Java til Capacitor 7
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Installer app-pakker
+        run: npm ci
+
+      - name: Kontrollér version og webapp
+        shell: bash
+        run: |
+          node - <<'NODE'
+          const pkg = require("./package.json");
+          const version = require("./public/version.json");
+          if (pkg.version !== version.activeVersion) {
+            throw new Error(`package.json ${pkg.version} matcher ikke version.json ${version.activeVersion}`);
+          }
+          if (version.activeVersion !== version.latestVersion ||
+              version.activeVersionCode !== version.latestVersionCode) {
+            throw new Error("Aktiv og nyeste version er ikke ens");
+          }
+          NODE
+
+      - name: Synkronisér Android, iPhone og webapp
+        run: npm run native:sync
+
+      - name: Kør samlet kvalitetskontrol
+        run: npm run qa
+
+      - name: Byg APK
+        working-directory: android-active
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon --no-watch-fs --max-workers=2
+
+      - name: Kontrollér APK-version
+        shell: bash
+        run: |
+          node - <<'NODE'
+          const fs = require("fs");
+          const version = require("./public/version.json");
+          const metadataPath = "./android-active/app/build/outputs/apk/debug/output-metadata.json";
+          const metadata = JSON.parse(fs.readFileSync(metadataPath, "utf8"));
+          const element = metadata.elements?.[0];
+          if (!element) throw new Error("Android output-metadata mangler");
+          if (Number(element.versionCode) !== Number(version.activeVersionCode)) {
+            throw new Error(`APK build ${element.versionCode} matcher ikke ${version.activeVersionCode}`);
+          }
+          if (String(element.versionName) !== String(version.activeVersion)) {
+            throw new Error(`APK version ${element.versionName} matcher ikke ${version.activeVersion}`);
+          }
+          NODE
+
+      - name: Klargør release
+        shell: bash
+        run: |
+          mkdir -p release
+          cp android-active/app/build/outputs/apk/debug/app-debug.apk release/xpressintra.apk
+          node - <<'NODE'
+          const fs = require("fs");
+          const version = require("./public/version.json");
+          const notes = [
+            `XpressIntra ${version.activeVersion} (build ${version.activeVersionCode})`,
+            "",
+            ...version.changelog.map(item => `- ${item}`),
+          ].join("\n");
+          fs.writeFileSync("release-notes.md", `${notes}\n`);
+          fs.appendFileSync(process.env.GITHUB_ENV, `XPRESS_VERSION=${version.activeVersion}\n`);
+          NODE
+
+      - name: Opret eller opdatér GitHub-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          TAG="v${XPRESS_VERSION}"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release edit "$TAG" --title "XpressIntra ${XPRESS_VERSION}" --notes-file release-notes.md
+            gh release upload "$TAG" release/xpressintra.apk --clobber
+          else
+            gh release create "$TAG" release/xpressintra.apk \
+              --title "XpressIntra ${XPRESS_VERSION}" \
+              --notes-file release-notes.md \
+              --latest
+          fi
+
+      - name: Gem APK som build-resultat
+        uses: actions/upload-artifact@v4
+        with:
+          name: xpressintra-${{ env.XPRESS_VERSION }}
+          path: release/xpressintra.apk
+          if-no-files-found: error
+          retention-days: 30

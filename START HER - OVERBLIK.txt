@@ -29,8 +29,11 @@ BRUG DEN HER
 DET VIGTIGE I SYSTEMET
 ----------------------
 
+app.js
+   Den aktive hovedapp. Bruges af pc/web, Android og iPhone/PWA.
+
 src
-   Selve appen. Bruges af baade pc/web og Android.
+   Moduler og styles. Den gamle src/app.js er historik og maa ikke bruges som hovedapp.
 
 public/app-config.js
    Faelles Supabase-login-config.
@@ -39,15 +42,21 @@ public/app-config.js
 supabase
    Database, SQL, RLS, Storage og noter om den aktuelle Supabase-opsætning.
 
-tools/supabase-release-check.ps1
+supabase-release-check.ps1
    Release-kontrol der sikrer at Supabase-pakken, standardkode-login og sikkerhed er med,
    foer OPDATER ALT gaar videre.
 
 tools/github-release-check.ps1
    Kontrollerer lokal version, GitHub-repo, version.json paa GitHub, release-tag og APK-asset.
 
-android
-   Android/APK-delen.
+android-active
+   Den aktive Android/APK-del. Mappen android er den gamle, laaste tilbagevej.
+
+ios-active
+   Den aktive iOS-del. Mappen ios er den gamle, laaste tilbagevej.
+
+web-build
+   Den friske byggede webapp. Den gamle dist-mappe bruges ikke mere.
 
 vercel.json
    Online pc/web/Vercel-opsætning.
@@ -69,17 +78,17 @@ De er ikke slettet permanent endnu. Det er med vilje, saa vi stadig kan hente no
 ARBEJDSREGEL FREMOVER
 ---------------------
 
-Denne traad passer pc/web/Vercel/GitHub og releasepakken.
-Mobiltraaden passer Android/APK/telefonoplevelsen.
-
 Faelles filer skal behandles forsigtigt:
-  src/app.js
+  app.js
   src/styles.css
   index.html
+  offline-queue.js
   public/app-config.js
   public/version.json
   service-worker.js
   supabase/*
+  capacitor.config.json
+  vite.active.config.js
 
 Naar en opdatering skal sendes ud, skal vi koere:
 

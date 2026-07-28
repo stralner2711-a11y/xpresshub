@@ -1,10 +1,10 @@
-﻿const fs = require('fs');
+const fs = require('fs');
 const vm = require('vm');
 
 const styles = fs.readFileSync('src/styles.css', 'utf8');
 
 function createHarness() {
-  const code = fs.readFileSync('src/app.js', 'utf8');
+  const code = fs.readFileSync('app.js', 'utf8');
   const storage = new Map([['roadlog:session', JSON.stringify({ email: 'demo@xpressintra.local', mode: 'demo' })]]);
   const appElement = { innerHTML: '', classList: { add() {}, remove() {} } };
   const modalNodes = [];

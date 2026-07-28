@@ -1,8 +1,8 @@
-﻿const fs = require('fs');
+const fs = require('fs');
 const vm = require('vm');
 
 function createHarness(session = true) {
-  const code = fs.readFileSync('src/app.js', 'utf8');
+  const code = fs.readFileSync('app.js', 'utf8');
   const storage = new Map(session ? [['roadlog:session', JSON.stringify({ email: 'demo@xpressintra.local', mode: 'demo' })]] : []);
   const appElement = { innerHTML: '', classList: { add() {}, remove() {} } };
   const toast = { textContent: '', classList: { add() {}, remove() {} } };
@@ -124,7 +124,7 @@ const supportModal = harness.modalNodes.find(node => node.innerHTML.includes('Me
 assert(supportModal, 'Support request modal should open');
 assert(supportModal.innerHTML.includes('Noget virker ikke'), 'Support modal should support bug reports');
 assert(supportModal.innerHTML.includes('support-report-status'), 'Support modal should show report status metadata');
-assert(fs.readFileSync('src/app.js', 'utf8').includes('function supportRequestSummary'), 'Support requests should be copyable as a compact report');
+assert(fs.readFileSync('app.js', 'utf8').includes('function supportRequestSummary'), 'Support requests should be copyable as a compact report');
 harness.run("saveSupportRequest(new Map([['type', 'bug'], ['area', 'home'], ['message', 'Knappen er svær at finde']]))");
 assert(JSON.parse(harness.storage.get('roadlog:supportRequests')).length === 1, 'Support requests should be stored locally');
 

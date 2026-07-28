@@ -1,7 +1,7 @@
-﻿const fs = require('fs');
+const fs = require('fs');
 const vm = require('vm');
 
-const code = fs.readFileSync('src/app.js', 'utf8');
+const code = fs.readFileSync('app.js', 'utf8');
 
 function createHarness(url = 'https://stralner2711-a11y.github.io/xpresshub/') {
   const appElement = { innerHTML: '', classList: { add() {}, remove() {} } };

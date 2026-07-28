@@ -11,7 +11,7 @@ const download = fs.readFileSync('public/download.html', 'utf8');
 const docsDownload = fs.readFileSync('docs/download.html', 'utf8');
 const serviceWorker = fs.readFileSync('service-worker.js', 'utf8');
 const publicServiceWorker = fs.readFileSync('public/service-worker.js', 'utf8');
-const app = fs.readFileSync('src/app.js', 'utf8');
+const app = fs.readFileSync('app.js', 'utf8');
 const version = JSON.parse(fs.readFileSync('public/version.json', 'utf8'));
 
 assert(index.includes('viewport-fit=cover'), 'index should support iPhone safe-area layout');

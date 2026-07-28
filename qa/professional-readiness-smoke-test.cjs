@@ -4,7 +4,7 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
-const app = fs.readFileSync('src/app.js', 'utf8');
+const app = fs.readFileSync('app.js', 'utf8');
 const worker = fs.readFileSync('public/service-worker.js', 'utf8');
 const rootWorker = fs.readFileSync('service-worker.js', 'utf8');
 const manifest = fs.readFileSync('android/app/src/main/AndroidManifest.xml', 'utf8');

@@ -2,6 +2,16 @@ const fs = require('fs');
 const path = require('path');
 
 const root = path.resolve(__dirname, '..');
+const capacitorConfigPath = path.join(root, 'capacitor.config.json');
+
+function readCapacitorConfig() {
+  if (!fs.existsSync(capacitorConfigPath)) return {};
+  return JSON.parse(fs.readFileSync(capacitorConfigPath, 'utf8'));
+}
+
+const capacitorConfig = readCapacitorConfig();
+const androidProjectDir = capacitorConfig.android?.path || 'android';
+const iosProjectDir = capacitorConfig.ios?.path || 'ios';
 
 function read(file) {
   return fs.readFileSync(path.join(root, file), 'utf8');
@@ -20,10 +30,10 @@ Examples:
   node tools/bump-version.cjs 1.3.50 63 bundled-deps-v110
 
 Updates:
-  - src/app.js (APP_VERSION, APP_DISPLAY_VERSION, APP_VERSION_CODE)
+  - app.js (APP_VERSION, APP_DISPLAY_VERSION, APP_VERSION_CODE)
   - package.json and package-lock.json
-  - android/app/build.gradle (versionName, versionCode)
-  - ios/App/App.xcodeproj/project.pbxproj (marketing/build version)
+  - active Android project (versionName, versionCode)
+  - active iOS project (marketing/build version)
   - public/download.html and docs/download.html (APK link)
   - service-worker.js, public/service-worker.js (CACHE_NAME)
 `);
@@ -41,11 +51,11 @@ if (!/^\d+\.\d+\.\d+$/.test(displayVersion) || !Number.isFinite(versionCode) || 
 const releaseTag = `${displayVersion}-release-v${versionCode}`;
 const cacheName = `xpressintra-${cacheLabel}`;
 
-let app = read('src/app.js');
+let app = read('app.js');
 app = app.replace(/const APP_VERSION = '[^']+';/, `const APP_VERSION = '${releaseTag}';`);
 app = app.replace(/const APP_DISPLAY_VERSION = '[^']+';/, `const APP_DISPLAY_VERSION = '${displayVersion}';`);
 app = app.replace(/const APP_VERSION_CODE = \d+;/, `const APP_VERSION_CODE = ${versionCode};`);
-write('src/app.js', app);
+write('app.js', app);
 
 const packageJson = JSON.parse(read('package.json'));
 packageJson.version = displayVersion;
@@ -56,12 +66,13 @@ packageLock.version = displayVersion;
 if (packageLock.packages?.['']) packageLock.packages[''].version = displayVersion;
 write('package-lock.json', `${JSON.stringify(packageLock, null, 2)}\n`);
 
-let gradle = read('android/app/build.gradle');
+const androidBuildFile = `${androidProjectDir}/app/build.gradle`;
+let gradle = read(androidBuildFile);
 gradle = gradle.replace(/versionCode \d+/, `versionCode ${versionCode}`);
 gradle = gradle.replace(/versionName "[^"]+"/, `versionName "${displayVersion}"`);
-write('android/app/build.gradle', gradle);
+write(androidBuildFile, gradle);
 
-const iosProjectFile = 'ios/App/App.xcodeproj/project.pbxproj';
+const iosProjectFile = `${iosProjectDir}/App/App.xcodeproj/project.pbxproj`;
 if (fs.existsSync(path.join(root, iosProjectFile))) {
   let iosProject = read(iosProjectFile);
   iosProject = iosProject.replace(/CURRENT_PROJECT_VERSION = \d+;/g, `CURRENT_PROJECT_VERSION = ${versionCode};`);

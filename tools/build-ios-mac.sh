@@ -2,7 +2,7 @@
 set -eu
 
 ROOT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)"
-IOS_DIR="$ROOT_DIR/ios/App"
+IOS_DIR="$ROOT_DIR/ios-active/App"
 WORKSPACE="$IOS_DIR/App.xcworkspace"
 SCHEME="App"
 
@@ -64,4 +64,3 @@ open "$WORKSPACE"
 echo
 echo "iOS project is ready in Xcode."
 echo "For TestFlight/App Store: choose your Apple Developer Team, test on iPhone, then Product -> Archive."
-

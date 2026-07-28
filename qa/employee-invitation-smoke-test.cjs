@@ -1,11 +1,11 @@
-﻿const fs = require('fs');
+const fs = require('fs');
 const vm = require('vm');
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
-const source = fs.readFileSync('src/app.js', 'utf8');
+const source = fs.readFileSync('app.js', 'utf8');
 
 assert(source.includes('function normalizeEmployeeEmail'), 'Employee invite flow should normalize typed email addresses');
 assert(source.includes('function employeeFromProfileForm'), 'New employees should be built through one safe helper');
