@@ -18,6 +18,7 @@ android-active/build/
 android-active/app/build/
 android-active/capacitor-cordova-android-plugins/build/
 android-active/core-common-test.jar
+android-active/release.keystore
 ios-active/App/Pods/
 ios-active/App/build/
 ios-active/App/DerivedData/
