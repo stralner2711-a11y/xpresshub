@@ -72,6 +72,7 @@ const harness = createHarness();
 
 harness.run("globalQuery = 'Hamburg'; render();");
 assert(harness.appElement.innerHTML.includes('global-search'), 'App shell should show global search');
+assert(harness.appElement.innerHTML.includes('aria-label="Søg i hele XpressIntra"'), 'Global search should have an accessible name');
 assert(harness.appElement.innerHTML.includes('Drift og planlægning') || harness.appElement.innerHTML.includes('Hamburg'), 'Global search should find chat or route content');
 
 harness.run("globalQuery = 'CMR'; render();");

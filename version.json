@@ -1,25 +1,26 @@
 {
-  "latestVersion": "1.3.54",
-  "stableVersion": "1.3.54",
-  "activeVersion": "1.3.54",
-  "previousStableVersion": "1.3.53",
-  "latestVersionCode": 67,
-  "stableVersionCode": 67,
-  "activeVersionCode": 67,
-  "apkDownloadUrl": "https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.54/xpressintra.apk",
-  "stableApkDownloadUrl": "https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.54/xpressintra.apk",
-  "previousStableApkDownloadUrl": "https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.53/xpressintra.apk",
-  "releasePageUrl": "https://github.com/stralner2711-a11y/xpresshub/releases/tag/v1.3.54",
-  "stableReleasePageUrl": "https://github.com/stralner2711-a11y/xpresshub/releases/tag/v1.3.54",
+  "latestVersion": "1.3.55",
+  "stableVersion": "1.3.55",
+  "activeVersion": "1.3.55",
+  "previousStableVersion": "1.3.54",
+  "latestVersionCode": 68,
+  "stableVersionCode": 68,
+  "activeVersionCode": 68,
+  "apkDownloadUrl": "https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.55/xpressintra.apk",
+  "stableApkDownloadUrl": "https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.55/xpressintra.apk",
+  "previousStableApkDownloadUrl": "https://github.com/stralner2711-a11y/xpresshub/releases/download/v1.3.54/xpressintra.apk",
+  "releasePageUrl": "https://github.com/stralner2711-a11y/xpresshub/releases/tag/v1.3.55",
+  "stableReleasePageUrl": "https://github.com/stralner2711-a11y/xpresshub/releases/tag/v1.3.55",
   "downloadPageUrl": "https://stralner2711-a11y.github.io/xpresshub/download.html",
   "changelog": [
-    "build 67: stabilitetsrunde for web, Android og iPhone/PWA",
-    "Chat og afhentningsnoter kan køres i kø ved ustabil forbindelse og prøves automatisk igen",
-    "Dubletter begrænses, og beskeder viser tydelig ventende eller fejlet status",
-    "Releaseflow, aktive native projekter og den samlede QA-pakke er gjort mere robuste"
+    "build 68: sikkert loginberedskab for appansvarlig",
+    "Et godkendt login bliver ikke længere kasseret, hvis profildata midlertidigt ikke kan hentes",
+    "Creator får en tydelig fejlside med prøv igen, teknisk status og begrænset nødberedskab",
+    "Nødberedskabet er bundet til den verificerede creator-mail, telefonen og en særskilt stærk nødkode",
+    "Ingen chat, GPS, medarbejderdata, roller eller databaseskrivning åbnes gennem nødberedskabet"
   ],
   "forceUpdate": true,
   "rollbackReason": "",
   "defectiveVersions": [],
-  "updatedAt": "2026-07-28"
+  "updatedAt": "2026-08-14"
 }

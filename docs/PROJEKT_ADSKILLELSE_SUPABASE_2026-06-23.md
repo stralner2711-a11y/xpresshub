@@ -1,6 +1,7 @@
 # Projektadskillelse i Supabase
 
-Dato: 2026-06-23
+Oprettet: 2026-06-23  
+Senest kontrolleret: 2026-08-14
 
 ## Formål
 
@@ -59,3 +60,27 @@ Efter ændringen havde live-databasen:
 ## Fremadrettet regel
 
 Nye projekter skal have egne Supabase-projekter. XpressIntra-databasen må kun indeholde XpressIntra-tabeller, XpressIntra-funktioner og XpressIntra-storage.
+
+## Gentagen oprydning 2026-08-14
+
+En senere TruckLex-migration havde ved en fejl genoprettet 13 `trucklex_*`-tabeller i XpressIntras produktionsprojekt `mtfbdoajzmlgqbeiubxe`.
+
+Før oprydningen blev følgende gennemført:
+
+- Schema, constraints, indexes, policies, data og Realtime-status blev eksporteret lokalt.
+- Alle 13 tabeller og 15 eksisterende rækker blev flyttet til det korrekte Truckpedia-projekt `pfhgchcqddequxhhgrla`.
+- Alle 13 måltabeller fik RLS.
+- 29 RLS-policies og to private rollefunktioner blev genskabt.
+- Anonyme brugere fik kun læseadgang til de offentlige rækker og ingen tabelbaseret skriveadgang.
+- TruckLex-koden, runtime-konfigurationen, QA-kontrollerne og dokumentationen blev ændret til Truckpedia-projektet.
+- TruckLex build og statisk QA bestod mod den nye konfiguration.
+- Supabase security- og performance-advisors på Truckpedia rapporterede ingen fund.
+
+Efter at målet var verificeret, blev migrationen `remove_reintroduced_trucklex_from_xpressintra_20260814` kørt på XpressIntra. Efterkontrollen viste:
+
+- 0 `trucklex_*`-tabeller i XpressIntra.
+- 0 TruckLex-funktioner og intet `trucklex_private`-schema i XpressIntra.
+- 0 TruckLex-tabeller i XpressIntras Realtime-publication.
+- 26 XpressIntra-tabeller, alle med RLS slået til.
+
+Sikkerhedseksporten ligger lokalt i `backups/trucklex-move-2026-08-14/` og er udelukket fra Git. `tools/supabase-release-check.ps1` stopper nu en release, hvis TruckLex igen dukker op i XpressIntras samlede SQL-filer.

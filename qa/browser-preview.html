@@ -43,7 +43,7 @@
             { ...qaProfile, status: 'Online', location: qaProfile.department, online: true, sharing: false },
             { id: 'qa-driver-2', name: 'Maja Nielsen', initials: 'MN', role: 'Lastbilchauffør', accessRole: 'employee', vehicleType: 'truck', truck: 'Lastbil 17', department: 'Lastbil', status: 'På vej', location: 'Aarhus', online: true, sharing: true, coords: [56.1629, 10.2039], lastUpdatedAt: new Date(Date.now() - 90_000).toISOString(), employmentStatus: 'active' },
             { id: 'qa-van-2', name: 'Peter Sørensen', initials: 'PS', role: 'Varebilschauffør', accessRole: 'employee', vehicleType: 'van', truck: 'Varebil 12', department: 'Varebil', status: 'Klar', location: 'Horsens', online: true, sharing: true, coords: [55.8581, 9.8476], lastUpdatedAt: new Date(Date.now() - 4 * 60_000).toISOString(), employmentStatus: 'active' },
-            { id: 'qa-office-2', name: 'Lene Andersen', initials: 'LA', role: 'Disponent', accessRole: 'dispatcher', vehicleType: 'dispatch', truck: 'Kontor', department: 'Drift', status: 'Online', location: 'Kontoret', online: true, sharing: false, employmentStatus: 'active' },
+            { id: 'qa-office-2', name: 'Lene Andersen', initials: 'LA', role: 'Disponent', accessRole: 'dispatcher', vehicleType: 'dispatch', truck: 'Kontor', department: 'Drift', status: 'Online', location: 'Kontoret', online: true, sharing: true, coords: [56.135, 10.11], lastUpdatedAt: new Date(Date.now() - 2 * 60_000).toISOString(), employmentStatus: 'active' },
           ];
           const qaChats = [
             { id: 'qa-all', name: 'Fælleschat', initials: 'FC', preview: 'Maja: God tur derude', time: '08.42', unread: 2, community: true, online: true },
@@ -93,6 +93,6 @@
     <script type="module" src="/src/modules/chat.js"></script>
     <script type="module" src="/src/modules/workday-logbook.js"></script>
     <script type="module" src="/src/modules/info-center.js"></script>
-    <script type="module" src="/src/app.js"></script>
+    <script type="module" src="/app.js"></script>
   </body>
 </html>

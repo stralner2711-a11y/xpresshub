@@ -46,7 +46,7 @@ assert(app.includes(`const APP_DISPLAY_VERSION = '${version.activeVersion}'`), '
 assert(app.includes(`const APP_DISPLAY_VERSION = '${version.activeVersion}'`), 'APK display version should be visible in code');
 assert(app.includes(`const APP_VERSION_CODE = ${version.activeVersionCode}`), 'APK version code should be visible in code');
 assert(app.includes('const DEMO_MODE = Boolean(window.XPRESSINTRA_DEMO_MODE)'), 'Demo mode should require an explicit test flag in the browser');
-assert(app.includes('return !DEMO_MODE && Boolean(getSupabaseClient());'), 'Demo mode should never write through the production backend');
+assert(app.includes('return !DEMO_MODE && !sessionLoadFailure && !emergencyRecoveryActive && Boolean(getSupabaseClient());'), 'Demo, failed-data and emergency modes should never write through the production backend');
 
 console.log('Professional readiness smoke test passed');
 

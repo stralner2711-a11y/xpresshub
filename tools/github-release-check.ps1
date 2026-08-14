@@ -2,7 +2,8 @@ param(
   [string]$ProjectPath = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Path,
   [string]$RepoPath = 'C:\Users\Tommy\Documents\GitHub\xpresshub',
   [string]$RepoName = 'stralner2711-a11y/xpresshub',
-  [switch]$LocalOnly
+  [switch]$LocalOnly,
+  [int]$WaitForReleaseSeconds = 0
 )
 
 $ErrorActionPreference = 'Stop'
@@ -11,7 +12,6 @@ if (Get-Variable -Name PSNativeCommandUseErrorActionPreference -ErrorAction Sile
 }
 
 $gitPath = 'C:\Program Files\Git\cmd\git.exe'
-$ghPath = 'C:\Program Files\GitHub CLI\gh.exe'
 $aaptCandidates = @(
   (Join-Path $env:LOCALAPPDATA 'Android\Sdk\build-tools\37.0.0\aapt2.exe'),
   (Join-Path $env:LOCALAPPDATA 'Android\Sdk\build-tools\36.1.0\aapt2.exe'),
@@ -170,75 +170,75 @@ if (!(Test-Path -LiteralPath $gitPath)) {
 if ($LocalOnly) {
   Warn 'Kører LocalOnly: GitHub online/release kontroller er sprunget over.'
 } else {
-  if (!(Test-Path -LiteralPath $ghPath)) {
-    Fail "GitHub CLI mangler: $ghPath"
-  } else {
-    Pass 'GitHub CLI er installeret'
-    $auth = Invoke-Checked $ghPath @('auth', 'status') $ProjectPath
-    if ($auth.Code -ne 0) {
-      Fail "GitHub login virker ikke i denne terminal: $($auth.Output)"
-    } else {
-      Pass 'GitHub login virker'
-    }
+  $headers = @{ 'User-Agent' = 'XpressIntra-release-check'; 'Accept' = 'application/vnd.github+json' }
+  try {
+    $repoInfo = Invoke-RestMethod -Uri "https://api.github.com/repos/$RepoName" -Headers $headers -TimeoutSec 20
+    Pass "GitHub repo kan laeses: $($repoInfo.default_branch) $($repoInfo.visibility)"
+  } catch {
+    Fail "GitHub repo kunne ikke laeses: $($_.Exception.Message)"
+  }
 
-    $repoInfo = Invoke-Checked $ghPath @('api', "repos/$RepoName", '--jq', '.default_branch + " " + .visibility') $ProjectPath
-    if ($repoInfo.Code -ne 0) {
-      Fail "GitHub repo kunne ikke laeses: $($repoInfo.Output)"
-    } else {
-      Pass "GitHub repo kan laeses: $($repoInfo.Output.Trim())"
+  foreach ($remoteFile in @('version.json', 'docs/version.json')) {
+    try {
+      $remoteUrl = "https://raw.githubusercontent.com/$RepoName/main/$remoteFile"
+      $remoteVersion = Invoke-RestMethod -Uri $remoteUrl -Headers $headers -TimeoutSec 20
+      Assert-SameVersion $publicVersion $remoteVersion 'lokal public/version.json' "GitHub $remoteFile"
+    } catch {
+      Fail "Kunne ikke hente eller fortolke $remoteFile fra GitHub main: $($_.Exception.Message)"
     }
+  }
 
-    foreach ($remoteFile in @('version.json', 'docs/version.json')) {
-      $api = Invoke-Checked $ghPath @('api', "repos/$RepoName/contents/$remoteFile`?ref=main") $ProjectPath
-      if ($api.Code -ne 0) {
-        Fail "Kunne ikke hente $remoteFile fra GitHub main: $($api.Output)"
-        continue
-      }
+  if ($tag) {
+    $apkUrl = [string]$publicVersion.apkDownloadUrl
+    $deadline = (Get-Date).AddSeconds([Math]::Max(0, $WaitForReleaseSeconds))
+    $releaseReady = $false
+    do {
       try {
-        $remoteVersion = Decode-GitHubContent $api
-        Assert-SameVersion $publicVersion $remoteVersion 'lokal public/version.json' "GitHub $remoteFile"
+        $response = Invoke-WebRequest -Uri $apkUrl -Method Head -UseBasicParsing -TimeoutSec 30
+        $releaseReady = [int]$response.StatusCode -ge 200 -and [int]$response.StatusCode -lt 400
       } catch {
-        Fail "Kunne ikke fortolke $remoteFile fra GitHub: $($_.Exception.Message)"
+        $releaseReady = $false
       }
-    }
-
-    if ($tag) {
-      $release = Invoke-Checked $ghPath @('release', 'view', $tag, '--repo', $RepoName, '--json', 'tagName,isDraft,isPrerelease,url,assets') $ProjectPath
-      if ($release.Code -ne 0) {
-        Fail "Release $tag findes ikke eller kan ikke laeses: $($release.Output)"
-      } else {
-        try {
-          $releaseJson = $release.Output | ConvertFrom-Json
-          if ($releaseJson.isDraft) { Fail "Release $tag er stadig en kladde" } else { Pass "Release $tag er publiceret" }
-          $asset = @($releaseJson.assets) | Where-Object { $_.name -eq 'xpressintra.apk' } | Select-Object -First 1
-          if (!$asset) {
-            Fail "Release $tag mangler xpressintra.apk"
-          } elseif ([int64]$asset.size -lt 1000000) {
-            Fail "xpressintra.apk paa release $tag virker for lille ($($asset.size) bytes)"
-          } else {
-            Pass "Release $tag har xpressintra.apk ($([math]::Round([int64]$asset.size / 1MB, 1)) MB)"
-          }
-        } catch {
-          Fail "Kunne ikke fortolke release ${tag}: $($_.Exception.Message)"
-        }
+      if (!$releaseReady -and (Get-Date) -lt $deadline) {
+        Write-Host "Venter paa GitHub Actions release $tag..."
+        Start-Sleep -Seconds 20
       }
-    }
+    } while (!$releaseReady -and (Get-Date) -lt $deadline)
 
-    foreach ($url in @(
-      'https://stralner2711-a11y.github.io/xpresshub/version.json',
-      'https://raw.githubusercontent.com/stralner2711-a11y/xpresshub/main/version.json',
-      [string]$publicVersion.apkDownloadUrl
-    ) | Where-Object { $_ }) {
+    if (!$releaseReady) {
+      Fail "Release $tag eller xpressintra.apk er endnu ikke tilgaengelig"
+    } else {
+      Pass "APK-linket for $tag er tilgaengeligt"
       try {
-        $response = Invoke-WebRequest -Uri $url -Method Head -UseBasicParsing -TimeoutSec 20
-        if ([int]$response.StatusCode -ge 200 -and [int]$response.StatusCode -lt 400) {
-          Pass "Online link svarer: $url"
+        $releaseJson = Invoke-RestMethod -Uri "https://api.github.com/repos/$RepoName/releases/tags/$tag" -Headers $headers -TimeoutSec 20
+        if ($releaseJson.draft) { Fail "Release $tag er stadig en kladde" } else { Pass "Release $tag er publiceret" }
+        $asset = @($releaseJson.assets) | Where-Object { $_.name -eq 'xpressintra.apk' } | Select-Object -First 1
+        if (!$asset) {
+          Fail "Release $tag mangler xpressintra.apk"
+        } elseif ([int64]$asset.size -lt 1000000) {
+          Fail "xpressintra.apk paa release $tag virker for lille ($($asset.size) bytes)"
         } else {
-          Warn "Online link svarede med status $($response.StatusCode): $url"
+          Pass "Release $tag har xpressintra.apk ($([math]::Round([int64]$asset.size / 1MB, 1)) MB)"
         }
       } catch {
-        Warn "Online link kunne ikke kontrolleres lige nu: $url ($($_.Exception.Message))"
+        Fail "Kunne ikke fortolke release ${tag}: $($_.Exception.Message)"
       }
+    }
+  }
+
+  foreach ($url in @(
+    'https://stralner2711-a11y.github.io/xpresshub/version.json',
+    'https://raw.githubusercontent.com/stralner2711-a11y/xpresshub/main/version.json'
+  )) {
+    try {
+      $response = Invoke-WebRequest -Uri $url -Method Head -UseBasicParsing -TimeoutSec 20
+      if ([int]$response.StatusCode -ge 200 -and [int]$response.StatusCode -lt 400) {
+        Pass "Online link svarer: $url"
+      } else {
+        Warn "Online link svarede med status $($response.StatusCode): $url"
+      }
+    } catch {
+      Warn "Online link kunne ikke kontrolleres lige nu: $url ($($_.Exception.Message))"
     }
   }
 }

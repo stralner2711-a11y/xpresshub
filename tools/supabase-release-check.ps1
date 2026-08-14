@@ -42,6 +42,15 @@ $directMessagesRepair = Get-Content $directMessagesRepairPath -Raw
 $app = Get-Content $appPath -Raw
 $worker = Get-Content $workerPath -Raw
 
+foreach ($databaseFile in @(
+  @{ Name = 'supabase/schema.sql'; Content = $schema },
+  @{ Name = 'supabase/RUN_THIS_FROM_SCRATCH_IN_SUPABASE.sql'; Content = $fullSetup }
+)) {
+  if ($databaseFile.Content -match '(?i)trucklex_') {
+    Fail "$($databaseFile.Name) indeholder TruckLex-objekter. TruckLex skal ligge i projektet pfhgchcqddequxhhgrla, ikke XpressIntra."
+  }
+}
+
 if ($config -match 'service_role|sb_secret_|SUPABASE_SERVICE_ROLE') {
   Fail "app-config.js maa ikke indeholde service_role eller hemmelige noegler"
 }
@@ -141,6 +150,7 @@ foreach ($requiredText in @('password_reset_required', 'onboarding_method', 'sta
 Pass "Supabase config peger paa $supabaseUrl"
 Pass "Kun offentlig publishable/anon key bruges i app-config.js"
 Pass "Supabase SQL, RLS, Storage og standardchat er med i pakken"
+Pass "Projektadskillelse tjekket: XpressIntra SQL indeholder ingen TruckLex-tabeller"
 Pass "Standardkode-login er med i Supabase SQL og parkerer nye profiler til chef/creator-godkendelse"
 Pass "Interne RLS-hjaelpefunktioner ligger i private schema, ikke som public RPC"
 Pass "Direkte beskeder har sikker RPC og en separat reparationsfil"

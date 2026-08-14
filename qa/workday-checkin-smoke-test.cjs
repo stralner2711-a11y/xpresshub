@@ -117,6 +117,7 @@ function assert(condition, message) {
   await harness.run("workday = { ...workday, active: true, endsAt: '2026-05-31T18:59:00.000+02:00' }; location = { ...location, sharing: true, timer: 2 }; save('workday', workday); enforceWorkdayExpiry(new Date('2026-05-31T19:01:00.000+02:00'));");
   assert(harness.run('workday.active') === false, 'Workday should end automatically after 19:00');
   assert(harness.run('location.sharing') === false, 'Automatic end should stop location sharing');
+  assert(fs.readFileSync('app.js', 'utf8').includes('En tidligere arbejdsdag blev afsluttet automatisk'), 'A stale workday should not claim that the current time is after 19:00');
 
   console.log('Workday check-in smoke test passed');
 })().catch(error => {

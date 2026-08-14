@@ -34,3 +34,4 @@ release-klargjort/
 .release-worktree-*/
 .release-changes-*.txt
 *.zip
+backups/

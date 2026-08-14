@@ -2,7 +2,7 @@
 const vm = require('vm');
 
 function createHarness(session = true) {
-  const code = fs.readFileSync('src/app.js', 'utf8');
+  const code = fs.readFileSync('app.js', 'utf8');
   const storage = new Map(session ? [['roadlog:session', JSON.stringify({ email: 'demo@xpressintra.local', mode: 'demo' })]] : []);
   const appElement = { innerHTML: '', classList: { add() {}, remove() {} } };
   const toast = { textContent: '', classList: { add() {}, remove() {} } };
@@ -79,12 +79,23 @@ function assert(condition, message) {
 }
 
 const harness = createHarness();
-const source = fs.readFileSync('src/app.js', 'utf8');
+const source = fs.readFileSync('app.js', 'utf8');
 
 assert(source.includes('navigator.geolocation.getCurrentPosition(updateLocation'), 'Location sharing should request a first GPS position before waiting for live updates');
 assert(source.includes("if (activeTab === 'map') initializeMaps();"), 'GPS updates on the map should refresh markers without rebuilding the full screen');
 assert(source.includes('large && people.length && isNewMap'), 'Leaflet should only auto-fit a newly created map');
 assert(!source.includes("if (activeTab === 'map') render({ preserveScroll: true });"), 'GPS updates should not repeatedly re-render the map screen');
+assert(source.includes('function disposeLeafletMaps()'), 'Detached Leaflet maps should have an explicit disposal path');
+assert(source.includes('delete leafletInstances[id]'), 'Disposed Leaflet maps should release retained container references');
+assert(/function render\(options = \{\}\)[\s\S]*?disposeLeafletMaps\(\);[\s\S]*?document\.querySelector\('#app'\)\.innerHTML/.test(source), 'Render should dispose maps before replacing the app DOM');
+assert(source.includes('function mapVehicleGlyph'), 'Live map should use role-specific vehicle icons');
+assert(source.includes('viewBox="0 0 46 24"'), 'Truck marker should include a tractor and semi-trailer icon');
+assert(source.includes("mapLegendIcon('dispatch')"), 'Live map legend should include the office marker for dispatchers and management');
+assert(source.includes("markerType === 'truck' ? [40, 30] : [32, 30]"), 'Map markers should stay compact enough for a phone map');
+assert(source.includes("officeRole.includes('disponent')") && source.includes("officeRole.includes('chef')"), 'Dispatchers and managers should use the office marker');
+assert(harness.run("mapMarkerType({ vehicleType: 'truck', role: 'Chef', accessRole: 'admin' })") === 'dispatch', 'A manager should use the office marker even if an old vehicle value remains');
+assert(harness.run("mapMarkerType({ vehicleType: 'truck', role: 'Lastbilchauffør', accessRole: 'employee' })") === 'truck', 'A truck driver should use the tractor and semi-trailer marker');
+assert(harness.run("mapMarkerType({ vehicleType: 'van', role: 'Varebilschauffør', accessRole: 'employee' })") === 'van', 'A van driver should use the van marker');
 
 harness.run("activeTab = 'map'; render();");
 
@@ -98,6 +109,18 @@ assert(harness.appElement.innerHTML.includes('Status'), 'Live map should show pe
 assert(harness.appElement.innerHTML.includes('Google Maps'), 'Live map should keep working Google Maps links');
 assert(harness.appElement.innerHTML.includes('Deler nu'), 'Live map should offer a sharing-only filter');
 assert(harness.appElement.innerHTML.includes('Kun kollegaer med aktiv deling vises'), 'Live map should explain visible markers');
+assert(harness.appElement.innerHTML.includes('legend-vehicle truck'), 'Live map legend should show the truck icon');
+assert(harness.appElement.innerHTML.includes('legend-vehicle van'), 'Live map legend should show the van icon');
+assert(harness.appElement.innerHTML.includes('legend-vehicle dispatch'), 'Live map legend should show the office icon');
+
+harness.run(`{
+  const ownId = session?.userId || currentEmployee().id;
+  employees = employees.map(person => person.id === ownId
+    ? { ...person, sharing: true, coords: [56.1, 10.0] }
+    : person);
+  location = { ...location, sharing: false, coords: null };
+}`);
+assert(harness.run('visibleMapPeople().some(person => String(person.id) === String(session?.userId || currentEmployee().id))') === false, 'A stale server copy must not show your own marker while local sharing is off');
 
 harness.run('startTimedLocationSharing(30);');
 assert(harness.run('location.sharing') === true, 'Timed sharing should start location sharing');

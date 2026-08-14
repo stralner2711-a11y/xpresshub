@@ -26,9 +26,9 @@ const icons = {
   search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>',
 };
 
-const APP_VERSION = '1.3.54-release-v67';
-const APP_DISPLAY_VERSION = '1.3.54';
-const APP_VERSION_CODE = 67;
+const APP_VERSION = '1.3.55-release-v68';
+const APP_DISPLAY_VERSION = '1.3.55';
+const APP_VERSION_CODE = 68;
 const IMAGE_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
 const PROFILE_PHOTO_MAX_DIMENSION = 512;
 const PROFILE_PHOTO_QUALITY = 0.84;
@@ -36,8 +36,12 @@ const SUPPORTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/g
 const LOGIN_GUARD_KEY = 'loginGuard';
 const SECURITY_EVENTS_KEY = 'securityEvents';
 const ACCESS_REQUEST_NOTICE_KEY = 'accessRequestNoticeSeen';
+const EMERGENCY_RECOVERY_KEY = 'emergencyRecovery';
+const EMERGENCY_RECOVERY_ATTEMPT_KEY = 'emergencyRecoveryAttempts';
 const LOGIN_GUARD_MAX_FAILED = 5;
 const LOGIN_GUARD_LOCK_MINUTES = 10;
+const EMERGENCY_RECOVERY_MAX_FAILED = 5;
+const EMERGENCY_RECOVERY_LOCK_MINUTES = 15;
 const UPDATE_CONFIG_KEY = 'appUpdateState';
 const defaultUpdateConfig = {
   versionUrl: 'https://raw.githubusercontent.com/stralner2711-a11y/xpresshub/main/version.json',
@@ -326,10 +330,11 @@ const seedMessages = {};
 const PERSISTENT_DEVICE_STORAGE_KEYS = new Set([
   SUPABASE_CONFIG_KEY,
   UPDATE_CONFIG_KEY,
+  EMERGENCY_RECOVERY_KEY,
   'desktopViewMode',
   'mapFilter',
 ]);
-const SESSION_ONLY_STORAGE_KEYS = new Set([LOGIN_GUARD_KEY, ACCESS_REQUEST_NOTICE_KEY]);
+const SESSION_ONLY_STORAGE_KEYS = new Set([LOGIN_GUARD_KEY, ACCESS_REQUEST_NOTICE_KEY, EMERGENCY_RECOVERY_ATTEMPT_KEY]);
 
 function clearLegacyProductionStorage() {
   if (DEMO_MODE) return;
@@ -404,6 +409,7 @@ const mediaSrcAttr = value => text(safeMediaSrc(value));
 
 let supabaseClientInstance = null;
 let supabaseChatSubscription = null;
+const supabaseMessageInFlight = new Set();
 let supabaseLocationSubscription = null;
 let supabasePickupSubscription = null;
 let supabaseNotificationSubscription = null;
@@ -785,7 +791,7 @@ function getSupabaseClient() {
 }
 
 function onlineBackendActive() {
-  return !DEMO_MODE && Boolean(getSupabaseClient());
+  return !DEMO_MODE && !sessionLoadFailure && !emergencyRecoveryActive && Boolean(getSupabaseClient());
 }
 
 function isSupportedImageFile(file) {
@@ -972,6 +978,9 @@ let session = hasSupabaseConfigForMode && !DEMO_MODE ? null : stored('session');
 let pendingStandardSignupEmail = '';
 let pendingStandardSignupInvitationId = '';
 let loginErrorMessage = '';
+let emergencyRecovery = stored(EMERGENCY_RECOVERY_KEY) || null;
+let emergencyRecoveryActive = false;
+let sessionLoadFailure = null;
 let creatorRoleTester = stored('creatorRoleTester') || { active: false, originalProfile: null, currentRole: null };
 let profile = stored('profile') || (DEMO_MODE ? clone(emptyLocalProfile) : clone(productionProfile));
 let location = { sharing: false, demo: false, speed: 0, points: 0, watchId: null, timer: null, coords: null, startedAt: null, expiresAt: null, lastUpdatedAt: null, shareMode: null, pendingMessage: '', errorHandled: false };
@@ -1234,6 +1243,148 @@ function registerLoginFailure(email, reason = '') {
   loginGuard[key] = { failed, lockedUntil, lastFailedAt: new Date().toISOString() };
   save(LOGIN_GUARD_KEY, loginGuard);
   recordSecurityEvent('login_failed', `${key}${lockedUntil ? ' · midlertidigt bremset' : ''}${reason ? ` · ${reason}` : ''}`);
+}
+
+function emergencyRecoveryStatus() {
+  return globalThis.XpressIntraEmergencyRecovery?.emergencyRecoveryStatus?.(emergencyRecovery)
+    || { ready: false, reason: 'unsupported', label: 'Ikke understøttet' };
+}
+
+function emergencyRecoveryAttemptState() {
+  const state = stored(EMERGENCY_RECOVERY_ATTEMPT_KEY) || { failed: 0, lockedUntil: 0 };
+  if (Number(state.lockedUntil || 0) <= Date.now()) return { ...state, lockedUntil: 0 };
+  return state;
+}
+
+function emergencyRecoveryLockMessage() {
+  const state = emergencyRecoveryAttemptState();
+  if (!state.lockedUntil) return '';
+  const minutes = Math.max(1, Math.ceil((state.lockedUntil - Date.now()) / 60000));
+  return `For mange forsøg. Nødberedskabet er låst i cirka ${minutes} min.`;
+}
+
+function registerEmergencyRecoveryFailure() {
+  const previous = emergencyRecoveryAttemptState();
+  const failed = Number(previous.failed || 0) + 1;
+  const lockedUntil = failed >= EMERGENCY_RECOVERY_MAX_FAILED
+    ? Date.now() + EMERGENCY_RECOVERY_LOCK_MINUTES * 60 * 1000
+    : 0;
+  save(EMERGENCY_RECOVERY_ATTEMPT_KEY, { failed, lockedUntil });
+}
+
+function clearEmergencyRecoveryFailures() {
+  if (typeof sessionStorage !== 'undefined') sessionStorage.removeItem(`roadlog:${EMERGENCY_RECOVERY_ATTEMPT_KEY}`);
+}
+
+function emergencyRecoveryExpiryLabel() {
+  const status = emergencyRecoveryStatus();
+  if (!status.ready || !status.expiresAt) return status.label;
+  return new Date(status.expiresAt).toLocaleDateString('da-DK', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+function openEmergencyRecoverySettingsModal() {
+  if (!isCreatorOwner() || session?.mode !== 'supabase') {
+    showToast('Nødberedskab kan kun klargøres efter et rigtigt creator-login');
+    return;
+  }
+  const status = emergencyRecoveryStatus();
+  const modal = document.createElement('div');
+  modal.className = 'modal-backdrop';
+  modal.innerHTML = `<section class="profile-modal emergency-recovery-modal">
+    <button type="button" class="modal-close" data-action="close-modal" aria-label="Luk">${icon('close')}</button>
+    <p class="eyebrow">Creator sikkerhed</p>
+    <h3>Nødberedskab på denne telefon</h3>
+    <p class="info-intro">Giver adgang til lokal fejlsøgning, opdatering og rollback, hvis Supabase ikke svarer. Det giver aldrig adgang til medarbejdere, chats, GPS, roller eller databaseændringer.</p>
+    <section class="emergency-recovery-status ${status.ready ? 'ready' : 'inactive'}">
+      <span>${icon(status.ready ? 'check' : 'alert')}</span>
+      <div><b>${text(status.label)}</b><small>${status.ready ? `Udløber ${text(emergencyRecoveryExpiryLabel())}` : 'Klargør telefonen, mens creator-login virker.'}</small></div>
+    </section>
+    <form class="emergency-recovery-setup-form">
+      <label>Ny særskilt nødkode<input name="recoveryCode" type="password" minlength="12" autocomplete="new-password" required /></label>
+      <label>Gentag nødkoden<input name="recoveryCodeConfirm" type="password" minlength="12" autocomplete="new-password" required /></label>
+      <small>Mindst 12 tegn med stort bogstav, lille bogstav og tal. Koden gemmes aldrig; kun en langsomt beregnet kontrolværdi lagres på denne telefon.</small>
+      <button class="save-btn">${status.ready ? 'Forny beredskab i 90 dage' : 'Klargør i 90 dage'}</button>
+    </form>
+    ${status.ready ? '<button type="button" class="danger-outline" data-action="disable-emergency-recovery">Deaktivér på denne telefon</button>' : ''}
+  </section>`;
+  document.body.append(modal);
+}
+
+function openEmergencyRecoveryUnlockModal() {
+  const status = emergencyRecoveryStatus();
+  if (!status.ready) {
+    showToast(status.reason === 'expired' ? 'Nødberedskabet er udløbet og skal fornyes efter creator-login' : 'Denne telefon er ikke klargjort til nødberedskab');
+    return;
+  }
+  const lockedMessage = emergencyRecoveryLockMessage();
+  const modal = document.createElement('div');
+  modal.className = 'modal-backdrop';
+  modal.innerHTML = `<section class="profile-modal emergency-recovery-modal">
+    <button type="button" class="modal-close" data-action="close-modal" aria-label="Luk">${icon('close')}</button>
+    <p class="eyebrow">Begrænset nødadgang</p>
+    <h3>Åbn nødberedskab</h3>
+    <p class="info-intro">Kun din klargjorte creator-konto kan åbne lokale reparationsværktøjer. Dine creator-rettigheder og firmaets data forbliver låst bag Supabase.</p>
+    <form class="emergency-recovery-unlock-form">
+      <label>Din creator-mail<input name="ownerEmail" type="email" autocomplete="username" ${lockedMessage ? 'disabled' : 'required'} /></label>
+      <label>Nødkode<input name="recoveryCode" type="password" autocomplete="off" ${lockedMessage ? 'disabled' : 'required'} /></label>
+      ${lockedMessage ? `<p class="login-error" role="alert">${text(lockedMessage)}</p>` : ''}
+      <button class="save-btn" ${lockedMessage ? 'disabled' : ''}>Åbn nødberedskab</button>
+    </form>
+  </section>`;
+  document.body.append(modal);
+}
+
+function disableEmergencyRecovery() {
+  if (!isCreatorOwner() || session?.mode !== 'supabase') {
+    showToast('Kun creator kan deaktivere nødberedskabet');
+    return;
+  }
+  emergencyRecovery = null;
+  emergencyRecoveryActive = false;
+  localStorage.removeItem(`roadlog:${EMERGENCY_RECOVERY_KEY}`);
+  clearEmergencyRecoveryFailures();
+  document.querySelector('.modal-backdrop')?.remove();
+  render();
+  showToast('Nødberedskabet er deaktiveret på denne telefon');
+}
+
+function renderEmergencyRecovery() {
+  const backend = supabaseStatus();
+  const update = appUpdateState.latest;
+  return `<section class="emergency-recovery-shell">
+    <div class="login-brand">${brandLogo()}<small>XpressIntra · nødberedskab</small></div>
+    <div class="emergency-recovery-heading">
+      <p class="eyebrow">Appansvarlig</p>
+      <h1>Begrænset fejlsøgning</h1>
+      <p>Du kan undersøge forbindelsen og hente en stabil appversion. Firmaets data og rettigheder er stadig låst.</p>
+    </div>
+    <section class="emergency-recovery-warning">
+      ${icon('alert')}
+      <span><b>Ingen lokal creator-adgang</b><small>Du kan ikke læse chat, se GPS, ændre medarbejdere eller skrive til databasen herfra.</small></span>
+    </section>
+    <section class="emergency-recovery-grid">
+      <span><b>${navigator.onLine ? 'Online' : 'Offline'}</b><small>Internet</small></span>
+      <span><b>${text(backend.label)}</b><small>Opsætning</small></span>
+      <span><b>${text(APP_DISPLAY_VERSION)}</b><small>Installeret app</small></span>
+      <span><b>${text(update?.activeVersion || 'Ikke tjekket')}</b><small>Seneste kendte</small></span>
+    </section>
+    <section class="emergency-recovery-actions">
+      <button type="button" data-action="emergency-run-diagnostics">${icon('check')}<span><b>Kør systemtest</b><small>Login, database, net og update</small></span></button>
+      <button type="button" data-action="emergency-test-supabase">${icon('settings')}<span><b>Test Supabase</b><small>Se præcis hvor forbindelsen fejler</small></span></button>
+      <button type="button" data-action="emergency-check-update">${icon('download')}<span><b>Tjek opdatering</b><small>Find ny eller stabil version</small></span></button>
+      <button type="button" data-action="emergency-open-download">${icon('download')}<span><b>Åbn downloadside</b><small>Installer seneste officielle app</small></span></button>
+      <button type="button" data-action="emergency-open-status">${icon('info')}<span><b>Supabase driftsstatus</b><small>Se om leverandøren har nedbrud</small></span></button>
+    </section>
+    <button type="button" class="emergency-recovery-exit" data-action="emergency-exit">Luk nødberedskab og gå til login</button>
+  </section>`;
+}
+
+function flushEmergencyRecoveryAudit() {
+  if (!isCreatorOwner() || !emergencyRecovery?.pendingAuditAt) return;
+  const usedAt = new Date(emergencyRecovery.pendingAuditAt).toLocaleString('da-DK', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+  emergencyRecovery = { ...emergencyRecovery, pendingAuditAt: null };
+  save(EMERGENCY_RECOVERY_KEY, emergencyRecovery);
+  recordAdminAudit('Nødberedskab anvendt', `Begrænset lokalt nødberedskab blev åbnet ${usedAt}. Ingen firmadata eller roller var tilgængelige offline.`);
 }
 
 function systemNotificationPermission() {
@@ -2796,7 +2947,13 @@ async function loadSupabaseLocations() {
     if (handleLocationShareSchemaError(error)) return;
     throw error;
   }
-  const shared = (data || []).map(locationShareFromSupabase).filter(Boolean);
+  const currentIds = new Set([session.userId, currentEmployee().id].filter(Boolean).map(String));
+  const ownRemoteShare = (data || []).some(row => currentIds.has(String(row.user_id)));
+  if (!location.sharing && ownRemoteShare) await stopSupabaseLocation();
+  const shared = (data || [])
+    .filter(row => !currentIds.has(String(row.user_id)))
+    .map(locationShareFromSupabase)
+    .filter(Boolean);
   const sharedIds = new Set(shared.map(person => person.id));
   employees = employees.map(employee => {
     const onlineShare = shared.find(person => person.id === employee.id);
@@ -3025,6 +3182,10 @@ function handleSupabaseLocation(payload) {
   const row = payload.new || payload.old;
   if (!row?.user_id) return;
   const isOwnLocationUpdate = row.user_id === session?.userId || row.user_id === currentEmployee().id;
+  if (isOwnLocationUpdate) {
+    if (payload.eventType !== 'DELETE' && !location.sharing) stopSupabaseLocation().catch(() => {});
+    return;
+  }
   if (payload.eventType === 'DELETE') {
     employees = employees.map(employee => employee.id === row.user_id ? { ...employee, sharing: false } : employee);
   } else {
@@ -3036,7 +3197,7 @@ function handleSupabaseLocation(payload) {
     }
   }
   save('employees', employees);
-  if (activeTab === 'map' && !isOwnLocationUpdate) initializeMaps();
+  if (activeTab === 'map') initializeMaps();
 }
 
 function handleSupabasePickupTask(payload) {
@@ -3073,31 +3234,39 @@ function notificationFromSupabase(row = {}) {
 }
 
 async function handleSupabaseMessage(row) {
-  if (!row?.conversation_id || messages[row.conversation_id]?.some(message => message.id === row.id)) return;
-  const rows = await attachSignedMediaUrls([row]);
-  messages[row.conversation_id] = messages[row.conversation_id] || [];
-  const nextMessage = messageFromSupabase(rows[0], session?.userId);
-  messages[row.conversation_id].push(nextMessage);
-  const chat = chats.find(item => item.id === row.conversation_id);
-  if (chat) {
-    chat.preview = nextMessage.body;
-    chat.time = nextMessage.time;
-    if (activeChat !== row.conversation_id && nextMessage.side !== 'me') chat.unread = (chat.unread || 0) + 1;
+  if (!row?.conversation_id || row.id === null || row.id === undefined) return;
+  const messageKey = `${row.conversation_id}:${row.id}`;
+  if (supabaseMessageInFlight.has(messageKey) || messages[row.conversation_id]?.some(message => message.id === row.id)) return;
+  supabaseMessageInFlight.add(messageKey);
+  try {
+    const rows = await attachSignedMediaUrls([row]);
+    messages[row.conversation_id] = messages[row.conversation_id] || [];
+    if (messages[row.conversation_id].some(message => message.id === row.id)) return;
+    const nextMessage = messageFromSupabase(rows[0], session?.userId);
+    messages[row.conversation_id].push(nextMessage);
+    const chat = chats.find(item => item.id === row.conversation_id);
+    if (chat) {
+      chat.preview = nextMessage.body;
+      chat.time = nextMessage.time;
+      if (activeChat !== row.conversation_id && nextMessage.side !== 'me') chat.unread = (chat.unread || 0) + 1;
+    }
+    if (nextMessage.side !== 'me' && activeChat !== row.conversation_id) {
+      const heading = chat ? conversationHeading(chat) : { title: 'Besked' };
+      addNotification({
+        type: 'Chatbesked',
+        title: `${nextMessage.senderName || 'Kollega'} skrev`,
+        body: `${heading.title || 'Samtale'} · ${nextMessage.body || 'Ny besked'}`,
+        level: 'message',
+        chatId: row.conversation_id,
+        tag: `chat-${row.conversation_id}`,
+      }, { system: true });
+    }
+    save('messages', messages);
+    save('chats', chats);
+    if (activeTab === 'chat' || activeTab === 'home' || activeTab === 'more') render({ preserveScroll: activeTab !== 'chat' });
+  } finally {
+    supabaseMessageInFlight.delete(messageKey);
   }
-  if (nextMessage.side !== 'me' && activeChat !== row.conversation_id) {
-    const heading = chat ? conversationHeading(chat) : { title: 'Besked' };
-    addNotification({
-      type: 'Chatbesked',
-      title: `${nextMessage.senderName || 'Kollega'} skrev`,
-      body: `${heading.title || 'Samtale'} · ${nextMessage.body || 'Ny besked'}`,
-      level: 'message',
-      chatId: row.conversation_id,
-      tag: `chat-${row.conversation_id}`,
-    }, { system: true });
-  }
-  save('messages', messages);
-  save('chats', chats);
-  if (activeTab === 'chat' || activeTab === 'home' || activeTab === 'more') render({ preserveScroll: activeTab !== 'chat' });
 }
 
 function handleSupabaseNotification(row) {
@@ -3335,6 +3504,7 @@ async function loadSupabaseData(authSession) {
 }
 
 async function applySupabaseSession(authSession) {
+  sessionLoadFailure = null;
   session = { email: authSession.user.email, userId: authSession.user.id, mode: 'supabase', signedInAt: new Date().toISOString() };
   save('session', session);
   await loadSupabaseData(authSession);
@@ -3344,6 +3514,7 @@ async function applySupabaseSession(authSession) {
     return false;
   }
   sanitizeCreatorRoleTester();
+  flushEmergencyRecoveryAudit();
   notifyPendingAccessRequestsOnce();
   subscribeSupabaseChat();
   subscribeSupabaseNotifications();
@@ -3362,16 +3533,17 @@ async function restoreSupabaseSession() {
   if (error || !data.session) {
     localStorage.removeItem('roadlog:session');
     session = null;
+    sessionLoadFailure = null;
     render();
     return;
   }
   try {
     await applySupabaseSession(data.session);
   } catch (error) {
-    localStorage.removeItem('roadlog:session');
-    session = null;
+    session = { email: data.session.user.email, userId: data.session.user.id, mode: 'supabase', signedInAt: new Date().toISOString() };
+    sessionLoadFailure = { message: String(error?.message || error || 'Ukendt datafejl'), occurredAt: new Date().toISOString() };
     render();
-    showToast(`XpressIntra er online, men dine data kunne ikke hentes: ${error.message}`);
+    showToast('Dit login er godkendt, men appens data kunne ikke hentes. Prøv igen fra fejlsiden.');
   }
 }
 
@@ -3381,7 +3553,15 @@ async function signInSupabase(email, password) {
   const { data, error } = await client.auth.signInWithPassword({ email, password });
   if (error) throw error;
   if (!data.session) throw new Error('Login lykkedes ikke. Tjek mail og adgangskode.');
-  const active = await applySupabaseSession(data.session);
+  let active;
+  try {
+    active = await applySupabaseSession(data.session);
+  } catch (loadError) {
+    session = { email: data.session.user.email, userId: data.session.user.id, mode: 'supabase', signedInAt: new Date().toISOString() };
+    sessionLoadFailure = { message: String(loadError?.message || loadError || 'Ukendt datafejl'), occurredAt: new Date().toISOString() };
+    render();
+    return 'data-unavailable';
+  }
   if (!active) return 'blocked';
   if (profile.passwordResetRequired) openTemporaryPasswordModal();
   return 'active';
@@ -3503,6 +3683,8 @@ async function updateSupabasePassword(newPassword) {
 }
 
 async function signOut() {
+  emergencyRecoveryActive = false;
+  sessionLoadFailure = null;
   const client = getSupabaseClient();
   if (location.sharing && session?.userId) {
     await stopSupabaseLocation().catch(error => console.warn('GPS-rækken kunne ikke fjernes under logout', error));
@@ -3572,10 +3754,12 @@ async function signOut() {
 }
 
 function isAdmin() {
+  if (sessionLoadFailure || emergencyRecoveryActive) return false;
   return ['admin', 'owner'].includes(profile.accessRole);
 }
 
 function isDispatcher() {
+  if (sessionLoadFailure || emergencyRecoveryActive) return false;
   return ['dispatcher', 'admin', 'owner'].includes(profile.accessRole);
 }
 
@@ -4041,6 +4225,7 @@ function launchReadiness() {
 }
 
 function isCreatorOwner() {
+  if (sessionLoadFailure || emergencyRecoveryActive) return false;
   return profile.accessRole === 'owner';
 }
 
@@ -4360,6 +4545,12 @@ function creatorUserTestItems() {
   const truckChat = chats.find(chat => chat.channel === 'truck');
   const vanChat = chats.find(chat => chat.channel === 'van');
   const publicChat = chats.find(chat => chat.community);
+  const expectedVehicleChat = profile.vehicleType === 'truck'
+    ? truckChat
+    : profile.vehicleType === 'van'
+      ? vanChat
+      : true;
+  const chatSeparationReady = Boolean(publicChat && expectedVehicleChat);
   const data = [
     {
       area: 'Forside',
@@ -4390,10 +4581,10 @@ function creatorUserTestItems() {
     {
       area: 'Chat',
       title: 'Fælles og interne chats er adskilt',
-      body: publicChat && truckChat && vanChat
-        ? 'Fælles, lastbil og varebil findes som separate kanaler.'
-        : 'En eller flere standardkanaler mangler i appens lokale chatliste.',
-      done: Boolean(publicChat && truckChat && vanChat),
+      body: chatSeparationReady
+        ? 'Fælleschat og den relevante køretøjskanal er adskilt og synlige for denne profil.'
+        : 'Fælleschat eller profilens relevante køretøjskanal mangler i den lokale chatliste.',
+      done: chatSeparationReady,
       warn: false,
       action: 'chat',
     },
@@ -4552,6 +4743,7 @@ function renderCreatorOperationsDashboard() {
       <button type="button" data-action="open-security-center">Sikkerhed</button>
       <button type="button" data-action="open-support-request">Fejlcenter</button>
       <button type="button" data-action="open-offline-queue">Offline-kø</button>
+      <button type="button" data-action="open-emergency-recovery-settings">Nødberedskab</button>
       <button type="button" data-action="open-settings">Backend</button>
     </div>
     ${renderUpdateSummary()}
@@ -4565,6 +4757,7 @@ function renderCreatorOperationsDashboard() {
       <span class="${stats.pendingDataRequests ? 'warn' : 'ok'}"><b>Persondata</b><small>${stats.pendingDataRequests ? `${stats.pendingDataRequests} anmodning(er) bør behandles` : 'Ingen åbne dataanmodninger'}</small></span>
       <span class="${stats.openSupportRequests ? 'warn' : 'ok'}"><b>Fejlmeldinger</b><small>${stats.openSupportRequests ? `${stats.openSupportRequests} melding(er) ligger klar til gennemgang` : 'Ingen lokale fejlmeldinger lige nu'}</small></span>
       <span class="${stats.offlinePending ? 'warn' : 'ok'}"><b>Offline-kø</b><small>${stats.offlinePending ? `${stats.offlinePending} lokal(e) handling(er) venter` : 'Ingen lokale handlinger venter'}</small></span>
+      <span class="${emergencyRecoveryStatus().ready ? 'ok' : 'warn'}"><b>Nødberedskab</b><small>${emergencyRecoveryStatus().ready ? `Klargjort på denne telefon til ${text(emergencyRecoveryExpiryLabel())}` : 'Klargør en begrænset nødadgang på din egen telefon'}</small></span>
     </section>
     <details class="creator-ops-details" open>
       <summary>Onboarding kontrol</summary>
@@ -4776,7 +4969,7 @@ function globalSearchResults() {
 function renderGlobalSearch() {
   const results = globalSearchResults();
   return `<section class="global-search">
-    <label><span>${icon('search')}</span><input data-global-search placeholder="Søg i appen..." value="${text(globalQuery)}" autocomplete="off" /></label>
+    <label><span>${icon('search')}</span><input data-global-search aria-label="Søg i hele XpressIntra" placeholder="Søg i appen..." value="${text(globalQuery)}" autocomplete="off" /></label>
     ${globalQuery.trim().length >= 2 ? `<div class="global-search-results">
       ${results.length ? results.map(item => `<button data-search-target="${text(item.targetTab)}" ${item.chatId ? `data-search-chat="${text(item.chatId)}"` : ''} ${item.employeeQuery ? `data-search-employee-query="${text(item.employeeQuery)}"` : ''} ${item.infoCategory ? `data-search-info="${text(item.infoCategory)}"` : ''} ${item.infoQuery ? `data-search-info-query="${text(item.infoQuery)}"` : ''} ${item.action ? `data-search-action="${text(item.action)}"` : ''}>
         <small>${text(item.type)}</small><b>${text(item.title)}</b><span>${text(item.body)}</span>
@@ -5256,10 +5449,27 @@ async function endWorkday(message = 'Du er meldt fri, og dagens deling er slukke
   showToast(finalMessage);
 }
 
+let workdayExpiryInProgress = false;
+
+function sameDanishCalendarDay(firstDate, secondDate) {
+  const first = zonedParts(firstDate, WORKDAY_TIMEZONE);
+  const second = zonedParts(secondDate, WORKDAY_TIMEZONE);
+  return first.year === second.year && first.month === second.month && first.day === second.day;
+}
+
 function enforceWorkdayExpiry(now = new Date()) {
   if (!workday.active || !workday.endsAt) return;
-  if (now < new Date(workday.endsAt)) return;
-  endWorkday('Klokken er over 19.00, så arbejdsdagen og deling er slukket automatisk', 'auto_ended');
+  const scheduledEnd = new Date(workday.endsAt);
+  if (Number.isNaN(scheduledEnd.getTime()) || now < scheduledEnd || workdayExpiryInProgress) return;
+  const message = sameDanishCalendarDay(now, scheduledEnd)
+    ? 'Klokken er over 19.00, så arbejdsdagen og deling er slukket automatisk'
+    : 'En tidligere arbejdsdag blev afsluttet automatisk, og delingen er slukket';
+  workdayExpiryInProgress = true;
+  workday = { ...workday, active: false, endedAt: now.toISOString() };
+  save('workday', workday);
+  void endWorkday(message, 'auto_ended').finally(() => {
+    workdayExpiryInProgress = false;
+  });
 }
 
 function logbookStats() {
@@ -5449,15 +5659,16 @@ function renderLogbookEntry(entry) {
 }
 
 function visibleMapPeople() {
-  const sharedPeople = employees.filter(person => person.sharing && person.coords);
   const currentId = session?.userId || currentEmployee().id;
+  const currentIds = new Set([currentId, currentEmployee().id].filter(Boolean).map(String));
+  const sharedPeople = employees.filter(person => person.sharing && person.coords && !currentIds.has(String(person.id)));
   const workPermissions = { ...(workday.permissions || {}), ...workdayPrivacy };
   const selfVisible = location.sharing && (workPermissions.audience || workdayPrivacy.audience) !== 'none';
   const selfStatusParts = ['Deler GPS'];
   if (workPermissions.showSpeed) selfStatusParts.push(`${location.speed} km/t`);
   const people = location.sharing
     ? [
-        ...sharedPeople.filter(person => person.id !== currentId && person.id !== currentEmployee().id),
+        ...sharedPeople,
         ...(selfVisible ? [{
           ...currentEmployee(),
           id: currentId,
@@ -5891,14 +6102,19 @@ function startLocationSharing(message = 'Din live-position deles nu med kolleger
 }
 
 function stopLocationSharing(message = 'Din position er ikke længere synlig for kolleger') {
-  if (!location.sharing) return;
+  const wasSharing = location.sharing;
   navigator.geolocation?.clearWatch(location.watchId);
   clearInterval(location.timer);
   stopSupabaseLocation().catch(() => {});
+  const currentIds = new Set([session?.userId, currentEmployee().id].filter(Boolean).map(String));
+  employees = employees.map(employee => currentIds.has(String(employee.id))
+    ? { ...employee, sharing: false, coords: null }
+    : employee);
+  save('employees', employees);
   location = { sharing: false, demo: false, speed: 0, points: 0, watchId: null, timer: null, coords: null, startedAt: null, expiresAt: null, lastUpdatedAt: null, shareMode: null, pendingMessage: '', errorHandled: false };
   resetLocationSyncGuard();
   render();
-  showToast(message);
+  if (wasSharing) showToast(message);
 }
 
 function startTimedLocationSharing(minutes) {
@@ -5961,6 +6177,7 @@ function renderLogin() {
   const inviteContext = loginInviteContext();
   const invitedEmail = inviteContext.email;
   const canUseInviteSignup = Boolean(backend.ready && inviteContext.valid);
+  const emergencyStatus = emergencyRecoveryStatus();
   return `<section class="login-shell">
     <div class="login-brand">${brandLogo()}<small>XpressIntra · internt medarbejdersystem</small></div>
     <div class="login-copy"><h1>Godt at se dig.</h1><p>Log ind for at finde kollegaer, dele din position og skrive med holdet.</p></div>
@@ -5977,6 +6194,29 @@ function renderLogin() {
       <span>På iPhone åbner du siden i Safari og vælger Føj til hjemmeskærm. På pc kan browseren installere den direkte.</span>
       <button type="button" data-action="install-pwa">${text(pwaInstallLabel())}</button>
     </div>
+    ${emergencyStatus.ready ? `<button type="button" class="login-emergency-recovery" data-action="open-emergency-recovery-unlock">${icon('alert')}<span><b>Nødberedskab</b><small>Kun for appansvarlig på denne klargjorte telefon</small></span></button>` : ''}
+  </section>`;
+}
+
+function renderSessionLoadFailure() {
+  const emergencyStatus = emergencyRecoveryStatus();
+  const occurredAt = sessionLoadFailure?.occurredAt
+    ? new Date(sessionLoadFailure.occurredAt).toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' })
+    : 'nu';
+  return `<section class="login-shell session-load-failure-shell">
+    <div class="login-brand">${brandLogo()}<small>XpressIntra · sikker forbindelsesfejl</small></div>
+    <div class="login-copy"><h1>Dit login er godkendt.</h1><p>Supabase kunne ikke levere dine profildata. Appen holder derfor firmaets data og rettigheder låst, indtil forbindelsen virker igen.</p></div>
+    <section class="session-load-failure-card">
+      ${icon('alert')}
+      <span><b>Dataforbindelsen svarede ikke</b><small>Seneste forsøg: ${text(occurredAt)}. Din adgangskode var ikke fejlen.</small></span>
+    </section>
+    <div class="session-load-failure-actions">
+      <button type="button" data-action="retry-session-data">Prøv forbindelsen igen</button>
+      <button type="button" class="login-secondary" data-action="session-open-diagnostics">Se teknisk status</button>
+      ${emergencyStatus.ready ? `<button type="button" class="login-emergency-recovery" data-action="open-emergency-recovery-unlock">${icon('alert')}<span><b>Mit nødberedskab</b><small>Kræver din creator-mail og særskilte nødkode</small></span></button>` : ''}
+      <button type="button" class="login-secondary" data-action="logout">Log ud</button>
+    </div>
+    <small class="session-load-error-detail">Teknisk fejl: ${text(sessionLoadFailure?.message || 'Ukendt datafejl')}</small>
   </section>`;
 }
 
@@ -6182,6 +6422,18 @@ function teamMap(large = true) {
 }
 
 const leafletInstances = {};
+
+function disposeLeafletMaps() {
+  Object.keys(leafletInstances).forEach(id => {
+    const record = leafletInstances[id];
+    try {
+      record?.map?.remove();
+    } catch {
+      // A detached WebView map may already have released its container.
+    }
+    delete leafletInstances[id];
+  });
+}
 let leafletLoadPromise = null;
 
 function loadExternalAsset(tagName, attributes) {
@@ -6209,10 +6461,35 @@ function ensureLeaflet() {
 }
 
 function markerClass(person) {
-  if ((person.id === currentEmployee().id || person.id === session?.userId) && location.sharing) return 'self';
+  const vehicleClass = mapMarkerType(person);
+  const isSelf = (person.id === currentEmployee().id || person.id === session?.userId) && location.sharing;
+  return `${vehicleClass}${isSelf ? ' self' : ''}`;
+}
+
+function mapMarkerType(person = {}) {
+  const officeRole = searchable(`${person.role || ''} ${person.department || ''}`);
+  if (person.vehicleType === 'dispatch' || person.accessRole === 'admin' || officeRole.includes('disponent') || officeRole.includes('chef')) return 'dispatch';
   if (person.vehicleType === 'truck') return 'truck';
   if (person.vehicleType === 'van') return 'van';
   return 'dispatch';
+}
+
+function mapVehicleGlyph(type = 'dispatch') {
+  if (type === 'truck') {
+    return '<svg viewBox="0 0 46 24" aria-hidden="true"><rect x="1.5" y="4" width="27" height="13" rx="2"/><path d="M30 8h7l6 5v4H30z"/><path d="M35 9v5h7"/><circle cx="9" cy="19" r="2.5"/><circle cx="24" cy="19" r="2.5"/><circle cx="37" cy="19" r="2.5"/></svg>';
+  }
+  if (type === 'van') {
+    return '<svg viewBox="0 0 38 24" aria-hidden="true"><path d="M2 7.5A2.5 2.5 0 0 1 4.5 5H23v12H2z"/><path d="M23 9h6l6 6v2H23z"/><path d="M28 10v5h6"/><circle cx="9" cy="19" r="2.5"/><circle cx="29" cy="19" r="2.5"/></svg>';
+  }
+  return '<svg viewBox="0 0 28 28" aria-hidden="true"><path d="M5 25V5h18v20M9 9h3m4 0h3M9 14h3m4 0h3M9 19h3m4 0h3M12 25v-4h4v4"/></svg>';
+}
+
+function mapMarkerHtml(person = {}) {
+  return `<span class="map-marker-vehicle">${mapVehicleGlyph(mapMarkerType(person))}</span><b class="map-marker-initials">${text(person.initials || 'XB')}</b>`;
+}
+
+function mapLegendIcon(type, self = false) {
+  return `<i class="legend-vehicle ${text(type)}${self ? ' self' : ''}">${mapVehicleGlyph(type)}</i>`;
 }
 
 function markerPosition(coords) {
@@ -6230,7 +6507,7 @@ function fallbackLiveMap(container, people) {
   container.innerHTML = `<div class="fallback-live-map">
     <div class="fallback-map-grid"></div>
     <span class="fallback-city city-aarhus">Aarhus</span><span class="fallback-city city-kolding">Kolding</span><span class="fallback-city city-hamburg">Hamburg</span>
-    ${people.map(person => `<button class="fallback-marker ${markerClass(person)}" style="${markerPosition(person.coords)}" title="${text(person.name)}"><b>${text(person.initials)}</b></button>`).join('')}
+    ${people.map(person => `<button class="fallback-marker live-leaflet-marker ${markerClass(person)}" style="${markerPosition(person.coords)}" title="${text(person.name)}">${mapMarkerHtml(person)}</button>`).join('')}
     <div class="fallback-map-note">${icon('alert')}<b>Backup-kort aktivt</b><span>Det rigtige OpenStreetMap-kort kunne ikke hentes. Markører og Google Maps-links virker stadig.</span></div>
   </div>`;
 }
@@ -6272,11 +6549,13 @@ async function initializeMaps() {
     const visibleIds = new Set();
     people.forEach(person => {
       const markerId = String(person.id);
+      const markerType = mapMarkerType(person);
+      const markerSize = markerType === 'truck' ? [40, 30] : [32, 30];
       const markerIcon = leaflet.divIcon({
         className: `live-leaflet-marker ${markerClass(person)}`,
-        html: `<b>${text(person.initials)}</b>`,
-        iconSize: [30, 30],
-        iconAnchor: [15, 15],
+        html: mapMarkerHtml(person),
+        iconSize: markerSize,
+        iconAnchor: [markerSize[0] / 2, markerSize[1] / 2],
       });
       const popup = `<strong>${text(person.name)}</strong><br>${text(vehicleLabel(person.vehicleType))} · ${text(person.status)}<br>${text(person.truck)}`;
       let marker = markers.get(markerId);
@@ -6343,10 +6622,10 @@ function renderMap() {
     </section>
     <div class="screen-section-head map-section-head"><span>Kort</span><small>OpenStreetMap med Google Maps-links</small></div>
     <section class="map-legend-panel">
-      <span><i class="legend-dot self"></i>Dig</span>
-      <span><i class="legend-dot truck"></i>Lastbil</span>
-      <span><i class="legend-dot van"></i>Varebil</span>
-      <span><i class="legend-dot dispatch"></i>Kontor</span>
+      <span>${mapLegendIcon(profile.vehicleType === 'van' ? 'van' : profile.vehicleType === 'truck' ? 'truck' : 'dispatch', true)}Dig</span>
+      <span>${mapLegendIcon('truck')}Lastbil</span>
+      <span>${mapLegendIcon('van')}Varebil</span>
+      <span>${mapLegendIcon('dispatch')}Kontor</span>
       <small>Kun kollegaer med aktiv deling vises. Brug "Deler nu" for et helt rent kort.</small>
     </section>
     ${teamMap(true)}
@@ -6374,18 +6653,24 @@ function renderChat() {
   const community = chats.find(chat => chat.community);
   const channels = chats.filter(chat => chat.channel && canAccessChat(chat));
   const chatSearch = searchable(chatQuery.trim());
+  const matchesChatSearch = chat => !chatSearch || searchable(`${chat.name} ${chat.preview}`).includes(chatSearch);
+  const visibleCommunity = community && matchesChatSearch(community) ? community : null;
+  const visibleChannels = channels.filter(matchesChatSearch);
   const directChats = chats.filter(chat => !chat.community && !chat.channel)
-    .filter(chat => !chatSearch || searchable(`${chat.name} ${chat.preview}`).includes(chatSearch));
+    .filter(matchesChatSearch);
   const pinnedChat = community || channels[0] || directChats[0];
   const unreadTotal = chats.reduce((sum, chat) => sum + Number(chat.unread || 0), 0);
   const allDirectCount = chats.filter(chat => !chat.community && !chat.channel).length;
-  const communityCard = community
-    ? `<button class="community-chat chat-feature-card" data-chat="${text(community.id)}">
+  const searchResultCount = Number(Boolean(visibleCommunity)) + visibleChannels.length + directChats.length;
+  const communityCard = visibleCommunity
+    ? `<button class="community-chat chat-feature-card" data-chat="${text(visibleCommunity.id)}">
       <span class="community-icon">${icon('users')}</span>
-      <span><small>Hele holdet</small><b>Fælleschat</b><em>${text(community.preview || 'Skriv til hele holdet')}</em></span>
-      ${community.unread ? `<i>${text(community.unread)}</i>` : icon('arrow', 'row-arrow')}
+      <span><small>Hele holdet</small><b>Fælleschat</b><em>${text(visibleCommunity.preview || 'Skriv til hele holdet')}</em></span>
+      ${visibleCommunity.unread ? `<i>${text(visibleCommunity.unread)}</i>` : icon('arrow', 'row-arrow')}
     </button>`
-    : '<section class="important-message"><span>Fælleschat</span><b>Midlertidigt ikke klar</b><small>Kontakt appens creator eller chef, hvis fælleschatten mangler.</small></section>';
+    : chatSearch
+      ? ''
+      : '<section class="important-message"><span>Fælleschat</span><b>Midlertidigt ikke klar</b><small>Kontakt appens creator eller chef, hvis fælleschatten mangler.</small></section>';
   return `
     <div class="page-heading chat-heading"><div><p class="eyebrow">XpressBudet internt</p><h2>Beskeder</h2><small>Fælles, hold og direkte beskeder samlet uden opslag.</small></div><button class="round-btn" data-action="new-chat" aria-label="Ny besked">${icon('plus')}</button></div>
     <section class="chat-inbox-summary surface-card">
@@ -6394,10 +6679,10 @@ function renderChat() {
       <div><span>Direkte</span><b>${allDirectCount}</b><small>samtaler</small></div>
     </section>
     ${communityCard}
-    <label class="search-box chat-search"><input data-chat-search placeholder="Søg i beskeder..." value="${text(chatQuery)}" /><span>${directChats.length} resultater</span></label>
+    <label class="search-box chat-search"><input data-chat-search aria-label="Søg i kanaler og direkte beskeder" placeholder="Søg i beskeder..." value="${text(chatQuery)}" /><span aria-live="polite">${chatSearch ? `${searchResultCount} resultater` : `${allDirectCount} direkte`}</span></label>
     <section class="channel-section screen-section">
-      <div class="section-title"><h3>Kanaler</h3><span>${channels.length} synlige</span></div>
-      ${channels.map(chat => `<button class="channel-card ${chat.channel}" data-chat="${chat.id}">
+      <div class="section-title"><h3>Kanaler</h3><span>${visibleChannels.length} synlige</span></div>
+      ${visibleChannels.map(chat => `<button class="channel-card ${chat.channel}" data-chat="${chat.id}">
         <span class="channel-icon">${icon(chat.channel === 'truck' ? 'truck' : 'van')}</span>
         <span><b>${text(chat.name)}</b><small>${text(chat.preview)}</small></span>
         ${chat.unread ? `<i>${text(chat.unread)}</i>` : icon('arrow', 'row-arrow')}
@@ -6587,7 +6872,7 @@ function renderInfo() {
     </section>
     <section class="info-search-panel screen-section">
       <div class="screen-section-head"><span>Søg i håndbogen</span><small>${filteredLinks.length} fundet</small></div>
-      <label class="search-box info-search simple"><input data-info-search placeholder="Søg fx CMR, miljøzone, hviletid..." value="${text(infoQuery)}" /><span>${query ? 'Søgning' : 'Skriv her'}</span></label>
+      <label class="search-box info-search simple"><input data-info-search aria-label="Søg i håndbogen" placeholder="Søg fx CMR, miljøzone, hviletid..." value="${text(infoQuery)}" /><span>${query ? 'Søgning' : 'Skriv her'}</span></label>
     </section>
     <details class="info-topic-list screen-section">
       <summary><span>Flere emner</span><small>${activeSection ? activeSection.title : 'Alle kilder'}</small></summary>
@@ -7741,6 +8026,7 @@ function openLegalModal() {
       <article><b>Billeder</b><span>Billeder kan være persondata. Undgå kunder, uvedkommende personer og følsomme dokumenter i delte billeder.</span></article>
       <article><b>Logbog</b><span>Personlig logbog er privat som standard og må ikke bruges som kontrolværktøj.</span></article>
       <article><b>Profiler</b><span>Kontaktoplysninger, beviser, sprog og nødkontakt skal kun bruges til drift og sikkerhed.</span></article>
+      <article><b>Teknisk statistik</b><span>Appen sender kun sammenlagte tællere om version, platform, tekniske fejl og hastighedsintervaller. Statistikken indeholder ikke bruger-id, navn, mail, beskeder, GPS, billeder eller rå fejltekst.</span></article>
       <article><b>Sletning</b><span>GPS bør gemmes kort. Chat, billeder og audit-log skal have aftalte slettefrister før online drift.</span></article>
     </div>
     <section class="privacy-rights">
@@ -7771,6 +8057,7 @@ function openLegalModal() {
       <span><b>Chat</b><small>12-24 måneder, besluttes internt</small></span>
       <span><b>Billeder</b><small>3-12 måneder afhængigt af dokumentationsformål</small></span>
       <span><b>Audit-log</b><small>24 måneder</small></span>
+      <span><b>Anonym teknisk statistik</b><small>90 dage, slettes automatisk</small></span>
     </section>
     <section class="legal-decision-list">
       <h4>Skal besluttes af virksomheden</h4>
@@ -8005,7 +8292,14 @@ function render(options = {}) {
   enforceLocationExpiry();
   enforceWorkdayExpiry();
   enforcePickupExpiry();
-  document.querySelector('#app').innerHTML = session ? (currentProfileAccessBlocked() ? renderApprovalPending() : appShell(routes[activeTab]())) : renderLogin();
+  disposeLeafletMaps();
+  document.querySelector('#app').innerHTML = emergencyRecoveryActive
+    ? renderEmergencyRecovery()
+    : sessionLoadFailure && session
+      ? renderSessionLoadFailure()
+    : session
+      ? (currentProfileAccessBlocked() ? renderApprovalPending() : appShell(routes[activeTab]()))
+      : renderLogin();
   if (!document.querySelector('.toast')) document.body.insertAdjacentHTML('beforeend', '<div class="toast"></div>');
   if (scrollState) {
     const nextFrame = window.requestAnimationFrame || (callback => setTimeout(callback, 0));
@@ -8069,6 +8363,44 @@ document.addEventListener('click', async event => {
   const resendConfirmationEmail = event.target.closest('[data-resend-confirmation]')?.dataset.resendConfirmation;
   const openEmployeeInviteId = event.target.closest('[data-open-employee-invite]')?.dataset.openEmployeeInvite;
   const searchResult = event.target.closest('[data-search-target]');
+  if (action === 'retry-session-data') {
+    showToast('Tester den sikre forbindelse igen…');
+    await restoreSupabaseSession();
+    return;
+  }
+  if (action === 'session-open-diagnostics') {
+    openSupabaseDiagnosticsModal();
+    return;
+  }
+  if (action === 'open-emergency-recovery-settings') {
+    openEmergencyRecoverySettingsModal();
+    return;
+  }
+  if (action === 'disable-emergency-recovery') {
+    disableEmergencyRecovery();
+    return;
+  }
+  if (action === 'open-emergency-recovery-unlock') {
+    openEmergencyRecoveryUnlockModal();
+    return;
+  }
+  if (action === 'emergency-exit') {
+    emergencyRecoveryActive = false;
+    render();
+    return;
+  }
+  if (action?.startsWith('emergency-')) {
+    if (!emergencyRecoveryActive) {
+      showToast('Nødberedskabet er låst');
+      return;
+    }
+    if (action === 'emergency-run-diagnostics') globalThis.XpressIntraAppDiagnostics?.openDiagnosticModal?.();
+    if (action === 'emergency-test-supabase') openSupabaseDiagnosticsModal();
+    if (action === 'emergency-check-update') await checkForAppUpdate({ manual: true });
+    if (action === 'emergency-open-download') openExternalUpdateLink(appUpdateState.latest?.downloadPageUrl || 'https://stralner2711-a11y.github.io/xpresshub/download.html');
+    if (action === 'emergency-open-status') window.open('https://status.supabase.com/', '_blank', 'noopener,noreferrer');
+    return;
+  }
   if (blockInternalAction(action)) return;
   if (searchResult) {
     activeTab = searchResult.dataset.searchTarget;
@@ -8503,6 +8835,71 @@ document.addEventListener('change', async event => {
 });
 
 document.addEventListener('submit', async event => {
+  if (event.target.matches('.emergency-recovery-setup-form')) {
+    event.preventDefault();
+    if (!isCreatorOwner() || session?.mode !== 'supabase') {
+      showToast('Nødberedskab kræver et aktivt creator-login');
+      return;
+    }
+    const data = new FormData(event.target);
+    const code = String(data.get('recoveryCode') || '');
+    const confirmation = String(data.get('recoveryCodeConfirm') || '');
+    const validationError = globalThis.XpressIntraEmergencyRecovery?.emergencyRecoveryCodeError?.(code)
+      || (!globalThis.XpressIntraEmergencyRecovery ? 'Nødberedskabsmodulet er ikke indlæst' : '');
+    if (validationError) {
+      showToast(validationError);
+      return;
+    }
+    if (code !== confirmation) {
+      showToast('De to nødkoder er ikke ens');
+      return;
+    }
+    try {
+      emergencyRecovery = await globalThis.XpressIntraEmergencyRecovery.createEmergencyRecoveryConfig(code, session.userId, { ownerEmail: session.email });
+      save(EMERGENCY_RECOVERY_KEY, emergencyRecovery);
+      clearEmergencyRecoveryFailures();
+      event.target.closest('.modal-backdrop')?.remove();
+      recordAdminAudit('Nødberedskab klargjort', 'Denne creator-telefon fik begrænset lokal reparationsadgang i 90 dage.');
+      render();
+      showToast('Nødberedskabet er klargjort på denne telefon');
+    } catch (error) {
+      showToast(`Nødberedskabet kunne ikke klargøres: ${error.message}`);
+    }
+    return;
+  }
+  if (event.target.matches('.emergency-recovery-unlock-form')) {
+    event.preventDefault();
+    const lockedMessage = emergencyRecoveryLockMessage();
+    if (lockedMessage) {
+      showToast(lockedMessage);
+      return;
+    }
+    const data = new FormData(event.target);
+    const ownerEmail = String(data.get('ownerEmail') || '').trim().toLowerCase();
+    const code = String(data.get('recoveryCode') || '');
+    try {
+      const ownerMatches = await globalThis.XpressIntraEmergencyRecovery?.verifyEmergencyRecoveryOwnerEmail?.(ownerEmail, emergencyRecovery);
+      const codeMatches = ownerMatches
+        ? await globalThis.XpressIntraEmergencyRecovery?.verifyEmergencyRecoveryCode?.(code, emergencyRecovery)
+        : false;
+      if (!ownerMatches || !codeMatches) {
+        registerEmergencyRecoveryFailure();
+        showToast(emergencyRecoveryLockMessage() || 'Creator-mail eller nødkode er forkert');
+        return;
+      }
+      clearEmergencyRecoveryFailures();
+      const usedAt = new Date().toISOString();
+      emergencyRecovery = { ...emergencyRecovery, lastUsedAt: usedAt, pendingAuditAt: usedAt };
+      save(EMERGENCY_RECOVERY_KEY, emergencyRecovery);
+      emergencyRecoveryActive = true;
+      event.target.closest('.modal-backdrop')?.remove();
+      render();
+      showToast('Begrænset nødberedskab er åbnet');
+    } catch (error) {
+      showToast(`Nødberedskabet kunne ikke åbnes: ${error.message}`);
+    }
+    return;
+  }
   if (event.target.matches('.standard-signup-password-form')) {
     event.preventDefault();
     const data = new FormData(event.target);
@@ -8587,6 +8984,10 @@ document.addEventListener('submit', async event => {
           const loginStatus = await signInSupabase(data.get('email'), data.get('password'));
           if (loginStatus === 'blocked') return;
           registerLoginSuccess(data.get('email'));
+          if (loginStatus === 'data-unavailable') {
+            showToast('Login er godkendt. Profildata kan ikke hentes endnu.');
+            return;
+          }
           showToast('Du er logget ind på XpressIntra');
         }
       } catch (error) {
@@ -8976,7 +9377,7 @@ document.addEventListener('submit', async event => {
 
 render();
 restoreSupabaseSession()
-  .then(() => syncOfflineQueue())
+  .then(() => (sessionLoadFailure ? null : syncOfflineQueue()))
   .catch(() => {});
 window.addEventListener('beforeinstallprompt', event => {
   event.preventDefault();

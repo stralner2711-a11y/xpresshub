@@ -10,6 +10,7 @@ const packageJson = JSON.parse(read('package.json'));
 const publicVersion = JSON.parse(read(path.join('public', 'version.json')));
 const updateScript = read('opdater-alt.ps1');
 const apkScript = read('Build Android APK.ps1');
+const browserPreview = read(path.join('qa', 'browser-preview.html'));
 
 assert.strictEqual(capacitor.webDir, 'web-build', 'Capacitor skal bruge den rene web-build mappe');
 assert.strictEqual(capacitor.android?.path, 'android-active', 'Capacitor skal bruge android-active');
@@ -19,6 +20,8 @@ assert(updateScript.includes("Join-Path $project 'android-active'"), 'Releasepak
 assert(updateScript.includes("Join-Path $project 'ios-active'"), 'Releasepakken skal kopiere ios-active');
 assert(apkScript.includes('Find-OrInstallJdk17'), 'APK-build skal kunne klargøre JDK 17 automatisk');
 assert(apkScript.includes('$capacitorConfig.android.path'), 'APK-build skal følge Capacitors Android-sti');
+assert(browserPreview.includes('src="/app.js"'), 'Visuel QA skal bruge den samme aktive app-kilde som produktionen');
+assert(!browserPreview.includes('src="/src/app.js"'), 'Visuel QA må ikke bruge den låste legacy-kopi');
 
 for (const relativePath of [
   path.join('web-build', 'index.html'),

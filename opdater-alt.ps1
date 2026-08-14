@@ -12,7 +12,6 @@ $project = (Resolve-Path -LiteralPath $PSScriptRoot).Path
 $ready = Join-Path $project 'github-upload-ready'
 $repo = 'C:\Users\Tommy\Documents\GitHub\xpresshub'
 $git = 'C:\Program Files\Git\cmd\git.exe'
-$gh = 'C:\Program Files\GitHub CLI\gh.exe'
 $log = Join-Path $project 'opdater-alt-log.txt'
 $message = 'Release XpressIntra update'
 
@@ -77,10 +76,10 @@ function Invoke-Git($arguments, $failureMessage) {
 
 function Invoke-AllQa {
   Write-Log ''
-  Write-Log '[3/10] Korer hele kvalitetstjekket...'
+  Write-Log '[4/12] Korer hele kvalitetstjekket...'
   $qaFiles = Get-ChildItem -LiteralPath (Join-Path $project 'qa') -Filter '*.cjs' | Sort-Object Name
   $previousNodeOptions = $env:NODE_OPTIONS
-  $redirect = Join-Path $project 'qa-app-source-redirect.cjs'
+  $redirect = (Join-Path $project 'qa-app-source-redirect.cjs').Replace('\', '/')
   $env:NODE_OPTIONS = (@($previousNodeOptions, "--require=`"$redirect`"") | Where-Object { $_ }) -join ' '
   try {
     foreach ($qaFile in $qaFiles) {
@@ -143,7 +142,6 @@ Write-Log ''
 if (!(Test-Path -LiteralPath (Join-Path $project 'package.json'))) { Stop-Release 'Projektmappen ser forkert ud.' }
 if (!(Test-Path -LiteralPath (Join-Path $repo '.git'))) { Stop-Release "GitHub-repoet blev ikke fundet: $repo" }
 if (!(Test-Path -LiteralPath $git)) { Stop-Release "Git blev ikke fundet: $git" }
-if (!(Test-Path -LiteralPath $gh)) { Stop-Release "GitHub CLI blev ikke fundet: $gh" }
 
 if ($AllowNoAdmin) {
   Write-Log 'Springer global Git safe.directory over i no-admin Codex-korsel.'
@@ -151,10 +149,13 @@ if ($AllowNoAdmin) {
   Invoke-NativeToLog $git @('config', '--global', '--add', 'safe.directory', ($repo -replace '\\', '/')) $project @(0)
 }
 
-Invoke-LoggedCommand '[1/10] Tjekker Supabase og faelles login-config...' $project 'powershell.exe' @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', (Join-Path $project 'supabase-release-check.ps1'))
-Invoke-LoggedCommand '[2/10] Tjekker login- og privatlivssikkerhed...' $project 'node.exe' @('qa/credential-privacy-smoke-test.cjs')
+Invoke-LoggedCommand '[1/12] Tjekker Supabase og faelles login-config...' $project 'powershell.exe' @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', (Join-Path $project 'supabase-release-check.ps1'))
+Invoke-LoggedCommand '[2/12] Tjekker login- og privatlivssikkerhed...' $project 'node.exe' @('qa/credential-privacy-smoke-test.cjs')
+Invoke-LoggedCommand '[3/12] Synkroniserer versionsdata til Android, iPhone og web...' $project 'npm.cmd' @('run', 'native:sync')
 Invoke-AllQa
-Invoke-LoggedCommand '[4/10] Tjekker GitHub login...' $project $gh @('auth', 'status')
+Invoke-LoggedCommand '[5/12] Henter seneste GitHub-version...' $repo $git @('fetch', 'origin', 'main')
+Invoke-LoggedCommand 'Synkroniserer lokal main uden at overskrive historik...' $repo $git @('pull', '--ff-only', 'origin', 'main')
+Invoke-LoggedCommand 'Tjekker at GitHub push-adgangen virker...' $repo $git @('push', '--dry-run', 'origin', 'main')
 
 Write-Log ''
 Write-Log 'Rydder gamle byggede web-assets, saa gamle loginfiler ikke kommer med i pakken...'
@@ -174,7 +175,7 @@ foreach ($cleanPath in @(
   }
 }
 
-Invoke-LoggedCommand '[5/10] Bygger og synkroniserer Android- og iOS-filer...' $project 'npm.cmd' @('run', 'native:sync')
+Invoke-LoggedCommand '[6/12] Genopbygger og synkroniserer rene native-filer...' $project 'npm.cmd' @('run', 'native:sync')
 
 Write-Log ''
 Write-Log 'Synkroniserer version.json til alle steder appen og GitHub Pages kan laese den...'
@@ -192,11 +193,16 @@ foreach ($versionTarget in @(
   Write-Log "Version synkroniseret: $versionTarget"
 }
 
-Invoke-LoggedCommand '[6/11] Bygger APK og opretter/overskriver release...' $project 'powershell.exe' @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', (Join-Path $project 'Udgiv APK til GitHub.ps1'))
-Invoke-LoggedCommand '[7/11] Verificerer lokal APK matcher ny version...' $project 'powershell.exe' @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', (Join-Path $project 'tools\github-release-check.ps1'), '-LocalOnly')
+Invoke-LoggedCommand '[7/12] Bygger lokal kontrol-APK...' $project 'powershell.exe' @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', (Join-Path $project 'Build Android APK.ps1'))
+$localApkSource = Join-Path $project "$((Get-Content -LiteralPath (Join-Path $project 'capacitor.config.json') -Raw | ConvertFrom-Json).android.path)\app\build\outputs\apk\debug\app-debug.apk"
+$localApkTarget = Join-Path $project 'release-klargjort\xpressintra.apk'
+if (!(Test-Path -LiteralPath $localApkSource)) { Stop-Release "Den byggede APK mangler: $localApkSource" }
+New-Item -ItemType Directory -Path (Split-Path -Parent $localApkTarget) -Force | Out-Null
+Copy-Item -LiteralPath $localApkSource -Destination $localApkTarget -Force
+Invoke-LoggedCommand '[8/12] Verificerer lokal APK matcher ny version...' $project 'powershell.exe' @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', (Join-Path $project 'tools\github-release-check.ps1'), '-LocalOnly')
 
 Write-Log ''
-Write-Log '[8/11] Klargor GitHub-pakke...'
+Write-Log '[9/12] Klargor GitHub-pakke...'
 if (!(Test-Path -LiteralPath $ready)) { New-Item -ItemType Directory -Path $ready -Force | Out-Null }
 foreach ($folder in @('.github', 'assets', 'docs', 'public', 'qa', 'src', 'supabase', 'tools')) {
   Copy-Folder $folder
@@ -260,13 +266,13 @@ foreach ($file in @(
 Copy-RootFile 'version.json'
 
 Write-Log ''
-Write-Log '[9/11] Kopierer pakken til GitHub-repo...'
+Write-Log '[10/12] Kopierer pakken til GitHub-repo...'
 & attrib -R (Join-Path $repo '*') /S /D *>> $log
 & icacls $repo /grant "$env:USERNAME`:(OI)(CI)F" /T /C *>> $log
 Invoke-Robocopy $ready $repo
 
 Write-Log ''
-Write-Log '[10/11] Committer og pusher til GitHub...'
+Write-Log '[11/12] Committer og pusher til GitHub...'
 $statusFile = Join-Path $env:TEMP 'xpressintra-status.txt'
 $statusCommand = ConvertTo-CmdLine $git @('-C', $repo, 'status', '--short')
 & cmd.exe /D /C "$statusCommand > `"$statusFile`" 2>&1"
@@ -282,7 +288,7 @@ if ([string]::IsNullOrWhiteSpace(($status -join "`n"))) {
   Invoke-Git -arguments @('push', 'origin', 'main') -failureMessage 'Git push fejlede'
 }
 
-Invoke-LoggedCommand '[11/11] Verificerer GitHub release, version.json og APK-link...' $project 'powershell.exe' @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', (Join-Path $project 'tools\github-release-check.ps1'))
+Invoke-LoggedCommand '[12/12] Venter paa GitHub Actions og verificerer release...' $project 'powershell.exe' @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', (Join-Path $project 'tools\github-release-check.ps1'), '-WaitForReleaseSeconds', '1800')
 
 Write-Log ''
 Write-Log '============================================================'

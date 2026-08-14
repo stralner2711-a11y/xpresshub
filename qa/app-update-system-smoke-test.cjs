@@ -102,10 +102,14 @@ assert(updateInstallerPlugin.includes('@CapacitorPlugin(name = "UpdateInstaller"
 assert(updateInstallerPlugin.includes('ACTION_MANAGE_UNKNOWN_APP_SOURCES'), 'Update installer should guide users to unknown app source settings');
 assert(updateInstallerPlugin.includes('application/vnd.android.package-archive'), 'Update installer should launch the Android APK installer');
 assert(releaseCheck.includes('XpressIntra GitHub/release-kontrol'), 'Release check should exist as a standalone GitHub verification tool');
-assert(releaseCheck.includes('gh.exe'), 'Release check should verify GitHub CLI availability');
-assert(releaseCheck.includes("'release', 'view'"), 'Release check should verify the GitHub release');
+assert(releaseCheck.includes('api.github.com/repos/$RepoName/releases/tags/$tag'), 'Release check should verify the public GitHub release without a separate CLI token');
+assert(releaseCheck.includes('WaitForReleaseSeconds'), 'Release check should be able to wait for GitHub Actions');
+assert(!releaseCheck.includes("@('auth', 'status')"), 'Release check should not depend on a separate GitHub CLI login');
 assert(releaseCheck.includes('xpressintra.apk'), 'Release check should verify the APK asset');
 assert(releaseCheck.includes('aapt2.exe'), 'Release check should verify local APK version when possible');
+assert(opdaterAlt.includes("@('fetch', 'origin', 'main')"), 'Main update script should fetch remote changes before publishing');
+assert(opdaterAlt.includes("@('pull', '--ff-only', 'origin', 'main')"), 'Main update script should fast-forward the local release repo before publishing');
+assert(opdaterAlt.includes("@('push', '--dry-run', 'origin', 'main')"), 'Main update script should verify push access before copying release files');
 assert(opdaterAlt.includes('github-release-check.ps1') && opdaterAlt.includes('FAERDIG - Alt er opdateret og sendt ud'), 'Main update script should run GitHub release verification before declaring success');
 assert(opdaterAlt.indexOf('github-release-check.ps1') < opdaterAlt.indexOf('FAERDIG - Alt er opdateret og sendt ud'), 'Main update script should verify release before declaring success');
 

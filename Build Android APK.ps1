@@ -27,18 +27,31 @@ function Get-JavaMajorVersion($javaHome) {
   if (!$javaHome) { return $null }
   $javaExe = Join-Path $javaHome "bin\java.exe"
   if (!(Test-Path -LiteralPath $javaExe)) { return $null }
-  $versionOutput = @(& $javaExe -version 2>&1 | ForEach-Object { "$_" })
+  $previousErrorActionPreference = $ErrorActionPreference
+  $ErrorActionPreference = "Continue"
+  try {
+    $versionOutput = @(& $javaExe -version 2>&1 | ForEach-Object { "$_" })
+  } finally {
+    $ErrorActionPreference = $previousErrorActionPreference
+  }
   if (($versionOutput -join "`n") -match 'version "(\d+)') {
     return [int]$matches[1]
   }
   return $null
 }
 
+function Test-SupportedJdk($javaHome) {
+  return (Get-JavaMajorVersion $javaHome) -in @(17, 21)
+}
+
 function Find-OrInstallJdk17 {
   $candidates = New-Object System.Collections.Generic.List[string]
   foreach ($candidate in @(
     $env:JAVA_HOME,
-    (Join-Path $PSScriptRoot ".tools\jdk17")
+    (Join-Path $PSScriptRoot ".tools\jdk17"),
+    "C:\Program Files\Android\Android Studio\jbr",
+    "C:\Program Files\Android\Android Studio1\jbr",
+    "C:\Program Files\Android\Android Studio2\jbr"
   )) {
     if ($candidate) { $candidates.Add($candidate) }
   }
@@ -54,10 +67,10 @@ function Find-OrInstallJdk17 {
   }
 
   foreach ($candidate in $candidates) {
-    if ((Get-JavaMajorVersion $candidate) -eq 17) { return $candidate }
+    if (Test-SupportedJdk $candidate) { return $candidate }
     if (Test-Path -LiteralPath $candidate) {
       $nested = Get-ChildItem -LiteralPath $candidate -Directory -ErrorAction SilentlyContinue |
-        Where-Object { (Get-JavaMajorVersion $_.FullName) -eq 17 } |
+        Where-Object { Test-SupportedJdk $_.FullName } |
         Select-Object -First 1
       if ($nested) { return $nested.FullName }
     }
@@ -82,7 +95,7 @@ function Find-OrInstallJdk17 {
   }
 
   $installed = Get-ChildItem -LiteralPath $installRoot -Directory -ErrorAction SilentlyContinue |
-    Where-Object { (Get-JavaMajorVersion $_.FullName) -eq 17 } |
+    Where-Object { Test-SupportedJdk $_.FullName } |
     Select-Object -First 1
   if (!$installed) {
     throw "Java-pakken blev hentet, men en gyldig JDK 17 blev ikke fundet."

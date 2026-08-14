@@ -1,8 +1,14 @@
 const DIAGNOSTIC_STORAGE_KEY = 'xpressintra:diagnostic-events';
 const LAST_REPORT_STORAGE_KEY = 'xpressintra:last-diagnostic-report';
+const METRIC_STORAGE_KEY = 'xpressintra:anonymous-app-metrics';
+const AUTO_HEALTH_STORAGE_KEY = 'xpressintra:last-automatic-health-check';
 const MAX_EVENTS = 80;
 const MAX_EVENT_AGE_MS = 14 * 24 * 60 * 60 * 1000;
 const SYNC_RETRY_MS = 15 * 60 * 1000;
+const METRIC_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
+const ALLOWED_METRIC_KEYS = new Set(['app_start', 'runtime_error', 'health_check', 'long_task']);
+const ALLOWED_METRIC_RESULTS = new Set(['success', 'warning', 'failure', 'offline']);
+const ALLOWED_DETAIL_CODES = new Set(['none', 'network', 'timeout', 'permission', 'authentication', 'database', 'javascript', 'unknown']);
 const ERROR_TOAST_PATTERN = /\b(fejl|fejlede|kunne ikke|udløbet|ingen forbindelse|ikke tilgængelig)\b/i;
 const EMAIL_PATTERN = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi;
 const JWT_PATTERN = /\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{8,}\b/g;
@@ -16,6 +22,11 @@ let diagnosticClient = null;
 let lastObservedToast = '';
 let lastObservedToastAt = 0;
 let renderScheduled = false;
+let metricSyncTimer = null;
+let longTaskCount = 0;
+let versionLabelPromise = null;
+let aggregateMetricSummary = null;
+let aggregateMetricLoadPromise = null;
 
 function redact(value, maxLength = 600) {
   return String(value ?? '')
@@ -49,6 +60,76 @@ function readEvents() {
 
 function saveEvents(events) {
   localStorage.setItem(DIAGNOSTIC_STORAGE_KEY, JSON.stringify(events.slice(0, MAX_EVENTS)));
+}
+
+function appPlatform() {
+  const platform = globalThis.Capacitor?.getPlatform?.();
+  if (platform === 'android') return 'android';
+  if (platform === 'ios' || /iPhone|iPad|iPod/i.test(navigator.userAgent || '')) return 'ios_pwa';
+  return 'web';
+}
+
+function durationBucket(durationMs) {
+  const duration = Number(durationMs);
+  if (!Number.isFinite(duration) || duration < 0) return 'none';
+  if (duration < 500) return 'under_500ms';
+  if (duration < 1500) return '500_1500ms';
+  if (duration < 4000) return '1500_4000ms';
+  return 'over_4000ms';
+}
+
+function technicalErrorCode(message) {
+  const value = String(message || '').toLowerCase();
+  if (/offline|network|fetch|forbindelse|internet/.test(value)) return 'network';
+  if (/timeout|timed out|tidsgrænse/.test(value)) return 'timeout';
+  if (/permission|tilladelse|denied|nægtet/.test(value)) return 'permission';
+  if (/auth|login|session|jwt/.test(value)) return 'authentication';
+  if (/database|supabase|postgres|pgrst|relation|schema|row level|rls/.test(value)) return 'database';
+  if (/javascript|cannot read|undefined|null|syntax|typeerror|referenceerror/.test(value)) return 'javascript';
+  return 'unknown';
+}
+
+function readMetricQueue() {
+  const cutoff = Date.now() - METRIC_RETENTION_MS;
+  return readJsonStorage(METRIC_STORAGE_KEY, [])
+    .filter(metric => Date.parse(`${metric.metricDate || ''}T00:00:00Z`) >= cutoff)
+    .slice(0, 80);
+}
+
+function saveMetricQueue(metrics) {
+  localStorage.setItem(METRIC_STORAGE_KEY, JSON.stringify(metrics.slice(0, 80)));
+}
+
+function queueAggregateMetric(eventKey, options = {}) {
+  if (!ALLOWED_METRIC_KEYS.has(eventKey)) return null;
+  const result = ALLOWED_METRIC_RESULTS.has(options.result) ? options.result : 'success';
+  const detailCode = ALLOWED_DETAIL_CODES.has(options.detailCode) ? options.detailCode : 'none';
+  const metric = {
+    metricDate: new Date().toISOString().slice(0, 10),
+    eventKey,
+    result,
+    detailCode,
+    platform: appPlatform(),
+    durationBucket: durationBucket(options.durationMs),
+    count: Math.min(100, Math.max(1, Number(options.count) || 1)),
+    lastSyncAttemptAt: null,
+  };
+  const metrics = readMetricQueue();
+  const key = [metric.metricDate, metric.eventKey, metric.result, metric.detailCode, metric.platform, metric.durationBucket].join('|');
+  const existing = metrics.find(item => [item.metricDate, item.eventKey, item.result, item.detailCode, item.platform, item.durationBucket].join('|') === key);
+  if (existing) existing.count = Math.min(1000, Number(existing.count || 0) + metric.count);
+  else metrics.unshift(metric);
+  saveMetricQueue(metrics);
+  scheduleMetricSync();
+  return metric;
+}
+
+function scheduleMetricSync(delayMs = 5_000) {
+  if (metricSyncTimer || !navigator.onLine) return;
+  metricSyncTimer = setTimeout(() => {
+    metricSyncTimer = null;
+    syncPendingMetrics().catch(() => {});
+  }, delayMs);
 }
 
 function fingerprint(event) {
@@ -86,8 +167,11 @@ function recordDiagnostic(message, options = {}) {
   }
   events.unshift(event);
   saveEvents(events);
+  queueAggregateMetric('runtime_error', {
+    result: event.level === 'error' ? 'failure' : 'warning',
+    detailCode: technicalErrorCode(message),
+  });
   scheduleUiRefresh();
-  syncPendingDiagnostics().catch(() => {});
   return event;
 }
 
@@ -99,7 +183,7 @@ function diagnosticSummary() {
     events,
     errors: recent.filter(event => event.level === 'error').length,
     warnings: recent.filter(event => event.level === 'warning').length,
-    pending: events.filter(event => !event.syncedAt).length,
+    pending: readMetricQueue().length,
     latest: events[0] || null,
   };
 }
@@ -131,33 +215,43 @@ function getDiagnosticClient() {
 }
 
 async function syncPendingDiagnostics() {
+  return syncPendingMetrics();
+}
+
+async function metricVersionLabel() {
+  if (!versionLabelPromise) versionLabelPromise = installedVersionLabel().catch(() => 'ukendt');
+  return versionLabelPromise;
+}
+
+async function syncPendingMetrics() {
   if (!navigator.onLine) return;
   const client = getDiagnosticClient();
   if (!client) return;
   const { data } = await client.auth.getSession();
-  const userId = data?.session?.user?.id;
-  if (!userId) return;
+  if (!data?.session?.user?.id) return;
 
-  const events = readEvents();
+  const metrics = readMetricQueue();
+  const appVersion = await metricVersionLabel();
   let changed = false;
-  for (const event of events.filter(item => !item.syncedAt).slice(0, 5)) {
-    const lastAttempt = Date.parse(event.lastSyncAttemptAt || 0);
+  for (const metric of metrics.slice(0, 8)) {
+    const lastAttempt = Date.parse(metric.lastSyncAttemptAt || 0);
     if (lastAttempt && Date.now() - lastAttempt < SYNC_RETRY_MS) continue;
-    event.lastSyncAttemptAt = new Date().toISOString();
+    metric.lastSyncAttemptAt = new Date().toISOString();
     changed = true;
-    const { error } = await client.from('support_requests').insert({
-      user_id: userId,
-      request_type: 'bug',
-      area: event.area || 'appen',
-      message: `${event.source}: ${event.message}${event.repeats > 1 ? ` · gentaget ${event.repeats} gange` : ''}`,
-      app_version: await installedVersionLabel(),
-      route: event.route || event.area || 'appen',
-      status: 'open',
+    const { error } = await client.rpc('record_app_metric', {
+      p_metric_date: metric.metricDate,
+      p_event_key: metric.eventKey,
+      p_result: metric.result,
+      p_detail_code: metric.detailCode,
+      p_event_count: metric.count,
+      p_app_version: appVersion,
+      p_platform: metric.platform,
+      p_duration_bucket: metric.durationBucket,
     });
-    if (!error) event.syncedAt = new Date().toISOString();
+    if (!error) metrics.splice(metrics.indexOf(metric), 1);
   }
   if (changed) {
-    saveEvents(events);
+    saveMetricQueue(metrics);
     scheduleUiRefresh();
   }
 }
@@ -293,6 +387,10 @@ async function runAppDiagnostics() {
       area: activeArea(),
     });
   }
+  queueAggregateMetric('health_check', {
+    result: failures.length ? 'failure' : checks.some(check => check.status === 'warning') ? 'warning' : 'success',
+    detailCode: failures.length ? technicalErrorCode(failures.map(check => check.detail).join(' ')) : 'none',
+  });
   return { checks, report };
 }
 
@@ -324,7 +422,7 @@ function diagnosticModalHtml() {
     <button type="button" class="modal-close" data-xpress-diagnostic-close aria-label="Luk">×</button>
     <p class="eyebrow">Appens helbred</p>
     <h3 id="xpress-diagnostic-title">Tjekker XpressIntra</h3>
-    <p class="info-intro">Vi tester login, database, live-opdateringer, GPS, notifikationer og update-system. Rapporten skjuler mail, koder, tokens og præcis position.</p>
+    <p class="info-intro">Vi tester login, database, live-opdateringer, GPS, notifikationer og update-system. Detaljer bliver på telefonen. Kun anonyme, sammenlagte tekniske tællere sendes til appens drift.</p>
     <div class="xpress-diagnostic-summary" aria-live="polite">
       <span><b>Tester...</b><small>Det tager normalt få sekunder</small></span>
     </div>
@@ -431,6 +529,8 @@ function injectCreatorHealth() {
     grid.insertAdjacentHTML('beforeend', `
       <span data-xpress-diagnostic-stat><b>${summary.errors}</b><small>Fejl 24 timer</small></span>
       <span data-xpress-diagnostic-pending><b>${summary.pending}</b><small>Venter på sync</small></span>
+      <span data-xpress-telemetry-errors><b>${aggregateMetricSummary?.errors ?? '–'}</b><small>Anonyme fejl · 7 dage</small></span>
+      <span data-xpress-telemetry-slow><b>${aggregateMetricSummary?.slowTasks ?? '–'}</b><small>Langsomme hændelser · 7 dage</small></span>
     `);
   } else {
     const errorCard = grid?.querySelector('[data-xpress-diagnostic-stat] b');
@@ -451,7 +551,71 @@ function injectCreatorHealth() {
         <b>App-diagnose</b>
         <small>${summary.errors ? `${summary.errors} fejl registreret de seneste 24 timer` : summary.pending ? `${summary.pending} rapport(er) venter på sikker forbindelse` : 'Ingen tekniske fejl registreret de seneste 24 timer'}</small>
       </span>
+      <span class="ok" data-xpress-telemetry-health>
+        <b>Anonym driftsstatistik</b>
+        <small>Ingen navne, mail, beskedtekst, GPS, billeder eller bruger-id gemmes i statistikken</small>
+      </span>
     `);
+  }
+  loadAggregateMetricSummary().catch(() => {});
+}
+
+function updateAggregateMetricUi() {
+  if (!aggregateMetricSummary) return;
+  const errorValue = document.querySelector('[data-xpress-telemetry-errors] b');
+  const slowValue = document.querySelector('[data-xpress-telemetry-slow] b');
+  if (errorValue) errorValue.textContent = String(aggregateMetricSummary.errors);
+  if (slowValue) slowValue.textContent = String(aggregateMetricSummary.slowTasks);
+}
+
+async function loadAggregateMetricSummary() {
+  if (aggregateMetricSummary || aggregateMetricLoadPromise) return aggregateMetricLoadPromise;
+  const client = getDiagnosticClient();
+  if (!client || !document.querySelector('.creator-ops-dashboard')) return null;
+  aggregateMetricLoadPromise = (async () => {
+    const since = new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    const { data, error } = await client
+      .from('app_telemetry_daily')
+      .select('event_key,result,event_count,metric_date')
+      .gte('metric_date', since)
+      .limit(500);
+    if (error) return null;
+    aggregateMetricSummary = (data || []).reduce((summary, row) => {
+      const count = Math.max(0, Number(row.event_count) || 0);
+      if (row.event_key === 'runtime_error' && row.result === 'failure') summary.errors += count;
+      if (row.event_key === 'long_task') summary.slowTasks += count;
+      return summary;
+    }, { errors: 0, slowTasks: 0 });
+    updateAggregateMetricUi();
+    return aggregateMetricSummary;
+  })().finally(() => { aggregateMetricLoadPromise = null; });
+  return aggregateMetricLoadPromise;
+}
+
+async function runAutomaticHealthCheck() {
+  const lastCheck = Date.parse(localStorage.getItem(AUTO_HEALTH_STORAGE_KEY) || 0);
+  if (lastCheck && Date.now() - lastCheck < 24 * 60 * 60 * 1000) return;
+  const client = getDiagnosticClient();
+  if (!client || !navigator.onLine) return;
+  const { data } = await client.auth.getSession().catch(() => ({ data: null }));
+  if (!data?.session?.user?.id) return;
+  await runAppDiagnostics();
+  localStorage.setItem(AUTO_HEALTH_STORAGE_KEY, new Date().toISOString());
+}
+
+function observeLongTasks() {
+  if (!('PerformanceObserver' in window)) return;
+  try {
+    const observer = new PerformanceObserver(list => {
+      for (const entry of list.getEntries()) {
+        if (longTaskCount >= 10) break;
+        longTaskCount += 1;
+        queueAggregateMetric('long_task', { result: 'warning', durationMs: entry.duration });
+      }
+    });
+    observer.observe({ type: 'longtask', buffered: true });
+  } catch {
+    // Long-task observation is optional and unsupported in some WebViews.
   }
 }
 
@@ -483,6 +647,13 @@ function observeAppUi() {
     recordDiagnostic(message, { source: 'Brugerbesked', area: activeArea() });
   });
   observer.observe(root, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['class'] });
+  queueAggregateMetric('app_start', {
+    result: navigator.onLine ? 'success' : 'offline',
+    detailCode: navigator.onLine ? 'none' : 'network',
+    durationMs: performance.now?.(),
+  });
+  observeLongTasks();
+  setTimeout(() => runAutomaticHealthCheck().catch(() => {}), 12_000);
   scheduleUiRefresh();
 }
 
@@ -515,7 +686,7 @@ window.addEventListener('unhandledrejection', event => {
 });
 
 window.addEventListener('online', () => {
-  syncPendingDiagnostics().catch(() => {});
+  syncPendingMetrics().catch(() => {});
   scheduleUiRefresh();
 });
 
@@ -527,7 +698,7 @@ if (document.readyState === 'loading') {
   observeAppUi();
 }
 
-syncPendingDiagnostics().catch(() => {});
+syncPendingMetrics().catch(() => {});
 
 globalThis.XpressIntraAppDiagnostics = {
   redact,
@@ -535,5 +706,7 @@ globalThis.XpressIntraAppDiagnostics = {
   diagnosticSummary,
   runAppDiagnostics,
   syncPendingDiagnostics,
+  syncPendingMetrics,
+  queueAggregateMetric,
   openDiagnosticModal,
 };

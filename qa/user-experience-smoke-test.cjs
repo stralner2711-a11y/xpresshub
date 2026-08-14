@@ -126,8 +126,11 @@ assert(logbook.innerHTML.includes('Gem dagen som minde'), 'Logbook should offer 
 const styles = fs.readFileSync('src/styles.css', 'utf8');
 assert(styles.includes('font-size: 12px'), 'Styles should lift small mobile text');
 assert(styles.includes('.bottom-nav { position: absolute; z-index: 12;'), 'Bottom navigation should sit above page content so mobile taps are not intercepted');
-assert(styles.includes('padding: 18px 0 calc(84px + env(safe-area-inset-bottom))'), 'Modal sheets should leave room for the mobile bottom navigation');
+assert(styles.includes('padding: max(18px, env(safe-area-inset-top)) 0 calc(84px + env(safe-area-inset-bottom))'), 'Modal sheets should respect both status bar and mobile bottom navigation');
 assert(styles.includes('max-height: calc(100vh - 122px - env(safe-area-inset-bottom))'), 'Modal sheets should remain scrollable above the mobile bottom navigation');
+assert(styles.includes('max-height: calc(100dvh - 102px - env(safe-area-inset-top) - env(safe-area-inset-bottom))'), 'Modal sheets should use the real dynamic mobile viewport');
+assert(!styles.includes('.global-search { position: sticky'), 'Global search must not cover page content while scrolling');
+assert(styles.includes('.home-day-tools button > span'), 'Home heading must not inherit icon-circle styling');
 assert(!styles.includes('.daily-assistant'), 'Styles should not keep removed daily assistant layout');
 
 console.log('User experience smoke test passed');
