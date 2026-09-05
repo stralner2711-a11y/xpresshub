@@ -26,9 +26,9 @@ const icons = {
   search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>',
 };
 
-const APP_VERSION = '1.3.60-release-v73';
-const APP_DISPLAY_VERSION = '1.3.60';
-const APP_VERSION_CODE = 73;
+const APP_VERSION = '1.3.61-release-v74';
+const APP_DISPLAY_VERSION = '1.3.61';
+const APP_VERSION_CODE = 74;
 const IMAGE_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
 const PROFILE_PHOTO_MAX_DIMENSION = 512;
 const PROFILE_PHOTO_QUALITY = 0.84;
@@ -1808,7 +1808,7 @@ function openAppUpdateModal(info = appUpdateState.latest, options = {}) {
         <small>${subtitle}</small>
       </div>
     </section>
-    <p class="update-reassurance">Det tager normalt kun et øjeblik. Dine beskeder, profil og indstillinger bliver liggende.</p>
+    <p class="update-reassurance">Dine beskeder og indstillinger bliver gemt.</p>
     <section class="update-version-card">
       <span><b>Installeret</b><strong>${text(APP_DISPLAY_VERSION)}</strong><small>Build ${APP_VERSION_CODE}</small></span>
       <span><b>Aktiv</b><strong>${text(info.activeVersion)}</strong><small>Build ${info.activeVersionCode}</small></span>
@@ -1824,9 +1824,8 @@ function openAppUpdateModal(info = appUpdateState.latest, options = {}) {
       <ul>${changelog}</ul>
     </section>
     ${isPlaceholderUpdateConfig() ? '<p class="update-warning">Creator: GitHub-placeholderen skal skiftes til det rigtige repository, før medarbejdere bruger opdateringslinket.</p>' : ''}
-    <p class="update-helper"><b>Rolig opdatering:</b> Appen forklarer kun det vigtige. Android kan stadig vise Google Play Protect, fordi appen er intern og ikke fra Play Butik.</p>
     <details class="install-help">
-      <summary>Hjælp til Google Play Protect og installation</summary>
+      <summary>Hjælp til installation</summary>
       <div>
         <span><b>1</b><strong>Tryk fortsæt eller installer</strong><small>Android kan vise en sikkerhedsboks, fordi appen er en intern APK og ikke fra Play Butik.</small></span>
         <span><b>2</b><strong>Tillad XpressIntra første gang</strong><small>Hvis telefonen spørger om ukendte apps, vælg indstillinger og tillad installation fra XpressIntra.</small></span>
@@ -1936,16 +1935,20 @@ function renderUpdateSummary() {
     </div>
     <div class="update-summary-actions">
       <button type="button" data-action="check-update">Tjek</button>
-      ${info ? '<button type="button" data-action="show-update-status">Detaljer</button>' : ''}
+      ${info && isCreatorOwner() ? '<button type="button" data-action="show-update-status">Detaljer</button>' : ''}
       ${isCreatorOwner() ? '<button type="button" data-action="open-rollback-center">Backup</button>' : ''}
     </div>
     ${isCreatorOwner() ? `<em class="${rollback.recommended ? 'warn' : ''}">${text(rollback.label)} · ${text(rollback.detail)}</em>` : ''}
-    ${isPlaceholderUpdateConfig() ? '<em>Husk: GitHub-placeholder skal skiftes.</em>' : ''}
-    ${appUpdateState.lastError ? `<em class="warn">${text(appUpdateState.lastError)}</em>` : ''}
+    ${isCreatorOwner() && isPlaceholderUpdateConfig() ? '<em>Husk: GitHub-placeholder skal skiftes.</em>' : ''}
+    ${appUpdateState.lastError ? `<em class="warn">${isCreatorOwner() ? text(appUpdateState.lastError) : 'Opdateringstjekket kunne ikke gennemføres. Prøv igen senere.'}</em>` : ''}
   </section>`;
 }
 
 function openUpdateStatusModal() {
+  if (!isCreatorOwner()) {
+    showToast('Tekniske opdateringsdetaljer er kun for creator');
+    return;
+  }
   const info = appUpdateState.latest;
   const fallbackUrls = Array.isArray(appUpdateConfig.versionFallbackUrls)
     ? appUpdateConfig.versionFallbackUrls.filter(Boolean)
@@ -4354,6 +4357,9 @@ function isCreatorOwner() {
   if (sessionLoadFailure || emergencyRecoveryActive) return false;
   return profile.accessRole === 'owner';
 }
+
+// UI visibility only; database permissions remain enforced by Supabase RLS.
+globalThis.XpressIntraCanViewTechnicalDetails = () => Boolean(session?.userId && isCreatorOwner());
 
 function securityReadinessItems() {
   const backend = supabaseStatus();

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'xpressintra-release-v73';
+const CACHE_NAME = 'xpressintra-release-v74';
 const APP_FILES = [
   './',
   './index.html',

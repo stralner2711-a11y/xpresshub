@@ -32,6 +32,17 @@ select set_config('request.jwt.claims','{"sub":"672e93a0-6cc1-4d14-9ab1-bc875ef1
 do $$ begin
  if not private.is_active_employee() then raise exception 'Approved user remains blocked'; end if;
  if private.is_admin() then raise exception 'Approval granted admin rights'; end if;
+ if exists(select 1 from public.admin_audit_log) or exists(select 1 from public.employee_invitations) or exists(select 1 from public.app_telemetry_daily) then
+  raise exception 'Active employee can read administrative records';
+ end if;
+ if exists(select 1 from public.profile_private_details where user_id<>auth.uid()) or exists(select 1 from public.support_requests where user_id<>auth.uid()) or exists(select 1 from public.data_subject_requests where user_id<>auth.uid()) then
+  raise exception 'Active employee can read other users private requests';
+ end if;
+ begin
+  update public.profiles set access_role='owner' where id=auth.uid();
+ exception when insufficient_privilege or raise_exception then null;
+ end;
+ if private.is_admin() then raise exception 'Active employee can promote themself'; end if;
 end $$;
 select set_config('request.jwt.claim.sub','672e93a0-6cc1-4d14-9ab1-bc875ef19002',true);
 select set_config('request.jwt.claims','{"sub":"672e93a0-6cc1-4d14-9ab1-bc875ef19002","role":"authenticated"}',true);

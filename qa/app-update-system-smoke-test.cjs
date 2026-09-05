@@ -6,6 +6,9 @@ function assert(condition, message) {
 
 const appSource = fs.readFileSync('src/app.js', 'utf8');
 const app = appSource.replace(/\r\n/g, '\n');
+assert(!app.includes('Rolig opdatering:'), 'Update dialog should not show the permanent technical reassurance');
+assert(app.includes('<summary>Hjælp til installation</summary>'), 'Installation guidance should remain collapsible');
+assert(app.includes('Dine beskeder og indstillinger bliver gemt.'), 'Update dialog should use short reassurance');
 const updateSystem = fs.readFileSync('src/modules/update-system.js', 'utf8');
 const styles = fs.readFileSync('src/styles.css', 'utf8');
 const version = JSON.parse(fs.readFileSync('public/version.json', 'utf8'));

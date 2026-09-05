@@ -422,13 +422,13 @@ function diagnosticModalHtml() {
     <button type="button" class="modal-close" data-xpress-diagnostic-close aria-label="Luk">×</button>
     <p class="eyebrow">Appens helbred</p>
     <h3 id="xpress-diagnostic-title">Tjekker XpressIntra</h3>
-    <p class="info-intro">Vi tester login, database, live-opdateringer, GPS, notifikationer og update-system. Detaljer bliver på telefonen. Kun anonyme, sammenlagte tekniske tællere sendes til appens drift.</p>
+    <p class="info-intro">Vi tjekker, om appen og forbindelsen virker. Kontakt chef eller creator, hvis problemet fortsætter.</p>
     <div class="xpress-diagnostic-summary" aria-live="polite">
       <span><b>Tester...</b><small>Det tager normalt få sekunder</small></span>
     </div>
     <section class="diagnostic-list xpress-diagnostic-list"><span>Starter app-tjek...</span></section>
     <div class="xpress-diagnostic-actions">
-      <button type="button" data-xpress-copy-report disabled>Kopiér rapport</button>
+      ${globalThis.XpressIntraCanViewTechnicalDetails?.() ? '<button type="button" data-xpress-copy-report disabled>Kopiér rapport</button>' : ''}
       <button type="button" data-xpress-rerun-diagnostic>Kør igen</button>
     </div>
   </section>`;
@@ -460,7 +460,12 @@ async function updateDiagnosticModal(backdrop) {
     summary.innerHTML = `
       <span class="${failures ? 'fail' : warnings ? 'warning' : 'ok'}"><b>${escapeHtml(status)}</b><small>${passed} OK · ${warnings} tjek · ${failures} fejl</small></span>
     `;
-    list.innerHTML = result.checks.map(check => `
+    const technical = Boolean(globalThis.XpressIntraCanViewTechnicalDetails?.());
+    const visibleChecks = technical ? result.checks : result.checks.filter(check => ['Internet', 'Login-session', 'GPS', 'Notifikationer', 'Opdateringssystem'].includes(check.name)).map(check => ({
+      ...check,
+      detail: check.status === 'ok' ? 'Fungerer normalt' : check.name === 'Login-session' ? 'Log ind eller kontakt chef, hvis din adgang afventer godkendelse.' : 'Tjek din forbindelse eller tilladelsen i telefonens indstillinger. Kontakt creator, hvis det fortsætter.',
+    }));
+    list.innerHTML = visibleChecks.map(check => `
       <article class="${escapeHtml(check.status)}">
         <b>${check.status === 'ok' ? 'OK' : check.status === 'warning' ? 'TJEK' : 'FEJL'} · ${escapeHtml(check.name)}</b>
         <small>${escapeHtml(check.detail)}</small>
@@ -470,11 +475,12 @@ async function updateDiagnosticModal(backdrop) {
   } catch (error) {
     recordDiagnostic(error.message, { source: 'App-tjek', area: activeArea() });
     summary.innerHTML = '<span class="fail"><b>App-tjek fejlede</b><small>Fejlen er gemt sikkert</small></span>';
-    list.innerHTML = `<article class="fail"><b>FEJL · App-tjek</b><small>${escapeHtml(redact(error.message))}</small></article>`;
+    list.innerHTML = `<article class="fail"><b>FEJL · App-tjek</b><small>${globalThis.XpressIntraCanViewTechnicalDetails?.() ? escapeHtml(redact(error.message)) : 'Tjek forbindelsen og prøv igen. Kontakt creator, hvis problemet fortsætter.'}</small></article>`;
   }
 }
 
 async function copyLastReport(button) {
+  if (!globalThis.XpressIntraCanViewTechnicalDetails?.()) return;
   const report = localStorage.getItem(LAST_REPORT_STORAGE_KEY) || '';
   if (!report) return;
   try {
