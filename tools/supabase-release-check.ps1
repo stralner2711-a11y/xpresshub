@@ -24,7 +24,7 @@ $schemaPath = Join-Path $ProjectRoot 'supabase\schema.sql'
 $fullSetupPath = Join-Path $ProjectRoot 'supabase\RUN_THIS_FROM_SCRATCH_IN_SUPABASE.sql'
 $setupNotePath = Join-Path $ProjectRoot 'supabase\XPRESSINTRA_CURRENT_SUPABASE_SETUP.md'
 $directMessagesRepairPath = Join-Path $ProjectRoot 'supabase\REPAIR_DIRECT_MESSAGES.sql'
-$appPath = Join-Path $ProjectRoot 'src\app.js'
+$appPath = Join-Path $ProjectRoot 'app.js'
 $workerPath = Join-Path $ProjectRoot 'public\service-worker.js'
 
 if (!(Test-Path $configPath)) { Fail "public/app-config.js mangler" }
@@ -32,7 +32,7 @@ if (!(Test-Path $schemaPath)) { Fail "supabase/schema.sql mangler" }
 if (!(Test-Path $fullSetupPath)) { Fail "supabase/RUN_THIS_FROM_SCRATCH_IN_SUPABASE.sql mangler" }
 if (!(Test-Path $setupNotePath)) { Fail "supabase/XPRESSINTRA_CURRENT_SUPABASE_SETUP.md mangler" }
 if (!(Test-Path $directMessagesRepairPath)) { Fail "supabase/REPAIR_DIRECT_MESSAGES.sql mangler" }
-if (!(Test-Path $appPath)) { Fail "src/app.js mangler" }
+if (!(Test-Path $appPath)) { Fail "app.js mangler" }
 if (!(Test-Path $workerPath)) { Fail "public/service-worker.js mangler" }
 
 $config = Get-Content $configPath -Raw
@@ -138,7 +138,10 @@ if ($schema -match 'function public\.(is_admin|is_dispatcher_or_admin|is_convers
 if ($fullSetup -notmatch 'create schema if not exists private' -or $fullSetup -notmatch 'function private\.is_admin\(\)') {
   Fail "Fuld Supabase SQL mangler oprettelse af private RLS-hjaelpefunktioner"
 }
-foreach ($requiredText in @('password_reset_required', 'onboarding_method', 'standard_password', 'invitation_id', 'expires_at', 'used_by', "else 'paused'")) {
+if ($schema.Contains("when not exists (select 1 from public.profiles) then 'active'") -or $fullSetup.Contains("when not exists (select 1 from public.profiles) then 'active'")) {
+  Fail "Nye profiler maa ikke aktiveres automatisk uden godkendelse"
+}
+foreach ($requiredText in @('password_reset_required', 'onboarding_method', 'standard_password', 'invitation_id', 'expires_at', 'used_by', "    'paused',")) {
   if ($schema -notmatch [regex]::Escape($requiredText)) {
     Fail "schema.sql mangler standardkode-onboarding: $requiredText"
   }

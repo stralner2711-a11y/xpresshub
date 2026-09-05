@@ -89,7 +89,7 @@ assert(schema.includes('and accepted_at is null') && schema.includes('and used_b
 assert(!schema.includes("when invite.id is not null then 'active'"), 'Invited users should still wait for chef/creator approval');
 assert(!fullBootstrap.includes("when invite.id is not null then 'active'"), 'Full bootstrap should not auto-activate invited users');
 assert(!updateSql.includes("when invite.id is not null then 'active'"), 'Update SQL should not auto-activate invited users');
-assert(schema.includes("when not exists (select 1 from public.profiles) then 'active'"), 'Only the first bootstrap profile should be auto-active');
+assert(!schema.includes("when not exists (select 1 from public.profiles) then 'active'"), 'Public signup must never bootstrap an active user');
 assert(schema.includes('employee_invitations_one_pending_email_idx'), 'Only one pending invitation per email should be allowed');
 assert(schema.includes('employee_invitations_used_by_idx'), 'Invitation used_by foreign key should have a covering index');
 assert(schema.includes('media_attachments_announcement_idx'), 'Announcement media foreign key should have a covering index');

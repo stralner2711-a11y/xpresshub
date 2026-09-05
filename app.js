@@ -26,9 +26,9 @@ const icons = {
   search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>',
 };
 
-const APP_VERSION = '1.3.56-release-v69';
-const APP_DISPLAY_VERSION = '1.3.56';
-const APP_VERSION_CODE = 69;
+const APP_VERSION = '1.3.57-release-v70';
+const APP_DISPLAY_VERSION = '1.3.57';
+const APP_VERSION_CODE = 70;
 const IMAGE_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
 const PROFILE_PHOTO_MAX_DIMENSION = 512;
 const PROFILE_PHOTO_QUALITY = 0.84;
@@ -3684,7 +3684,8 @@ async function signUpSupabase(email, password, options = {}) {
     options: {
       emailRedirectTo: officialAppUrl(),
       data: {
-        invited_to_xpressintra: true,
+        invited_to_xpressintra: Boolean(options.invitationId),
+        full_name: String(options.fullName || '').trim(),
         invitation_id: String(options.invitationId || '').trim(),
         requested_xpressintra_access: true,
         temporary_password_flow: !options.personalPasswordReady,
@@ -6283,8 +6284,9 @@ function renderLogin() {
       <label>Adgangskode<input name="password" type="password" value="${demoCredentials ? 'demo1234' : ''}" minlength="6" required /></label>
       <p class="login-error" role="alert" ${loginErrorMessage ? '' : 'hidden'}>${text(loginErrorMessage)}</p>
       <button>Log ind</button>
+      ${backend.ready && !canUseInviteSignup ? '<button type="submit" class="login-secondary" data-action="signup-access-request" formnovalidate>Opret profil og anmod om adgang</button>' : ''}
       ${canUseInviteSignup ? '<button type="submit" class="login-secondary" data-action="signup-invite-profile" formnovalidate>Opret profil med invitationslink</button>' : ''}
-      <span>${text(canUseInviteSignup ? 'Du har et invitationslink. Opret din personlige kode her. Chef eller creator skal godkende profilen før appen åbner.' : backend.ready ? 'Har du ikke adgang endnu, skal din chef eller creator oprette dig og sende et personligt invitationslink.' : 'Har du ikke adgang endnu, skal din chef eller creator oprette dig først.')}</span>
+      <span>${text(canUseInviteSignup ? 'Du har et invitationslink. Opret din personlige kode her. Chef eller creator skal godkende profilen før appen åbner.' : 'Ny medarbejder? Opret din profil med navn, mail og personlig kode. Chef eller creator skal godkende dig, før du får adgang til appen.')}</span>
     </form>
     <div class="pwa-install-card">
       <b>Brug den som app</b>
@@ -7229,9 +7231,10 @@ function openStandardSignupPasswordModal(email, invitationId = '') {
     <p class="eyebrow">Opret konto</p>
     <h3>Lav din personlige kode</h3>
     <section class="invite-help">
-      <b>Invitationslinket er klar</b>
+      <b>${pendingStandardSignupInvitationId ? 'Invitationslinket er klar' : 'Anmod om adgang'}</b>
       <span>Du opretter profilen for <strong>${text(pendingStandardSignupEmail)}</strong>. Vælg nu din egen adgangskode. Chef eller creator godkender derefter adgangen.</span>
     </section>
+    <label>Navn og efternavn<input name="fullName" type="text" autocomplete="name" minlength="2" maxlength="100" required /></label>
     <label>Ny adgangskode<input name="newPassword" type="password" minlength="8" autocomplete="new-password" required /></label>
     <label>Gentag ny adgangskode<input name="confirmPassword" type="password" minlength="8" autocomplete="new-password" required /></label>
     <p class="security-inline-note">Brug mindst 8 tegn, små bogstaver, store bogstaver og tal. Del aldrig din personlige kode med andre.</p>
@@ -9016,6 +9019,11 @@ document.addEventListener('submit', async event => {
   if (event.target.matches('.standard-signup-password-form')) {
     event.preventDefault();
     const data = new FormData(event.target);
+    const fullName = String(data.get('fullName') || '').trim();
+    if (fullName.length < 2 || fullName.length > 100) {
+      showToast('Skriv dit navn og efternavn');
+      return;
+    }
     const nextPassword = String(data.get('newPassword') || '');
     const confirmPassword = String(data.get('confirmPassword') || '');
     const validationError = personalPasswordError(nextPassword);
@@ -9029,6 +9037,7 @@ document.addEventListener('submit', async event => {
     }
     try {
       const message = await signUpSupabase(pendingStandardSignupEmail, nextPassword, {
+        fullName,
         personalPasswordReady: true,
         invitationId: pendingStandardSignupInvitationId,
       });
@@ -9077,7 +9086,11 @@ document.addEventListener('submit', async event => {
           setLoginError(loginBlocked);
           return;
         }
-        if (event.submitter?.dataset.action === 'signup-invite-profile') {
+        if (event.submitter?.dataset.action === 'signup-access-request') {
+          const emailInput = event.target.elements.namedItem('email');
+          if (!emailInput?.reportValidity()) return;
+          openStandardSignupPasswordModal(String(data.get('email') || '').trim());
+        } else if (event.submitter?.dataset.action === 'signup-invite-profile') {
           const inviteContext = loginInviteContext();
           if (!inviteContext.valid) {
             showToast('Opret konto kræver et invitationslink fra chef eller creator');

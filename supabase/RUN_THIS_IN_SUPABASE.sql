@@ -1,4 +1,17 @@
 -- XpressIntra samlet Supabase-fix
+-- All public signups require approval, including the first profile.
+do $approval_patch$
+declare definition text;
+begin
+  select pg_get_functiondef('public.handle_new_user()'::regprocedure) into definition;
+  definition := replace(definition,
+    'case' || chr(10) || '      when not exists (select 1 from public.profiles) then ''active''' || chr(10) || '      else ''paused''' || chr(10) || '    end',
+    '''paused''');
+  if position('when not exists (select 1 from public.profiles)' in definition) > 0 then
+    raise exception 'Unexpected signup function; approval patch needs review';
+  end if;
+  execute definition;
+end $approval_patch$;
 alter table public.pickup_tasks
   add column if not exists started_location_sharing boolean not null default false;
 notify pgrst, 'reload schema';

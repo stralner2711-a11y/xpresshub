@@ -122,10 +122,7 @@ begin
     coalesce(invite.access_role, 'employee'),
     coalesce(invite.vehicle_type, 'van'),
     invite.truck,
-    case
-      when not exists (select 1 from public.profiles) then 'active'
-      else 'paused'
-    end,
+    'paused',
     coalesce(invite.logbook_enabled, false),
     case
       when coalesce((new.raw_user_meta_data ->> 'first_personal_password')::boolean, false) then false

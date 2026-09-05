@@ -66,7 +66,8 @@ assert(vm.runInContext('vehicles.length', context) === 0, 'Fresh production app 
 assert(vm.runInContext('announcements.length', context) === 0, 'Fresh production app should start without demo posts');
 assert(!appElement.innerHTML.includes('demo@xpressintra.local'), 'Production login should not prefill demo email');
 assert(!appElement.innerHTML.includes('Opret profil med invitationslink'), 'Public production login without invite should not expose signup');
-assert(appElement.innerHTML.includes('personligt invitationslink'), 'Public production login should explain invite-only onboarding');
+assert(appElement.innerHTML.includes('Opret profil og anmod om adgang'), 'Public production login should offer self-registration');
+assert(appElement.innerHTML.includes('Chef eller creator skal godkende dig'), 'Public signup should explain approval');
 
 const invited = createHarness('https://stralner2711-a11y.github.io/xpresshub/?invite=test-123&email=ny@example.com');
 assert(invited.appElement.innerHTML.includes('Opret profil med invitationslink'), 'Invite link should expose invite-based onboarding');
@@ -74,5 +75,4 @@ assert(invited.appElement.innerHTML.includes('ny@example.com'), 'Invite link sho
 assert(invited.appElement.innerHTML.includes('readonly'), 'Invite email should be locked on the signup screen');
 
 console.log('Production empty register smoke test passed');
-
 

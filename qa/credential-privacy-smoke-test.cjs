@@ -28,8 +28,8 @@ assert(!loginBlock.includes('backend-status'), 'Employee login should not expose
 assert(!loginBlock.includes('data-action="open-settings"'), 'Employee login should not expose setup/settings');
 assert(loginBlock.includes('canUseInviteSignup'), 'Signup visibility should require a valid invite link');
 assert(loginBlock.includes('data-action="signup-invite-profile"'), 'Signup should use the invite-link onboarding flow');
-assert(schema.includes("else 'paused'"), 'Database trigger should park open signups until admin approval');
-assert(fullSetup.includes("else 'paused'"), 'Full SQL should park open signups until admin approval');
+assert(schema.includes("    'paused',") && !schema.includes("when not exists (select 1 from public.profiles) then 'active'"), 'All new profiles must wait for approval');
+assert(fullSetup.includes("    'paused',") && !fullSetup.includes("when not exists (select 1 from public.profiles) then 'active'"), 'Full SQL must not auto-approve first signup');
 
 assert(serviceWorker.includes("url.pathname.startsWith('/auth/')"), 'Service worker must bypass auth routes');
 assert(serviceWorker.includes("url.pathname.startsWith('/rest/')"), 'Service worker must bypass REST routes');

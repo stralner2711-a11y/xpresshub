@@ -129,7 +129,10 @@ if ($schema -match 'function public\.(is_admin|is_dispatcher_or_admin|is_convers
 if ($fullSetup -notmatch 'create schema if not exists private' -or $fullSetup -notmatch 'function private\.is_admin\(\)') {
   Fail "Fuld Supabase SQL mangler oprettelse af private RLS-hjaelpefunktioner"
 }
-foreach ($requiredText in @('password_reset_required', 'onboarding_method', 'standard_password', 'invitation_id', 'expires_at', 'used_by', "else 'paused'")) {
+if ($schema.Contains("when not exists (select 1 from public.profiles) then 'active'") -or $fullSetup.Contains("when not exists (select 1 from public.profiles) then 'active'")) {
+  Fail "Nye profiler maa ikke aktiveres automatisk uden godkendelse"
+}
+foreach ($requiredText in @('password_reset_required', 'onboarding_method', 'standard_password', 'invitation_id', 'expires_at', 'used_by', "    'paused',")) {
   if ($schema -notmatch [regex]::Escape($requiredText)) {
     Fail "schema.sql mangler standardkode-onboarding: $requiredText"
   }
