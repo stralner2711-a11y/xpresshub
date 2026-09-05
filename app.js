@@ -26,9 +26,9 @@ const icons = {
   search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>',
 };
 
-const APP_VERSION = '1.3.57-release-v70';
-const APP_DISPLAY_VERSION = '1.3.57';
-const APP_VERSION_CODE = 70;
+const APP_VERSION = '1.3.58-release-v71';
+const APP_DISPLAY_VERSION = '1.3.58';
+const APP_VERSION_CODE = 71;
 const IMAGE_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
 const PROFILE_PHOTO_MAX_DIMENSION = 512;
 const PROFILE_PHOTO_QUALITY = 0.84;
