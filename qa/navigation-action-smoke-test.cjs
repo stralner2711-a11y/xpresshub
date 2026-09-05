@@ -19,6 +19,8 @@ assert(source.includes("data-action=\"open-task-overview\""), 'Task overview sho
 assert(source.includes("if (action === 'open-task-overview') openTaskOverviewModal();"), 'Task overview action should open the task modal');
 assert(!source.includes('<button data-action="open-notifications">Se alt</button>'), 'Task "Se alt" should not route directly to notifications');
 assert(source.includes("modalReplacingActions"), 'Modal-to-modal navigation should replace the current modal');
+const replacingActions = source.match(/const modalReplacingActions = \[([\s\S]*?)\];/)[1];
+assert(replacingActions.includes("'open-access-requests'"), 'Access requests must replace the notification modal instead of stacking');
 assert(source.includes("canPublishOfficePosts() ? '<button data-action=\"new-announcement\">Nyt opslag</button>' : ''"), 'Office post button should only show for office/dispatch roles');
 assert(source.includes("activeInfoCategory = searchResult.dataset.searchInfo;\n      infoQuery = searchResult.dataset.searchInfoQuery || '';"), 'Global information results should replace stale searches with the selected result query');
 

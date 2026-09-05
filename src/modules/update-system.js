@@ -79,6 +79,11 @@ export function stableRollbackUrl(info, options = {}) {
 }
 
 export function rollbackReadiness(info, options = {}) {
+  if (!info) return {
+    available: false, stableUrl: '', recommended: false, currentMarked: false,
+    label: 'Ikke tjekket endnu',
+    detail: 'Versionsdata er ikke hentet. Tjek opdateringer for at kontrollere backup.',
+  };
   const stableUrl = stableRollbackUrl(info, options);
   const hasPrevious = Boolean(info.previousStableVersion || info.stableVersion);
   const appVersionCode = Number(options.appVersionCode || 0);

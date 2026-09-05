@@ -1,0 +1,104 @@
+{
+  "at": "2026-09-05T13:00:56.438Z",
+  "run": "qa-real-1788613053114",
+  "scope": "Real production network; bounded 3 test identities and 10 sockets, not 100 users",
+  "conversation": "806f08f5-ed47-4b3c-ad34-4461a3610afb",
+  "checks": [
+    {
+      "name": "10 real WebSocket connections subscribed",
+      "pass": true,
+      "detail": "8 participant, 2 unrelated admin; 3 identities total"
+    },
+    {
+      "name": "50 real private-chat reads",
+      "pass": true,
+      "detail": "{\"samples\":50,\"p50Ms\":59,\"p95Ms\":247,\"maxMs\":282}"
+    },
+    {
+      "name": "Participant socket 1 receives exactly 30 messages",
+      "pass": true,
+      "detail": "30 events"
+    },
+    {
+      "name": "Participant socket 2 receives exactly 30 messages",
+      "pass": true,
+      "detail": "30 events"
+    },
+    {
+      "name": "Participant socket 3 receives exactly 30 messages",
+      "pass": true,
+      "detail": "30 events"
+    },
+    {
+      "name": "Participant socket 4 receives exactly 30 messages",
+      "pass": true,
+      "detail": "30 events"
+    },
+    {
+      "name": "Participant socket 5 receives exactly 30 messages",
+      "pass": true,
+      "detail": "30 events"
+    },
+    {
+      "name": "Participant socket 6 receives exactly 30 messages",
+      "pass": true,
+      "detail": "30 events"
+    },
+    {
+      "name": "Participant socket 7 receives exactly 30 messages",
+      "pass": true,
+      "detail": "30 events"
+    },
+    {
+      "name": "Participant socket 8 receives exactly 30 messages",
+      "pass": true,
+      "detail": "30 events"
+    },
+    {
+      "name": "Unrelated admin sockets receive no private messages",
+      "pass": true,
+      "detail": "0 events"
+    },
+    {
+      "name": "Unrelated admin REST cannot read private conversation",
+      "pass": true
+    },
+    {
+      "name": "Disconnected socket does not pretend to receive messages",
+      "pass": true
+    },
+    {
+      "name": "Latest-500 fetch recovers all three offline messages",
+      "pass": true,
+      "detail": "107 ms"
+    }
+  ],
+  "metrics": {
+    "login": {
+      "samples": 3,
+      "p50Ms": 162,
+      "p95Ms": 468,
+      "maxMs": 468
+    },
+    "read": {
+      "samples": 50,
+      "p50Ms": 59,
+      "p95Ms": 247,
+      "maxMs": 282
+    },
+    "write": {
+      "samples": 30,
+      "p50Ms": 57,
+      "p95Ms": 78,
+      "maxMs": 84
+    },
+    "realtime": {
+      "samples": 240,
+      "p50Ms": 313,
+      "p95Ms": 560,
+      "maxMs": 572
+    },
+    "recoveryMs": 107
+  },
+  "failed": 0
+}

@@ -1,4 +1,7 @@
 -- XpressIntra samlet Supabase-fix
+alter table public.pickup_tasks
+  add column if not exists started_location_sharing boolean not null default false;
+notify pgrst, 'reload schema';
 -- Oprettet automatisk fra den aktuelle sikkerhedsmigration.
 -- Saadan bruges den:
 -- 1. Aabn Supabase SQL Editor.
@@ -8,6 +11,25 @@
 -- VIGTIGT:
 -- Hvis databasen slet ikke er oprettet endnu, skal supabase/schema.sql koeres foerst.
 -- Denne fil er til et projekt hvor grunddatabasen allerede findes.
+
+-- Bind media metadata to the same user folder enforced by Storage INSERT RLS.
+-- This also protects UPDATE if a future policy enables metadata editing.
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conrelid = 'public.media_attachments'::regclass
+      and conname = 'media_attachments_owner_path_check'
+  ) then
+    alter table public.media_attachments
+      add constraint media_attachments_owner_path_check
+      check (
+        bucket = 'xpressintra-media'
+        and split_part(storage_path, '/', 1) = owner_id::text
+        and length(storage_path) > length(owner_id::text) + 1
+      );
+  end if;
+end $$;
 
 
 -- ============================================================

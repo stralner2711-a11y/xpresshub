@@ -299,6 +299,9 @@ create table if not exists public.pickup_tasks (
   completed_at timestamptz
 );
 
+alter table public.pickup_tasks
+  add column if not exists started_location_sharing boolean not null default false;
+
 create table if not exists public.conversations (
   id uuid primary key default gen_random_uuid(),
   title text,
@@ -336,6 +339,25 @@ create table if not exists public.media_attachments (
   visibility text not null default 'conversation' check (visibility in ('conversation', 'announcement', 'private_log', 'profile')),
   created_at timestamptz not null default now()
 );
+
+-- Bind media metadata to the same user folder enforced by Storage INSERT RLS.
+-- This also protects UPDATE if a future policy enables metadata editing.
+do $$
+begin
+  if not exists (
+    select 1 from pg_constraint
+    where conrelid = 'public.media_attachments'::regclass
+      and conname = 'media_attachments_owner_path_check'
+  ) then
+    alter table public.media_attachments
+      add constraint media_attachments_owner_path_check
+      check (
+        bucket = 'xpressintra-media'
+        and split_part(storage_path, '/', 1) = owner_id::text
+        and length(storage_path) > length(owner_id::text) + 1
+      );
+  end if;
+end $$;
 
 create table if not exists public.announcements (
   id bigint generated always as identity primary key,

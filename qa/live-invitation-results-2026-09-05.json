@@ -1,0 +1,69 @@
+{
+  "run": "qa-1788607137839",
+  "users": [
+    {
+      "id": "8c44bfb8-43dc-47a3-ba47-526c7bc086e3",
+      "email": "qa-1788607137839-valid@example.com"
+    },
+    {
+      "id": "acf67a06-d1ad-4204-9db6-6214b2e975a9",
+      "email": "qa-1788607137839-expired@example.com"
+    }
+  ],
+  "invitations": [
+    "102c836d-207c-4170-99fa-4da025f8c3ba",
+    "7e4991ec-095d-4be3-bd0d-3678684982d0"
+  ],
+  "results": [
+    {
+      "name": "Admin creates valid invitation",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Signup valid",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Valid invite maps intended profile",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Valid invite still needs approval",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Invite consumed once and bound to user",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Admin creates expired invitation",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Signup expired",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Expired invite does not grant role or truck channel",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Expired invite not consumed",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Admin cannot invite owner role",
+      "passed": true,
+      "details": "new row violates row-level security policy for table \"employee_invitations\""
+    }
+  ]
+}

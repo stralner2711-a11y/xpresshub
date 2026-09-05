@@ -63,6 +63,8 @@ function createHarness() {
   context.window.document = document;
   context.window.localStorage = context.localStorage;
   vm.createContext(context);
+  const updateModule = fs.readFileSync('src/modules/update-system.js', 'utf8').replace(/^export /gm, '');
+  vm.runInContext(`(() => { ${updateModule} })();`, context, { filename: 'update-system.js' });
   vm.runInContext(code, context, { filename: 'app.js' });
   return { appElement, modalNodes, run: script => vm.runInContext(script, context) };
 }
@@ -73,8 +75,16 @@ function assert(condition, message) {
 
 const harness = createHarness();
 
+assert(harness.run('XpressIntraUpdateSystem.rollbackReadiness(null).recommended') === false, 'Unknown version must not recommend a rollback');
+assert(harness.run('XpressIntraUpdateSystem.rollbackReadiness(undefined).available') === false, 'Missing version must not expose backup actions');
+assert(harness.run('rollbackReadiness(null).label') === 'Ikke tjekket endnu', 'Missing version should show an honest status');
+
 harness.run("profile = { ...profile, name: 'Tommy Hansen', email: 'stralner2711@gmail.com', role: 'Appansvarlig · Lastbilchauffør', accessRole: 'owner', vehicleType: 'truck' }; openAdminModal();");
 const creatorModal = harness.modalNodes.at(-1);
+assert(creatorModal.innerHTML.includes('Appens drift'), 'Creator dashboard should open with the real update module and no version data');
+assert(!creatorModal.innerHTML.includes('<strong>72%</strong>'), 'Planning estimates must not look like measured quality');
+assert(creatorModal.innerHTML.includes('ikke automatiske målinger'), 'Planning list should explain that it is not telemetry');
+assert(harness.run("gdprGoLiveItems().find(item => item.id === 'retention').done") === false, 'Unverified cleanup must not be marked completed');
 assert(creatorModal.innerHTML.includes('Kør brugertest'), 'Creator dashboard should expose a single user-test action');
 assert(creatorModal.innerHTML.includes('Kør appen igennem som medarbejder'), 'Creator dashboard should show the user-test summary panel');
 assert(creatorModal.innerHTML.includes('Employee ser ikke admin/creator'), 'User-test panel should include access-control verification');

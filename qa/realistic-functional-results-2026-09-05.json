@@ -1,0 +1,323 @@
+{
+  "run": "qa-real-1788613053114",
+  "at": "2026-09-05T12:59:03.028Z",
+  "users": [
+    {
+      "id": "43852bbf-7228-4300-921c-490e01c8193d",
+      "email": "qa-real-1788613053114-driver@example.com"
+    },
+    {
+      "id": "b8849539-a8c8-4bd4-bc5d-7f66751dc567",
+      "email": "qa-real-1788613053114-peer@example.com"
+    },
+    {
+      "id": "882f7163-dfbb-4c4b-aae4-81dc8db3e52a",
+      "email": "qa-real-1788613053114-admin@example.com"
+    }
+  ],
+  "resources": {
+    "conversations": [
+      "806f08f5-ed47-4b3c-ad34-4461a3610afb"
+    ],
+    "storage": [
+      {
+        "user": 0,
+        "path": "43852bbf-7228-4300-921c-490e01c8193d/qa-real-1788613053114.png"
+      }
+    ]
+  },
+  "results": [
+    {
+      "name": "Password login fixture 1",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Password login fixture 2",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Password login fixture 3",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Pending cannot read conversations",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Pending cannot activate itself",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Pending cannot start conversation",
+      "passed": true,
+      "details": "caller_not_active"
+    },
+    {
+      "name": "Admin approves truck",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Admin approves van",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Edit own display name",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Employee self-promotion blocked",
+      "passed": true,
+      "details": "Verified persisted role; trigger may silently preserve employee"
+    },
+    {
+      "name": "Other profile edit blocked",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Employee cannot invite",
+      "passed": true,
+      "details": "new row violates row-level security policy for table \"employee_invitations\""
+    },
+    {
+      "name": "Employee cannot read admin audit",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Employee cannot read creator telemetry",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Truck sees truck and all only",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Van cannot see truck channel",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "RPC returns valid conversations",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Concurrent start creates one conversation",
+      "passed": true,
+      "details": "distinct=1"
+    },
+    {
+      "name": "Participant sees direct conversation",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Unrelated admin cannot see private conversation",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Realtime subscription established",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Message delivered live exactly once",
+      "passed": false,
+      "details": "events=0"
+    },
+    {
+      "name": "Text sender and timestamp preserved",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Unrelated admin cannot read private message",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Recipient cannot overwrite sender message",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Recipient cannot delete sender message",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Forged message sender blocked",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Admin cannot send into private conversation",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Anonymous message insert blocked",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Start workday",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Colleague cannot read private workday",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "End workday",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Save personal logbook",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Colleague cannot read personal logbook",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Admin cannot read personal logbook",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Delete own log entry",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Create pickup task",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Recipient updates pickup note",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Outsider admin cannot read pickup",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Participant cannot silently replace other participant",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Designated colleague sees synthetic GPS",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Other users cannot see pickup GPS",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Stale GPS is hidden",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Expired GPS is hidden",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Stop sharing removes GPS",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Upload valid PNG",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Attach image to private message",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Recipient can download private image",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Unrelated admin cannot download private image",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Cannot upload to other user folder",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Non-image file rejected",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Own notification stored",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Colleague cannot read notification",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Notification marked read",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Employee cannot spoof other notification",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Privacy preference saves",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Existing employee token loses chat access when paused",
+      "passed": true,
+      "details": ""
+    },
+    {
+      "name": "Cleanup storage 43852bbf-7228-4300-921c-490e01c8193d/qa-real-1788613053114.png",
+      "passed": true,
+      "details": ""
+    }
+  ],
+  "passed": 57,
+  "failed": 1
+}

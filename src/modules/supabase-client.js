@@ -21,6 +21,9 @@ export function supabaseStatusFromConfig(config = {}, hasNativeClient = false) {
 }
 
 export function profileFromSupabaseRow(row, user, privateDetails, currentProfile = {}) {
+  row = row || {};
+  user = user || {};
+  privateDetails = privateDetails || {};
   return {
     name: row.full_name || currentProfile.name || '',
     phone: row.phone || currentProfile.phone || '',

@@ -67,14 +67,14 @@ function createAppHarness() {
 
 function makeEmployees(count = 25) {
   return Array.from({ length: count }, (_, index) => {
-    const vehicleType = index < 12 ? 'truck' : index < 22 ? 'van' : 'dispatch';
+    const vehicleType = index < Math.floor(count * 0.48) ? 'truck' : index < Math.floor(count * 0.88) ? 'van' : 'dispatch';
     return {
       id: `sim-user-${index}`,
       email: `sim-user-${index}@xpressintra.local`,
       name: `Simuleret Medarbejder ${index + 1}`,
       initials: `S${index + 1}`,
       role: vehicleType === 'truck' ? 'Lastbilchauffør' : vehicleType === 'van' ? 'Varebilschauffør' : 'Disponent',
-      accessRole: index === 24 ? 'admin' : 'employee',
+      accessRole: index === count - 1 ? 'admin' : 'employee',
       vehicleType,
       truck: vehicleType === 'truck' ? `LB ${index + 1}` : vehicleType === 'van' ? `VB ${index + 1}` : 'Kontor',
       employmentStatus: 'active',
@@ -93,10 +93,13 @@ function makeEmployees(count = 25) {
   const updateSystem = await import(`${pathToFileURL(path.join(root, 'src', 'modules', 'update-system.js')).href}?qa=${cacheBust}`);
   const schema = fs.readFileSync(path.join(root, 'supabase', 'schema.sql'), 'utf8');
   const version = JSON.parse(fs.readFileSync(path.join(root, 'public', 'version.json'), 'utf8'));
-  const employees = makeEmployees();
+  const userCount = Number(process.env.QA_SIM_USERS || 25);
+  assert(Number.isInteger(userCount) && userCount >= 25 && userCount <= 100, 'Use 25 to 100 isolated simulated users');
+  const messageCount = userCount * 20;
+  const employees = makeEmployees(userCount);
 
-  assert.strictEqual(employees.filter(user => chat.hasChannelAccess('truck', user)).length, 12, 'Only the 12 truck drivers should enter the truck channel');
-  assert.strictEqual(employees.filter(user => chat.hasChannelAccess('van', user)).length, 10, 'Only the 10 van drivers should enter the van channel');
+  assert.strictEqual(employees.filter(user => chat.hasChannelAccess('truck', user)).length, Math.floor(userCount * 0.48), 'Only truck drivers should enter the truck channel');
+  assert.strictEqual(employees.filter(user => chat.hasChannelAccess('van', user)).length, Math.floor(userCount * 0.88) - Math.floor(userCount * 0.48), 'Only van drivers should enter the van channel');
 
   const harness = createAppHarness();
   harness.run(`
@@ -122,7 +125,7 @@ function makeEmployees(count = 25) {
   await harness.run('Promise.all(Array.from({ length: 32 }, () => handleSupabaseMessage(globalThis.simDuplicateMessage)))');
   assert.strictEqual(harness.run("messages['sim-all'].filter(item => item.id === 'sim-message-duplicate').length"), 1, 'Concurrent realtime delivery must not duplicate one message');
 
-  const messageRows = Array.from({ length: 500 }, (_, index) => ({
+  const messageRows = Array.from({ length: messageCount }, (_, index) => ({
     id: `sim-message-${index}`,
     conversation_id: 'sim-all',
     sender_id: `sim-user-${index % employees.length}`,
@@ -132,7 +135,11 @@ function makeEmployees(count = 25) {
   }));
   harness.run(`globalThis.simMessageRows = ${JSON.stringify(messageRows)}`);
   await harness.run('Promise.all(globalThis.simMessageRows.map(row => handleSupabaseMessage(row)))');
-  assert.strictEqual(harness.run("new Set(messages['sim-all'].map(item => item.id)).size"), 501, 'A burst of 500 messages should retain every unique message exactly once');
+  assert.strictEqual(harness.run("new Set(messages['sim-all'].map(item => item.id)).size"), messageCount + 1, 'A message burst should retain every unique message exactly once');
+  assert.strictEqual(harness.run("messages['sim-all'].length"), messageCount + 1, 'No duplicate rows may remain');
+  for (let index = 0; index < userCount; index++) {
+    assert.strictEqual(harness.run(`messages['sim-all'].find(item => item.id === 'sim-message-${index}').senderName`), employees[index].name, 'Every sender must match their profile');
+  }
   assert.strictEqual(harness.run("messages['sim-all'].find(item => item.id === 'sim-message-1').senderName"), employees[1].name, 'Burst messages should stay linked to the correct sender profile');
 
   const now = Date.now();
@@ -148,8 +155,8 @@ function makeEmployees(count = 25) {
     show_status: true,
     status: 'driving',
     share_mode: '15 min',
-    last_updated_at: new Date(index >= 19 && index <= 21 ? now - 16 * 60 * 1000 : now - 30 * 1000).toISOString(),
-    expires_at: new Date(index >= 22 ? now - 1000 : now + 15 * 60 * 1000).toISOString(),
+    last_updated_at: new Date(index >= userCount - 6 && index < userCount - 3 ? now - 16 * 60 * 1000 : now - 30 * 1000).toISOString(),
+    expires_at: new Date(index >= userCount - 3 ? now - 1000 : now + 15 * 60 * 1000).toISOString(),
   }));
   harness.run(`
     globalThis.simLocationRows = ${JSON.stringify(locationRows)};
@@ -161,7 +168,7 @@ function makeEmployees(count = 25) {
     location = { ...location, sharing: false, coords: null };
     mapFilter = 'all';
   `);
-  assert.strictEqual(harness.run('visibleMapPeople().length'), 18, 'The map should show 18 fresh colleagues while hiding self, three stale and three expired positions');
+  assert.strictEqual(harness.run('visibleMapPeople().length'), userCount - 7, 'Hide self, three stale and three expired positions');
   assert.strictEqual(harness.run("visibleMapPeople().some(person => person.id === 'sim-user-0')"), false, 'A remote copy must not expose the current user while local sharing is off');
   harness.run("location = { ...location, sharing: true, coords: [55.5, 9.4], speed: 42 }; workdayPrivacy = { ...workdayPrivacy, audience: 'all' }");
   assert.strictEqual(harness.run("visibleMapPeople().filter(person => person.id === 'sim-user-0').length"), 1, 'Active local sharing should add exactly one own marker');
@@ -203,8 +210,8 @@ function makeEmployees(count = 25) {
     queuedTotal += summary.total;
     syncedTotal += summary.synced;
   }
-  assert.strictEqual(queuedTotal, 400, 'The simulation should process 400 offline actions');
-  assert.strictEqual(syncedTotal, 400, 'All 400 offline actions should recover after the connection returns');
+  assert.strictEqual(queuedTotal, userCount * 16, 'Every offline action must be retained');
+  assert.strictEqual(syncedTotal, userCount * 16, 'All offline actions should recover after the connection returns');
 
   const officialApk = `https://github.com/stralner2711-a11y/xpresshub/releases/download/v${version.activeVersion}/xpressintra.apk`;
   const updateOptions = {
@@ -221,7 +228,8 @@ function makeEmployees(count = 25) {
   assert(schema.includes("last_updated_at > now() - interval '15 minutes'"), 'The database must also reject stale GPS rows');
 
   const durationMs = Date.now() - startedAt;
-  console.log(`Simulated workday passed: 25 users, 501 realtime messages, 400 offline actions, 25 GPS rows, ${durationMs} ms`);
+  console.log(`Simulated workday passed: ${userCount} users, ${messageCount + 1} realtime messages, ${queuedTotal} offline actions, ${userCount} GPS rows, ${durationMs} ms`);
+  console.log('Scope: isolated client logic with mocked network/DOM, not concurrent live Supabase sessions or device rendering.');
 })().catch(error => {
   console.error(error);
   process.exit(1);

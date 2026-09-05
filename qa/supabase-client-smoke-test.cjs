@@ -82,10 +82,10 @@ function createHarness() {
     rpc(name, args) {
       rpcCalls.push({ name, args });
       if (name === 'start_direct_conversation') {
-        return Promise.resolve({ data: 'direct-conversation-1', error: null });
+        return Promise.resolve({ data: '22222222-2222-4222-8222-222222222222', error: null });
       }
       if (name === 'start_direct_conversation_v2') {
-        return Promise.resolve({ data: 'direct-conversation-1', error: null });
+        return Promise.resolve({ data: '22222222-2222-4222-8222-222222222222', error: null });
       }
       return Promise.resolve({ data: null, error: new Error(`Unknown RPC ${name}`) });
     },
@@ -113,14 +113,18 @@ function createHarness() {
           this.insertedRow = storedRow;
           return this;
         },
-        maybeSingle() { return Promise.resolve({ data: this.insertedRow || null, error: null }); },
+        maybeSingle() {
+          const data = this.insertedRow || (this.updatedRow ? { id: `${table}-1`, ...this.updatedRow } : table === 'profiles'
+            ? { id: 'user-1', full_name: 'Test Driver', email: 'driver@example.com', access_role: 'employee', employment_status: 'active', vehicle_type: 'truck' } : null);
+          return Promise.resolve({ data, error: null });
+        },
         then(resolve) {
           if (this.insertedRow) return resolve({ data: [this.insertedRow], error: null });
           if (table === 'conversations') {
             return resolve({
               data: [
                 { id: '00000000-0000-4000-8000-000000000001', title: 'Fælleschat · Alle medarbejdere', channel_type: 'all', is_group: true, created_at: '2026-05-31T10:00:00Z' },
-                { id: 'direct-conversation-1', title: 'Direkte samtale', channel_type: 'direct', is_group: false, created_at: '2026-05-31T10:02:00Z' },
+                { id: '22222222-2222-4222-8222-222222222222', title: 'Direkte samtale', channel_type: 'direct', is_group: false, created_at: '2026-05-31T10:02:00Z' },
               ],
               error: null,
             });
@@ -185,7 +189,7 @@ function createHarness() {
         return Promise.resolve({
           ok: true,
           status: 200,
-          text: () => Promise.resolve(JSON.stringify('direct-conversation-1')),
+          text: () => Promise.resolve(JSON.stringify('22222222-2222-4222-8222-222222222222')),
         });
       }
       return Promise.resolve({
@@ -245,22 +249,22 @@ function assert(condition, message) {
 
   await harness.run("employees.push({ id: '11111111-1111-4111-8111-111111111111', name: 'Test Medarbejder', initials: 'TM', employmentStatus: 'active' }); startSupabaseDirectChat(employees.find(item => item.id === '11111111-1111-4111-8111-111111111111'), 'Direkte hej')");
   assert(harness.fetchCalls.some(item => item.url.includes('/rest/v1/rpc/start_direct_conversation_v2') && item.options.body.includes('11111111-1111-4111-8111-111111111111')), 'Direct chats should be created through the safe REST RPC path');
-  assert(harness.insertedRows.some(item => item.table === 'messages' && item.row.conversation_id === 'direct-conversation-1' && item.row.body === 'Direkte hej'), 'Starting a direct chat should send the first message online');
-  await harness.run("messages['direct-conversation-1'] = []; chats = chats.filter(item => item.id !== 'direct-conversation-1')");
+  assert(harness.insertedRows.some(item => item.table === 'messages' && item.row.conversation_id === '22222222-2222-4222-8222-222222222222' && item.row.body === 'Direkte hej'), 'Starting a direct chat should send the first message online');
+  await harness.run("messages['22222222-2222-4222-8222-222222222222'] = []; chats = chats.filter(item => item.id !== '22222222-2222-4222-8222-222222222222')");
   await harness.run("getSupabaseClient().rpc = () => Promise.resolve({ data: null, error: null })");
   await harness.run("startSupabaseDirectChat(employees.find(item => item.id === '11111111-1111-4111-8111-111111111111'), 'Direkte igen')");
-  assert(harness.insertedRows.some(item => item.table === 'messages' && item.row.conversation_id === 'direct-conversation-1' && item.row.body === 'Direkte igen'), 'Direct chat should recover the conversation id when RPC returns an empty body');
-  await harness.run("messages['direct-conversation-1'] = []; chats = chats.filter(item => item.id !== 'direct-conversation-1')");
+  assert(harness.insertedRows.some(item => item.table === 'messages' && item.row.conversation_id === '22222222-2222-4222-8222-222222222222' && item.row.body === 'Direkte igen'), 'Direct chat should use the verified REST id even if the unused client RPC returns no id');
+  await harness.run("messages['22222222-2222-4222-8222-222222222222'] = []; chats = chats.filter(item => item.id !== '22222222-2222-4222-8222-222222222222')");
   await harness.run("getSupabaseClient().rpc = () => Promise.reject(new Error(\"Cannot read properties of null (reading 'body')\"))");
   await harness.run("startSupabaseDirectChat(employees.find(item => item.id === '11111111-1111-4111-8111-111111111111'), 'Direkte reserve')");
-  assert(harness.insertedRows.some(item => item.table === 'messages' && item.row.conversation_id === 'direct-conversation-1' && item.row.body === 'Direkte reserve'), 'Direct chat should use REST fallback when Supabase RPC throws a null-body error');
+  assert(harness.insertedRows.some(item => item.table === 'messages' && item.row.conversation_id === '22222222-2222-4222-8222-222222222222' && item.row.body === 'Direkte reserve'), 'Direct chat should use REST fallback when Supabase RPC throws a null-body error');
   assert(app.includes("callDirectConversationRestRpc(client, employeeId, 'start_direct_conversation_v2')"), 'Direct chat should use the REST RPC path before the Supabase client RPC');
   const rpcCallCount = harness.rpcCalls.length;
   const invalidDirectChatError = await harness.run("(async () => { try { await startSupabaseDirectChat({ id: 'local-test-profile', name: 'Lokal Testprofil', initials: 'LT', employmentStatus: 'active' }, 'Hej'); return ''; } catch (error) { return error.message; } })()");
   assert(invalidDirectChatError.includes('ikke oprettet som aktiv onlinebruger'), 'Local/demo employee ids should be rejected with a clear direct-chat message');
   assert(harness.rpcCalls.length === rpcCallCount, 'Local/demo employee ids should not call the online direct-chat RPC');
 
-  await harness.run("activeChat = 'direct-conversation-1'");
+  await harness.run("activeChat = '22222222-2222-4222-8222-222222222222'");
   await harness.document.dispatchEvent({
     type: 'submit',
     preventDefault() {},
@@ -272,7 +276,7 @@ function assert(condition, message) {
       },
     },
   });
-  assert(harness.uploads.some(item => item.bucket === 'xpressintra-media' && item.path.includes('/chat/direct-conversation-1/')), 'Chat images should upload to private Storage under the sender path');
+  assert(harness.uploads.some(item => item.bucket === 'xpressintra-media' && item.path.includes('/chat/22222222-2222-4222-8222-222222222222/')), 'Chat images should upload to private Storage under the sender path');
   assert(harness.insertedRows.some(item => item.table === 'media_attachments' && item.row.message_id === 99 && item.row.visibility === 'conversation'), 'Chat images should create a conversation media attachment');
 
   harness.run("workdayPrivacy = { ...workdayPrivacy, showSpeed: false, audience: 'truck', showVehicle: false, showStatus: false }; location = { ...location, sharing: true, coords: [56.1055, 10.0065], speed: 42, shareMode: '30 min', expiresAt: '2026-05-31T19:00:00Z' }");

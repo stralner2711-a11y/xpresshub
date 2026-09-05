@@ -79,7 +79,7 @@ export function logbookSuggestions({
   vehicles = [],
   pickupStatusLabel = status => status || 'Status',
 } = {}) {
-  if (!logbookAutomation.smartLogbook) return [];
+  if (profile.logbook === false || !logbookAutomation.smartLogbook) return [];
   const suggestions = [];
   if (logbookAutomation.autoPlace) {
     suggestions.push({

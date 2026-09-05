@@ -99,5 +99,11 @@ assert(harness.appElement.innerHTML.includes('Køre- og hviletid'), 'Favorites t
 
 console.log('Info center smoke test passed');
 
+harness.run("infoQuery = 'CMR'; activeInfoCategory = 'trucks'; render();");
+assert(harness.appElement.innerHTML.includes('data-action="clear-info-search"'), 'Clear button must reset the query, not only the category');
+harness.run('clearInfoSearch();');
+assert(harness.run('infoQuery') === '', 'Clear search must remove the search text');
+assert(harness.run('activeInfoCategory') === 'all', 'Clear search must reset the category');
+
 
 

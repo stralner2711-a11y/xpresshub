@@ -121,5 +121,12 @@ assert(disabledSettings.smartLogbook === false, 'Smart logbook master switch sho
 
 console.log('Logbook automation smoke test passed');
 
+harness.run('profile.logbook = false; logbookAutomation.smartLogbook = true; logbookDrafts = []; syncLogbookDrafts();');
+assert(harness.run('logbookSuggestions().length') === 0, 'Profile opt-out must stop suggestions even when automation switches are on');
+assert(harness.run('logbookDrafts.length') === 0, 'Profile opt-out must stop draft creation');
+assert(harness.run("createAutoLogEntry('current-location')") === null, 'Profile opt-out must stop automatic entry creation');
+harness.run('profile.logbook = true; coreSettings.logbook = false; syncLogbookDrafts();');
+assert(harness.run('logbookDrafts.length') === 0, 'Disabled company logbook must stop draft creation');
+
 
 
