@@ -26,9 +26,9 @@ const icons = {
   search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>',
 };
 
-const APP_VERSION = '1.3.58-release-v71';
-const APP_DISPLAY_VERSION = '1.3.58';
-const APP_VERSION_CODE = 71;
+const APP_VERSION = '1.3.59-release-v72';
+const APP_DISPLAY_VERSION = '1.3.59';
+const APP_VERSION_CODE = 72;
 const IMAGE_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
 const PROFILE_PHOTO_MAX_DIMENSION = 512;
 const PROFILE_PHOTO_QUALITY = 0.84;
@@ -1714,7 +1714,29 @@ function openExternalUpdateLink(url) {
   window.open(url, '_blank', 'noopener,noreferrer');
 }
 
+let appUpdateInstalling = false;
+
 async function installAppUpdate(url) {
+  if (appUpdateInstalling) return;
+  const nativePlatform = window.Capacitor?.getPlatform?.() || 'web';
+  if (nativePlatform === 'web') {
+    appUpdateInstalling = true;
+    showToast('Henter den nyeste webversion...');
+    try {
+      const target = new URL(window.location.href);
+      target.searchParams.set('app-update', String(Date.now()));
+      const response = await fetch(target.href, { cache: 'no-store' });
+      if (!response.ok) throw new Error('Webversionen kunne ikke hentes');
+      const registration = await navigator.serviceWorker?.getRegistration?.();
+      if (registration) await registration.update();
+      window.location.replace(target.href);
+    } catch (error) {
+      showToast('Opdateringen kunne ikke hentes. Tjek forbindelsen og prøv igen.');
+    } finally {
+      appUpdateInstalling = false;
+    }
+    return;
+  }
   if (!url || !isAllowedUpdateUrl(url)) {
     showToast('Downloadlinket er ikke godkendt');
     return;
@@ -1726,6 +1748,7 @@ async function installAppUpdate(url) {
     return;
   }
 
+  appUpdateInstalling = true;
   showToast('Henter opdatering...');
   try {
     const result = await updateInstaller.install({ url });
@@ -1736,7 +1759,8 @@ async function installAppUpdate(url) {
     }
   } catch (error) {
     showToast(`Kunne ikke starte opdatering: ${error.message || error}`);
-    openExternalUpdateLink(url);
+  } finally {
+    appUpdateInstalling = false;
   }
 }
 

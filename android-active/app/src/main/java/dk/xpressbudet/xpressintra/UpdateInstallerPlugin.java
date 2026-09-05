@@ -6,12 +6,14 @@ import android.os.Build;
 import android.provider.Settings;
 
 import androidx.core.content.FileProvider;
+import androidx.activity.result.ActivityResult;
 
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
+import com.getcapacitor.annotation.ActivityCallback;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -32,11 +34,9 @@ public class UpdateInstallerPlugin extends Plugin {
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !getContext().getPackageManager().canRequestPackageInstalls()) {
-            openUnknownAppsSettings();
-            JSObject result = new JSObject();
-            result.put("needsPermission", true);
-            result.put("message", "Tillad installation fra XpressIntra og tryk Opdater igen.");
-            call.resolve(result);
+            Intent settings = new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES);
+            settings.setData(Uri.parse("package:" + getContext().getPackageName()));
+            startActivityForResult(call, settings, "installPermissionResult");
             return;
         }
 
@@ -51,6 +51,17 @@ public class UpdateInstallerPlugin extends Plugin {
                 call.reject("Kunne ikke hente eller starte opdateringen: " + exception.getMessage(), exception);
             }
         });
+    }
+
+    @ActivityCallback
+    private void installPermissionResult(PluginCall call, ActivityResult result) {
+        if (call == null) return;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !getContext().getPackageManager().canRequestPackageInstalls()) {
+            call.reject("Installation blev ikke tilladt. Tryk Opdater for at proeve igen.");
+            return;
+        }
+        // Continue the original request when returning from Android settings.
+        install(call);
     }
 
     @PluginMethod
