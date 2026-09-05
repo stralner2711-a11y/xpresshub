@@ -26,9 +26,9 @@ const icons = {
   search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>',
 };
 
-const APP_VERSION = '1.3.59-release-v72';
-const APP_DISPLAY_VERSION = '1.3.59';
-const APP_VERSION_CODE = 72;
+const APP_VERSION = '1.3.60-release-v73';
+const APP_DISPLAY_VERSION = '1.3.60';
+const APP_VERSION_CODE = 73;
 const IMAGE_UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
 const PROFILE_PHOTO_MAX_DIMENSION = 512;
 const PROFILE_PHOTO_QUALITY = 0.84;
@@ -1510,6 +1510,10 @@ function isAllowedUpdateUrl(url) {
   }
   try {
     const parsed = new URL(url, window.location.href);
+    if (parsed.username || parsed.password) return false;
+    const localPreview = parsed.protocol === 'http:' && ['localhost', '127.0.0.1', '[::1]'].includes(parsed.hostname)
+      && parsed.origin === window.location.origin;
+    if (parsed.protocol !== 'https:' && !localPreview) return false;
     if (parsed.origin === window.location.origin) return true;
     const repo = new URL(appUpdateConfig.officialRepo || defaultUpdateConfig.officialRepo);
     const repoParts = repo.pathname.replace(/^\/|\/$/g, '').split('/').map(part => part.toLowerCase());
@@ -1537,7 +1541,7 @@ function normalizeVersionInfo(raw) {
   }
   if (!raw || typeof raw !== 'object') throw new Error('version.json er ikke gyldig');
   const activeVersionCode = Number(raw.activeVersionCode);
-  if (!Number.isFinite(activeVersionCode) || activeVersionCode <= 0) throw new Error('activeVersionCode mangler');
+  if (!Number.isSafeInteger(activeVersionCode) || activeVersionCode <= 0) throw new Error('activeVersionCode mangler');
   const apkDownloadUrl = String(raw.apkDownloadUrl || '').trim();
   const releasePageUrl = String(raw.releasePageUrl || '').trim();
   if (!apkDownloadUrl || !isAllowedUpdateUrl(apkDownloadUrl)) throw new Error('APK-linket er ikke fra godkendt GitHub-kilde');
@@ -1651,16 +1655,20 @@ async function fetchVersionInfo() {
   let lastError = null;
   let bestInfo = null;
   for (const originalUrl of [...new Set(urls.filter(Boolean))]) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000);
     try {
       if (!isAllowedUpdateUrl(originalUrl)) throw new Error('version.json ligger ikke på en godkendt kilde');
       const url = cacheBustedUpdateUrl(originalUrl);
-      const response = await fetch(url, { cache: 'no-store' });
+      const response = await fetch(url, { cache: 'no-store', signal: controller.signal });
       if (!response.ok) throw new Error(`Kunne ikke hente version.json (${response.status})`);
       const info = normalizeVersionInfo(await response.json());
       info.sourceUrl = originalUrl;
       if (!bestInfo || Number(info.activeVersionCode) > Number(bestInfo.activeVersionCode)) bestInfo = info;
     } catch (error) {
       lastError = error;
+    } finally {
+      clearTimeout(timeout);
     }
   }
   if (bestInfo) return bestInfo;

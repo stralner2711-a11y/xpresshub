@@ -16,6 +16,10 @@ function currentOrigin() {
 export function isAllowedUpdateUrl(url, options = {}) {
   try {
     const parsed = new URL(url, options.currentHref || currentHref());
+    if (parsed.username || parsed.password) return false;
+    const localPreview = parsed.protocol === 'http:' && ['localhost', '127.0.0.1', '[::1]'].includes(parsed.hostname)
+      && parsed.origin === (options.currentOrigin || currentOrigin());
+    if (parsed.protocol !== 'https:' && !localPreview) return false;
     if (parsed.origin === (options.currentOrigin || currentOrigin())) return true;
     const repo = new URL(options.officialRepo || DEFAULT_OFFICIAL_REPO);
     const repoParts = repo.pathname.replace(/^\/|\/$/g, '').split('/').map(part => part.toLowerCase());
@@ -36,7 +40,7 @@ export function isAllowedUpdateUrl(url, options = {}) {
 export function normalizeVersionInfo(raw, options = {}) {
   if (!raw || typeof raw !== 'object') throw new Error('version.json er ikke gyldig');
   const activeVersionCode = Number(raw.activeVersionCode);
-  if (!Number.isFinite(activeVersionCode) || activeVersionCode <= 0) throw new Error('activeVersionCode mangler');
+  if (!Number.isSafeInteger(activeVersionCode) || activeVersionCode <= 0) throw new Error('activeVersionCode mangler');
 
   const allowUrl = options.isAllowedUpdateUrl || (url => isAllowedUpdateUrl(url, options));
   const apkDownloadUrl = String(raw.apkDownloadUrl || '').trim();
